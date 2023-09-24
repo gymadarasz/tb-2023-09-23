@@ -1,5 +1,5 @@
-#include "includes/Graphics.h"
-
+#include "Graphics.h"
+//
 void Graphics::createWindow() {
     // Initialize the X display
     display = XOpenDisplay(NULL);

@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-dbg",
+            "type": "shell",
+            "command": "./build-dbg.sh",  // Command to run your build script
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
