@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug C++",
+            "name": "Debug C++ builder",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/build",  // Replace with your executable path
