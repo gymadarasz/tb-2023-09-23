@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <regex>
+#include <algorithm>
 #include <ctime>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -11,11 +13,11 @@ using namespace std;
 class Files {
 
 public:
-    static vector<string> find(const filesystem::path& folder = ".", const string& pattern = "") {
+    static vector<string> findByExtension(const filesystem::path& folder = ".", const string& pattern = "") {
         vector<string> files;
 
         for (const auto& entry : filesystem::directory_iterator(folder)) {
-            cout << "ENTRY:" << entry.path() << endl;
+            // cout << "ENTRY:" << entry.path() << endl;
             if (
                 entry.is_regular_file() && 
                 (
@@ -23,13 +25,24 @@ public:
                     entry.path().filename().string().find(pattern) != string::npos
                 )
             ) {
-                cout << "FILE:" << entry.path() << endl;
+                // cout << "FILE:" << entry.path() << endl;
                 files.push_back(entry.path().string());
             } else if (entry.is_directory()) {
                 // Recursively search in subdirectories
-                vector<string> subs = find(entry.path(), pattern);
+                vector<string> subs = findByExtension(entry.path(), pattern);
                 files.insert(files.end(), subs.begin(), subs.end());
             }
+        }
+
+        return files;
+    }
+
+    static vector<string> findByExtensions(const filesystem::path& folder, const vector<string>& patterns) {
+        vector<string> files;
+
+        for (const string& pattern : patterns) {
+            vector<string> matches = findByExtension(folder, pattern);
+            files.insert(files.end(), matches.begin(), matches.end());
         }
 
         return files;

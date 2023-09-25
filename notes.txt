@@ -1,5 +1,6 @@
 Commands:
 ./build-run.sh
+./cleanup.sh | ./build-run.sh
 
 TODO:
 Tradebot:
