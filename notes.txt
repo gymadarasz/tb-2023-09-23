@@ -2,6 +2,9 @@ Commands:
 ./build-run.sh
 ./cleanup.sh | ./build-run.sh
 
+Debug:
+use vscode or build with "DEBUG" parameter
+
 TODO:
 Tradebot:
 - extract the steps to-do here...

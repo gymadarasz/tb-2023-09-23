@@ -9,6 +9,15 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "build-main-dbg",
+            "type": "shell",
+            "command": "./build-run.sh DEBUG && ./build/build DEBUG",  // Command to run your build script
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
