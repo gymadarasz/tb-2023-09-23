@@ -13,7 +13,7 @@ private:
     GC gc;
     XGCValues values;
     XFontStruct *fontInfo;
-    char *font_name = (char *)"9x15"; // Font name and size
+    const char *font_name = "9x15"; // Font name and size
     int screen;
 public:
     void createWindow();

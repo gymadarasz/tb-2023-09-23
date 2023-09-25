@@ -17,4 +17,4 @@ Builder:
 - build with debug flags
 - build with super strict mode (warns as error etc.)
 - vscode debugs the builder only, add new task to debug the main project and tests too (launch.json and tasks.json)
-- cleanup script (recursive delete everything in build folder)
+. - cleanup script (recursive delete everything in build folder)

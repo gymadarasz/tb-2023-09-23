@@ -21,7 +21,7 @@ int main(/* int argc, char *argv[] */) {
     const string sourcePath = "./src";
     const string buildPath = "build/";
     const string main = "main";
-    const string flagsDbg = ""; // "-g";
+    const string flags = "-Wall -Werror -pedantic -Wextra -Wunused -Wuninitialized -Wshadow -Wformat -Wconversion -Wcast-align -Wnull-dereference -Wlogical-op -Wfloat-conversion -Wdouble-promotion -Wsign-conversion -Wsign-promo -Wcast-qual -Wdisabled-optimization -Werror=return-type -Werror=main -Wsuggest-final-methods -std=c++17"; // for debug, add: "-g";
     const string flagsLibs = "-lX11";
 
     vector<string> files = Files::findByExtensions(sourcePath, { ".cpp" });
@@ -39,12 +39,12 @@ int main(/* int argc, char *argv[] */) {
             !Files::exists(oFile) ||
             Files::getLastModificationTime(oFile) < Files::getLastModificationTime(file)
         ) {
-            exec("g++ " + flagsDbg + " -c " + file + " -o " + oFile);
+            exec("g++ " + flags + " -c " + file + " -o " + oFile);
         }
         oFiles.push_back(oFile);
     }
 
-    exec("g++ " + flagsDbg + " -o " + buildPath + main + " " + Vector::concat(oFiles) + " " + flagsLibs);
+    exec("g++ " + flags + " -o " + buildPath + main + " " + Vector::concat(oFiles) + " " + flagsLibs);
     exec("./" + buildPath + main);
 
     return 0;
