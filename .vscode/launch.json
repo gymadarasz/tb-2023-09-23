@@ -45,6 +45,27 @@
             ],
             "preLaunchTask": "build-main-dbg",  // Optional: Specify a task to run before launching the debugger
             "miDebuggerPath": "gdb"  // Replace with your debugger path (e.g., gdb or lldb)
+        },
+        {
+            "name": "Debug C++ tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/test",  // Replace with your executable path
+            "args": [],  // Optional: Specify program arguments here
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build-test-dbg",  // Optional: Specify a task to run before launching the debugger
+            "miDebuggerPath": "gdb"  // Replace with your debugger path (e.g., gdb or lldb)
         }
     ]
 }    

@@ -1,6 +1,8 @@
 Commands:
 ./build-run.sh
 ./cleanup.sh | ./build-run.sh
+./cleanup.sh | ./build-run.sh TESTS
+./cleanup.sh | ./test-cov.sh
 
 Debug:
 use vscode or build with "DEBUG" parameter
@@ -22,3 +24,6 @@ Builder:
 X vscode debugs the builder only, add new task to debug the main project and tests too (launch.json and tasks.json)
 X cleanup script (recursive delete everything in build folder)
 - vscode debugs the builder and the main project only, add new task to debug the tests too (launch.json and tasks.json)
+Misc:
+- Terminal class color codes: https://www.codeproject.com/Articles/5329247/How-to-Change-Text-Color-in-a-Linux-Terminal
+

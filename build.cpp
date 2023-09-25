@@ -11,13 +11,16 @@ public:
 
     enum Mode {
         RELEASE = 1,
-        DEBUG
+        DEBUG,
+        DEBUG_TESTS,
+        TESTS,
+        TESTS_COVERAGE,
     };
 
-    const string sourcePath = "./src/includes";
+    vector<string> sourcePaths = { "./src/includes" };
     const string buildPath = "build/";
-    const string mainPath = "./src";
-    const string main = "main";
+    string mainPath = "./src";
+    string main = "main";
     string flags = "-Wall -Werror -pedantic -Wextra -Wunused -Wuninitialized -Wshadow -Wformat -Wconversion -Wcast-align -Wnull-dereference -Wlogical-op -Wfloat-conversion -Wdouble-promotion -Wsign-conversion -Wsign-promo -Wcast-qual -Wdisabled-optimization -Werror=return-type -Werror=main -Wsuggest-final-methods -std=c++17"; // for debug, add: "-g";
     const string flagsLibs = "-lX11";
     const string cppExtension = ".cpp";
@@ -31,6 +34,30 @@ public:
                 cout << "DEBUG";
                 flags += " -g";
                 executeMain = false;
+                break;
+
+            case Mode::DEBUG_TESTS:
+                cout << "DEBUG_TESTS";
+                sourcePaths.push_back("./tests/includes");
+                flags += " -g";
+                executeMain = false;
+                mainPath = "./tests";
+                main = "test";
+                break;
+
+            case Mode::TESTS:
+                cout << "TESTS";
+                sourcePaths.push_back("./tests/includes");
+                mainPath = "./tests";
+                main = "test";
+                break;
+
+            case Mode::TESTS_COVERAGE:
+                cout << "TESTS_COVERAGE";
+                sourcePaths.push_back("./tests/includes");
+                flags += " -fprofile-arcs -ftest-coverage";
+                mainPath = "./tests";
+                main = "test";
                 break;
             
             default:
@@ -62,15 +89,21 @@ int main(int argc, char *argv[]) {
             mode = Arguments::Mode::RELEASE;
         } else if (modeArg == "DEBUG") {
             mode = Arguments::Mode::DEBUG;
+        } else if (modeArg == "DEBUG_TESTS") {
+            mode = Arguments::Mode::DEBUG_TESTS;
+        } else if (modeArg == "TESTS") {
+            mode = Arguments::Mode::TESTS;
+        } else if (modeArg == "TESTS_COVERAGE") {
+            mode = Arguments::Mode::TESTS_COVERAGE;
         } else {
-            cerr << "Invalid mode argument. Usage: " << argv[0] << " [RELEASE|DEBUG]" << endl;
+            cerr << "Invalid mode argument. Usage: " << argv[0] << " [RELEASE|DEBUG|DEBUG_TESTS|TESTS|TESTS_COVERAGE]" << endl;
             return 1;  // Exit with an error code
         }
     }
 
     Arguments args(mode);
 
-    const string sourcePath = args.sourcePath;
+    const vector<string> sourcePaths = args.sourcePaths;
     const string buildPath = args.buildPath;
     const string mainPath = args.mainPath;
     const string main = args.main;
@@ -79,7 +112,11 @@ int main(int argc, char *argv[]) {
     const string cppExtension = args.cppExtension;
     const bool executeMain = args.executeMain;
 
-    vector<string> files = Files::findByExtensions(sourcePath, { cppExtension });
+    vector<string> files;
+    for (const string& sourcePath : sourcePaths) {
+        vector<string> founds = Files::findByExtensions(sourcePath, { cppExtension });
+        files.insert(files.end(), founds.begin(), founds.end());
+    }
     files.push_back(mainPath + "/" + main + cppExtension);
 
     vector<string> oFiles;

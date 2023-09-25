@@ -1,2 +1,5 @@
 build/*
 *.o
+*.gcov
+coverage.info
+coverage_report/*

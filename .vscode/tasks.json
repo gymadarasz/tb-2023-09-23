@@ -18,6 +18,15 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "build-test-dbg",
+            "type": "shell",
+            "command": "./build-run.sh DEBUG_TESTS && ./build/build DEBUG_TESTS",  // Command to run your build script
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
