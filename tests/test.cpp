@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "includes/VectorTest.hpp"
+#include "includes/SystemTest.hpp"
+#include "includes/FilesTest.hpp"
 
 using namespace std;
 
@@ -21,6 +23,15 @@ int main() {
     cout << "Testing in progress.." << endl;
 
     Tester::run(VectorTest::testVector_concat);
+    Tester::run(SystemTest::testSystem_exec);
+    Tester::run(FilesTest::testFiles_findByExtension);
+    Tester::run(FilesTest::testFiles_findByExtensions);
+    Tester::run(FilesTest::testFiles_replaceExtension);
+    Tester::run(FilesTest::testFiles_normalizePath);
+    Tester::run(FilesTest::testFiles_extractPath);
+    Tester::run(FilesTest::testFiles_exists);
+    Tester::run(FilesTest::testFiles_createPath);
+    Tester::run(FilesTest::testFiles_getLastModificationTime);
 
     cout << endl;
 

@@ -7,12 +7,12 @@ using namespace std;
 
 class System {
 public:
-    static string exec(const string& command, bool captureOutput = true, bool captureError = true) {
+    static string exec(const string& command, bool captureOutput = true) {
         array<char, 128> buffer;
         string result;
 
-        // Open the command for reading
-        FILE* pipe = popen(command.c_str(), "r");
+        // Open the command for reading, redirecting stderr to stdout
+        FILE* pipe = popen((command + " 2>&1").c_str(), "r");
         if (!pipe) {
             throw runtime_error("Failed to execute command.");
         }

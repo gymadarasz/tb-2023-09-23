@@ -54,7 +54,8 @@
         "typeinfo": "cpp",
         "bitset": "cpp",
         "map": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "fstream": "cpp"
     },
     "cmake.configureOnOpen": false
 }
