@@ -1,11 +1,13 @@
 #include "includes/Graphics.hpp"
 
+using namespace gfx;
+
 int main()
 {
-    Graphics graph;
-    graph.createWindow();
-    while (!graph.eventLoop());
-    graph.closeWindow();
+    Graphics gfx;
+    gfx.init(800, 600, gray);
+    while(true) gfx.loop();
+    gfx.close();
 
     return 0;
 }
