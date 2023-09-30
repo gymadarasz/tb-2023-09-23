@@ -1,5 +1,7 @@
 #include <cassert>
 
+#pragma once
+
 #include "../../src/includes/System.hpp"
 
 using namespace std;

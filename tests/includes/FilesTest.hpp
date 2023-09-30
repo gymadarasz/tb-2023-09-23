@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <cassert>
 #include <vector>
@@ -6,7 +8,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-#include "../../src/includes/Files.hpp" // Adjust the path to your Files.hpp header
+#include "../../src/includes/Files.hpp"
 
 using namespace std;
 
@@ -123,5 +125,54 @@ public:
 
         // Clean up: Remove the test file
         filesystem::remove(testFile);
+    }
+
+    static void testFiles_file_get_contents() {
+        // Create a test file with known content
+        const string filename = "test_file_get_contents.txt";
+        const string expected_content = "This is a test content.";
+
+        // Write test content to the file
+        Files::file_put_contents(filename, expected_content);
+
+        // Read the content using file_get_contents
+        string actual_content;
+        try {
+            actual_content = Files::file_get_contents(filename);
+        } catch (const exception& e) {
+            cerr << "Error in testFiles_file_get_contents: " << e.what() << endl;
+            return;
+        }
+
+        // Check if the actual content matches the expected content
+        assert(actual_content == expected_content);
+
+        // Clean up: remove the test file
+        remove(filename.c_str());
+    }
+
+    static void testFiles_file_put_contents() {
+        // Define test data
+        const string filename = "test_file_put_contents.txt";
+        const string test_content = "This is a test content.";
+
+        // Write test content to the file using file_put_contents
+        try {
+            Files::file_put_contents(filename, test_content);
+        } catch (const exception& e) {
+            cerr << "Error in testFiles_file_put_contents: " << e.what() << endl;
+            return;
+        }
+
+        // Read the content of the file
+        ifstream file(filename);
+        string actual_content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));
+        file.close();
+
+        // Check if the actual content matches the expected content
+        assert(actual_content == test_content);
+
+        // Clean up: remove the test file
+        remove(filename.c_str());
     }
 };

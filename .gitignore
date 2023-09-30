@@ -3,3 +3,4 @@ build/*
 *.gcov
 coverage.info
 coverage_report/*
+app.log

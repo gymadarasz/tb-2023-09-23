@@ -3,6 +3,7 @@
 #include "includes/VectorTest.hpp"
 #include "includes/SystemTest.hpp"
 #include "includes/FilesTest.hpp"
+#include "includes/LogTest.hpp"
 
 using namespace std;
 
@@ -32,6 +33,9 @@ int main() {
     Tester::run(FilesTest::testFiles_exists);
     Tester::run(FilesTest::testFiles_createPath);
     Tester::run(FilesTest::testFiles_getLastModificationTime);
+    Tester::run(FilesTest::testFiles_file_get_contents);
+    Tester::run(FilesTest::testFiles_file_put_contents);
+    Tester::run(LogTest::testLog_writeln);
 
     cout << endl;
 

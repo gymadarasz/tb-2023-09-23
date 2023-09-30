@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <filesystem>
 #include <string>
@@ -5,6 +7,8 @@
 #include <regex>
 #include <algorithm>
 #include <ctime>
+#include <fstream>
+#include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -124,5 +128,41 @@ public:
         }
         
         return fileInfo.st_mtime;
+    }
+
+    static void file_put_contents(const string filename, const string data, bool append = false) {
+        try {
+            ofstream file;
+            if (append) {
+                file.open(filename, ios::out | ios::app);
+            } else {
+                file.open(filename, ios::out);
+            }
+
+            if (!file.is_open()) {
+                throw runtime_error("Error: Unable to open file for writing: " + filename);
+            }
+
+            file << data;
+            file.close();
+        } catch (const exception& e) {
+            throw runtime_error("Error in file_put_contents: " + string(e.what()));
+        }
+    }
+
+    static string file_get_contents(const string filename) {
+        try {
+            ifstream file(filename);
+            if (!file.is_open()) {
+                throw runtime_error("Error: Unable to open file for reading: " + filename);
+            }
+
+            string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));
+            file.close();
+
+            return content;
+        } catch (const exception& e) {
+            throw runtime_error("Error in file_get_contents: " + string(e.what()));
+        }
     }
 };

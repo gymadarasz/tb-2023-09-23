@@ -1,12 +1,12 @@
+#pragma once
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <X11/keysym.h>
-#include <cstdio> // Include for fprintf and stderr
 #include <stdexcept>
 #include <vector>
-#include <iostream>
-
+#include "Log.hpp"
 
 using namespace std;
 
@@ -36,6 +36,7 @@ namespace gfx {
         Area* parent = NULL;
         int top = 0, left = 0, width = 0, height = 0, scrollx = 0, scrolly = 0;
         vector<Area> children;
+        Color bgColor = gray;
     public:
         void reset(int t, int l, int w, int h) {
             top = t;
@@ -179,53 +180,53 @@ namespace gfx {
         onResizeHandler onResize;
 
         void loop() {
-            while (true) {
-                XEvent event;
-                XNextEvent(display, &event);
+            LOG("Loop...");
+            XEvent event;
+            XNextEvent(display, &event);
 
-                int w, h;
-                KeySym key;
-                char text[32];
-                switch (event.type) {
-                    case Expose:
-                        // Handle expose event (e.g., redraw)
-                        w = width();
-                        h = height();
-                        reset(0, 0, w, h);
-                        if (onResize) onResize(w, h);
-                        break;
+            int w, h;
+            KeySym key;
+            char text[32];
+            switch (event.type) {
+                case Expose:
+                    // Handle expose event (e.g., redraw)
+                    w = width();
+                    h = height();
+                    reset(0, 0, w, h);
+                    if (onResize) onResize(w, h);
+                    LOG("Windows expose: ", w, ":", h);
+                    break;
 
-                    case KeyPress:
-                        // Handle key press event
-                        XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        cout << "Key pressed: " << text << endl << flush;
-                        break;
+                case KeyPress:
+                    // Handle key press event
+                    XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
+                    LOG("Key pressed: ", text);
+                    break;
 
-                    case KeyRelease:
-                        // Handle key release event
-                        XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        cout << "Key released: " << text << endl << flush;
-                        break;
+                case KeyRelease:
+                    // Handle key release event
+                    XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
+                    LOG("Key released: ", text);
+                    break;
 
-                    case ButtonPress:
-                        // Handle mouse button press event
-                        cout << "Mouse button pressed: " << event.xbutton.button << " at (" << event.xbutton.x << ", " << event.xbutton.y << ")" << endl << flush;
-                        break;
+                case ButtonPress:
+                    // Handle mouse button press event
+                    LOG("Mouse button pressed: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
+                    break;
 
-                    case ButtonRelease:
-                        // Handle mouse button release event
-                        cout << "Mouse button released: " << event.xbutton.button << " at (" << event.xbutton.x << ", " << event.xbutton.y << ")" << endl << flush;
-                        break;
+                case ButtonRelease:
+                    // Handle mouse button release event
+                    LOG("Mouse button released: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
+                    break;
 
-                    case MotionNotify:
-                        // Handle mouse motion event
-                        cout << "Mouse moved to (" << event.xmotion.x << ", " << event.xmotion.y << ")" << endl << flush;
-                        break;
+                case MotionNotify:
+                    // Handle mouse motion event
+                    LOG("Mouse moved to (", event.xmotion.x, ", ", event.xmotion.y, ")");
+                    break;
 
-                    default:
-                        throw runtime_error("Unhandled event type: " + to_string(event.type));
-                        break;
-                }
+                default:
+                    throw runtime_error("Unhandled event type: " + to_string(event.type));
+                    break;
             }
         }
     };
