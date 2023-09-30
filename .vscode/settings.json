@@ -55,7 +55,12 @@
         "bitset": "cpp",
         "map": "cpp",
         "regex": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     },
     "cmake.configureOnOpen": false
 }
