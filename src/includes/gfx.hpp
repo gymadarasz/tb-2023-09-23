@@ -32,7 +32,7 @@ namespace gfx {
     const Color lightPurple = 0xFF00FF;
     const Color yellow = 0xFFFF00;
     
-    class Graphics {
+    class GFX {
     private:
 
         void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) {
@@ -56,6 +56,7 @@ namespace gfx {
         typedef void (*onTouchHandler)(unsigned int, int, int);
         typedef void (*onReleaseHandler)(unsigned int, int, int);
         typedef void (*onDragHandler)(int, int);
+        typedef void (*onLoopHandler)();
         
         onResizeHandler onResize = NULL;
         onKeyPressHandler onKeyPress = NULL;
@@ -63,6 +64,7 @@ namespace gfx {
         onTouchHandler onTouch = NULL;
         onReleaseHandler onRelease = NULL;
         onDragHandler onDrag = NULL;
+        onLoopHandler onLoop = NULL;
 
         void openWindow(int width, int height, Color color) {
             // Initialize the X display
@@ -164,60 +166,69 @@ namespace gfx {
             height = 0;
         }
 
-        void eventLoop() {            
-            XEvent event;
-            XNextEvent(display, &event);
+        void eventLoop(unsigned long ms = 100) {
+            while (true) {
 
-            int width, height;
-            KeySym key;
-            char text[32];
-            switch (event.type) {
-                case Expose:
-                    // Handle expose event (e.g., redraw)
-                    getWindowSize(width, height);
-                    LOG("Windows expose: ", width, ":", height);
-                    if (onResize) onResize(width, height);
-                    break;
+                if (onLoop && XPending(display) <= 0) {
+                    Tools::sleep(ms);
+                    onLoop();
+                    continue;
+                }
 
-                case KeyPress:
-                    // Handle key press event
-                    XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                    LOG("Key pressed: ", text);
-                    if (onKeyPress) onKeyPress(key);
-                    break;
+                XEvent event;
+                XNextEvent(display, &event);
 
-                case KeyRelease:
-                    // Handle key release event
-                    XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                    LOG("Key released: ", text);
-                    if (onKeyRelease) onKeyRelease(key);
-                    break;
+                int width, height;
+                KeySym key;
+                char text[32];
+                switch (event.type) {
+                    case Expose:
+                        // Handle expose event (e.g., redraw)
+                        getWindowSize(width, height);
+                        LOG("Windows expose: ", width, ":", height);
+                        if (onResize) onResize(width, height);
+                        break;
 
-                case ButtonPress:
-                    // Handle mouse button press event
-                    if (onTouch) onTouch(event.xbutton.button, event.xbutton.x, event.xbutton.y);
-                    LOG("Mouse button pressed: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
-                    break;
+                    case KeyPress:
+                        // Handle key press event
+                        XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
+                        LOG("Key pressed: ", text);
+                        if (onKeyPress) onKeyPress(key);
+                        break;
 
-                case ButtonRelease:
-                    // Handle mouse button release event
-                    LOG("Mouse button released: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
-                    if (onRelease) onRelease(event.xbutton.button, event.xbutton.x, event.xbutton.y);
-                    break;
+                    case KeyRelease:
+                        // Handle key release event
+                        XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
+                        LOG("Key released: ", text);
+                        if (onKeyRelease) onKeyRelease(key);
+                        break;
 
-                case MotionNotify:
-                    // Handle mouse motion event
-                    LOG("Mouse moved to (", event.xmotion.x, ", ", event.xmotion.y, ")");
-                    if (onDrag) onDrag(event.xbutton.x, event.xbutton.y);
-                    break;
+                    case ButtonPress:
+                        // Handle mouse button press event
+                        if (onTouch) onTouch(event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        LOG("Mouse button pressed: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
+                        break;
 
-                default:
-                    throw runtime_error("Unhandled event type: " + to_string(event.type));
-                    break;
+                    case ButtonRelease:
+                        // Handle mouse button release event
+                        LOG("Mouse button released: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
+                        if (onRelease) onRelease(event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        break;
+
+                    case MotionNotify:
+                        // Handle mouse motion event
+                        LOG("Mouse moved to (", event.xmotion.x, ", ", event.xmotion.y, ")");
+                        if (onDrag) onDrag(event.xbutton.x, event.xbutton.y);
+                        break;
+
+                    default:
+                        throw runtime_error("Unhandled event type: " + to_string(event.type));
+                        break;
+                }
             }
         }
     };
 
-    Display* Graphics::display = NULL;
+    Display* GFX::display = NULL;
 
 }
