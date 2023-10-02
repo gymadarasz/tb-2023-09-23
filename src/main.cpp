@@ -3,18 +3,18 @@
 
 using namespace gfx;
 
-GFX g;
+GraphicsWindow g;
 int i=0;
 
-void loop() {
-    //LOG("Draw a rectangle");
+void open(void*) {
+    LOG("Draw a rectangle");
     g.drawRectangle(50+i, 50+i, 200, 150, red);
     i++;
 }
 
 int main()
 {
-    g.onLoop = loop;
+    g.onSetup = open;
     g.openWindow(800, 600, gray);
 
     // // Draw a rectangle

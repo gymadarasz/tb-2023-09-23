@@ -31,8 +31,33 @@ namespace gfx {
     const Color lightCyan = 0x00FFFF;
     const Color lightPurple = 0xFF00FF;
     const Color yellow = 0xFFFF00;
+
+    class EventHandler {
+    public:
+
+        void* eventContext = NULL;
+
+        typedef void (*onResizeHandler)(void*, int, int);
+        typedef void (*onKeyPressHandler)(void*, unsigned long);
+        typedef void (*onKeyReleaseHandler)(void*, unsigned long);
+        typedef void (*onTouchHandler)(void*, unsigned int, int, int);
+        typedef void (*onReleaseHandler)(void*, unsigned int, int, int);
+        typedef void (*onDragHandler)(void*, int, int);
+        typedef void (*onOpenHandler)(void*);
+        typedef void (*onLoopHandler)(void*);
+        
+        onResizeHandler onResize = NULL;
+        onKeyPressHandler onKeyPress = NULL;
+        onKeyReleaseHandler onKeyRelease = NULL;
+        onTouchHandler onTouch = NULL;
+        onReleaseHandler onRelease = NULL;
+        onDragHandler onDrag = NULL;
+        onOpenHandler onSetup = NULL;
+        onLoopHandler onLoop = NULL;
+
+    };
     
-    class GFX {
+    class GraphicsWindow: public EventHandler {
     private:
 
         void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) {
@@ -50,28 +75,10 @@ namespace gfx {
 
     public:
 
-        typedef void (*onResizeHandler)(int, int);
-        typedef void (*onKeyPressHandler)(unsigned long);
-        typedef void (*onKeyReleaseHandler)(unsigned long);
-        typedef void (*onTouchHandler)(unsigned int, int, int);
-        typedef void (*onReleaseHandler)(unsigned int, int, int);
-        typedef void (*onDragHandler)(int, int);
-        typedef void (*onLoopHandler)();
-        
-        onResizeHandler onResize = NULL;
-        onKeyPressHandler onKeyPress = NULL;
-        onKeyReleaseHandler onKeyRelease = NULL;
-        onTouchHandler onTouch = NULL;
-        onReleaseHandler onRelease = NULL;
-        onDragHandler onDrag = NULL;
-        onLoopHandler onLoop = NULL;
-
         void openWindow(int width, int height, Color color) {
             // Initialize the X display
-            if (display) throw runtime_error("Display already open.");
-            display = XOpenDisplay(NULL);
-            if (!display)
-                throw runtime_error("Unable to open display.");
+            if (!display) display = XOpenDisplay(NULL);
+            if (!display) throw runtime_error("Unable to open display.");
 
             // int screen = DefaultScreen(display);
 
@@ -86,6 +93,8 @@ namespace gfx {
             XSelectInput(display, window, 
                 ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | 
                 ButtonReleaseMask | PointerMotionMask);
+
+            eventContext = this;
         }
 
         void closeWindow() {            
@@ -120,17 +129,17 @@ namespace gfx {
         }
 
         void drawLine(int x1, int y1, int x2, int y2, Color color) {            
-            XSetForeground(display, gc, color);
+            setupDrawing(x1, y1, x2, y2, color);
             XDrawLine(display, window, gc, x1, y1, x2, y2);
         }
 
         void drawVerticalLine(int x1, int y1, int y2, Color color) {            
-            XSetForeground(display, gc, color);
+            setupDrawing(x1, y1, x1, y2, color);
             XDrawLine(display, window, gc, x1, y1, x1, y2);
         }
         
         void drawHorizontalLine(int x1, int y1, int x2, Color color) {            
-            XSetForeground(display, gc, color);
+            setupDrawing(x1, y1, x1, y1, color);
             XDrawLine(display, window, gc, x1, y1, x2, y1);
         }
 
@@ -167,11 +176,16 @@ namespace gfx {
         }
 
         void eventLoop(unsigned long ms = 100) {
+            if (onSetup && XPending(display) <= 0) {
+                Tools::sleep(ms);
+                onSetup(eventContext);
+            }
+
             while (true) {
 
                 if (onLoop && XPending(display) <= 0) {
                     Tools::sleep(ms);
-                    onLoop();
+                    onLoop(eventContext);
                     continue;
                 }
 
@@ -186,39 +200,39 @@ namespace gfx {
                         // Handle expose event (e.g., redraw)
                         getWindowSize(width, height);
                         LOG("Windows expose: ", width, ":", height);
-                        if (onResize) onResize(width, height);
+                        if (onResize) onResize(eventContext, width, height);
                         break;
 
                     case KeyPress:
                         // Handle key press event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
                         LOG("Key pressed: ", text);
-                        if (onKeyPress) onKeyPress(key);
+                        if (onKeyPress) onKeyPress(eventContext, key);
                         break;
 
                     case KeyRelease:
                         // Handle key release event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
                         LOG("Key released: ", text);
-                        if (onKeyRelease) onKeyRelease(key);
+                        if (onKeyRelease) onKeyRelease(eventContext, key);
                         break;
 
                     case ButtonPress:
                         // Handle mouse button press event
-                        if (onTouch) onTouch(event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        if (onTouch) onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         LOG("Mouse button pressed: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
                         break;
 
                     case ButtonRelease:
                         // Handle mouse button release event
                         LOG("Mouse button released: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
-                        if (onRelease) onRelease(event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        if (onRelease) onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         break;
 
                     case MotionNotify:
                         // Handle mouse motion event
                         LOG("Mouse moved to (", event.xmotion.x, ", ", event.xmotion.y, ")");
-                        if (onDrag) onDrag(event.xbutton.x, event.xbutton.y);
+                        if (onDrag) onDrag(eventContext, event.xbutton.x, event.xbutton.y);
                         break;
 
                     default:
@@ -229,6 +243,6 @@ namespace gfx {
         }
     };
 
-    Display* GFX::display = NULL;
+    Display* GraphicsWindow::display = NULL;
 
 }
