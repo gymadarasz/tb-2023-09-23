@@ -11,7 +11,9 @@ int main()
     area.setBorder(SIMPLE);
     area.setBorderColor(red);
     Button button(gwin, 10, 10, 80, 30, "Hello");
+    Button button2(gwin, 210, 10, 80, 30, "Hello2");
     area.child(button);
+    area.child(button2);
     gui.child(area);
     gui.loop();
  

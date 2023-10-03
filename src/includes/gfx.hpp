@@ -466,19 +466,37 @@ namespace gfx {
                 y >= top && y <= top + getHeight();
         }
 
+        bool contains(int x1, int y1, int x2, int y2) const {
+            return contains(x1, y1) && contains(x2, y2);
+        }
+
+        bool contains(const Area& area) const {
+            int left = area.getLeft();
+            int top = area.getTop();
+            int right = left + area.getWidth();
+            int bottom = top + area.getHeight();
+            return contains(left, top, right, bottom);
+        }
+
         void propagateTouch(unsigned int button, int x, int y) {
             if (onTouch && contains(x, y)) onTouch(this, button, x, y);
-            for (Area& area: areas) area.propagateTouch(button, x, y);
+            for (Area& area: areas) {
+                if (contains(area)) area.propagateTouch(button, x, y);
+            }
         }
 
         void propagateRelease(unsigned int button, int x, int y) {
             if (onRelease && contains(x, y)) onRelease(this, button, x, y);
-            for (Area& area: areas) area.propagateRelease(button, x, y);
+            for (Area& area: areas) {
+                if (contains(area)) area.propagateRelease(button, x, y);
+            }
         }
 
         void propagateMove(int x, int y) {
             if (onMove && contains(x, y)) onMove(this, x, y);
-            for (Area& area: areas) area.propagateMove(x, y);
+            for (Area& area: areas) {
+                if (contains(area)) area.propagateMove(x, y);
+            }
         }
 
         void draw() {
@@ -497,7 +515,7 @@ namespace gfx {
             Color borderColorDark;
             LOG(left, ", ", top, ", ", right, ", ", bottom, " border:", (int)border);
             switch (border) {
-                
+
                 case NONE:
                     break;
 
@@ -548,7 +566,7 @@ namespace gfx {
             gwin->writeText(textLeft, textTop, text, getTextColor());
 
             for (Area& area: areas) {
-                area.draw();
+                if (contains(area)) area.draw();
             }
 
         }
