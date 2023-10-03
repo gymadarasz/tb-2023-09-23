@@ -7,15 +7,16 @@ int main()
 {
     GUI gui(800, 600);
     GraphicsWindow* gwin = gui.getGraphicsWindow();
-    Area area(gwin, 100, 100, 200, 200);
-    area.setBorder(SIMPLE);
-    area.setBorderColor(red);
+    Drag drag(gwin, 100, 100, 200, 200);
     Button button(gwin, 10, 10, 80, 30, "Hello");
-    Button button2(gwin, 210, 10, 80, 30, "Hello2");
-    area.child(button);
-    area.child(button2);
-    area.scroll(100, 0);
-    gui.child(area);
+    Button button2(gwin, 110, 10, 80, 30, "Hello2");
+    Button button3(gwin, 210, 10, 80, 30, "Hello3");
+    Button button4(gwin, 310, 10, 80, 30, "Hello4");
+    drag.child(&button);
+    drag.child(&button2);
+    drag.child(&button3);
+    drag.child(&button4);
+    gui.child(&drag);
     gui.loop();
  
     return 0;

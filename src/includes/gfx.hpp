@@ -132,6 +132,9 @@ namespace gfx {
         static const Align textAlign = CENTER;
         static const Color borderColor = gray;
         static const Color textColor = black;
+        static const Color backgroundColor = gray;
+        static const Color scrollBackgroundColor = darkGray;
+        static const int scrollMargin = 10;
     };
     const char* Theme::windowFont = "10x20";
 
@@ -356,6 +359,12 @@ namespace gfx {
         static const Color defaultAreaBorderColor = Theme::borderColor;
         static const Color defaultAreaTextColor = Theme::textColor;
         static const Border defaultAreaBorder = NONE;
+        static const Color defaultAreaBackgroundColor = GraphicsWindow::defaultWindowColor;
+        static const int defaultScrollMargin = Theme::scrollMargin;
+
+        typedef void (*onDrawHandler)(void*);
+        
+        onDrawHandler onDraw = NULL;
 
     protected:
         GraphicsWindow* gwin = NULL;
@@ -364,24 +373,35 @@ namespace gfx {
         int width, height;
         const string text;
         const Align textAlign;
-        const Color backgroundColor = GraphicsWindow::defaultWindowColor;
         Color borderColor = defaultAreaBorderColor;
         const Color textColor = defaultAreaTextColor;
-        Border border = defaultAreaBorder;
+        Border border;
+        Color backgroundColor;
+        int scrollMargin;
 
-        vector<Area> areas;
+        vector<Area*> areas;
         Area* parent = NULL;
-        int scrollX = 0, scrollY = 0;
+        int scrollX = 0, scrollY = 0, scrollXMax = 0, scrollYMax = 0;
+
+        void forceScrollInRange() {
+            if (scrollX < 0) scrollX = 0;
+            if (scrollY < 0) scrollY = 0;
+            if (scrollX > scrollXMax) scrollX = scrollXMax;
+            if (scrollY > scrollYMax) scrollY = scrollYMax;
+        }
 
     public:
 
         Area(GraphicsWindow* gwin, int left, int top, int width, int height, 
             const string text = "", const Align textAlign = defaultAreaTextAlign,
-            const Border border = defaultAreaBorder
+            const Border border = defaultAreaBorder,
+            const Color backgroundColor = defaultAreaBackgroundColor,
+            const int scrollMargin = defaultScrollMargin
         ):
             gwin(gwin),
             left(left), top(top), width(width), height(height), 
-            text(text), textAlign(textAlign), border(border) {}
+            text(text), textAlign(textAlign), border(border), 
+            backgroundColor(backgroundColor), scrollMargin(scrollMargin) {}
 
         GraphicsWindow* getGraphicsWindow() const {
             return gwin;
@@ -395,9 +415,25 @@ namespace gfx {
             return parent;
         } 
 
-        void child(Area& area) {
-            area.setParent(this);
+        void child(Area* area) {
+            area->setParent(this);
             areas.push_back(area);
+            int xMax = (area->left + area->width) - width + scrollMargin;
+            int yMax = (area->top + area->height) - height + scrollMargin;
+            if (xMax > scrollXMax) scrollXMax = xMax;
+            if (yMax > scrollYMax) scrollYMax = yMax;
+        }
+
+        void setScrollXY(int x, int y) {
+            scrollX = x;
+            scrollY = y;
+            forceScrollInRange();
+        }
+
+        void moveScrollXY(int x, int y) {
+            scrollX += x;
+            scrollY += y;
+            forceScrollInRange();
         }
 
         int getScrollX() const {
@@ -406,11 +442,6 @@ namespace gfx {
 
         int getScrollY() const {
             return scrollY;
-        }
-
-        void scroll(int x, int y) {
-            scrollX = x;
-            scrollY = y;
         }
 
         int getTop() const {
@@ -459,6 +490,10 @@ namespace gfx {
             return backgroundColor;
         }
 
+        void setBackgroundColor(Color color) {
+            backgroundColor = color;
+        }
+
         Color getBorderColor() const {
             return borderColor;
         }
@@ -483,50 +518,40 @@ namespace gfx {
             return contains(x1, y1) && contains(x2, y2);
         }
 
-        bool contains(const Area& area) const {
-            int left = area.getLeft();
-            int top = area.getTop();
-            int right = left + area.getWidth();
-            int bottom = top + area.getHeight();
+        bool contains(Area* area) const {
+            int left = area->getLeft();
+            int top = area->getTop();
+            int right = left + area->getWidth();
+            int bottom = top + area->getHeight();
             return contains(left, top, right, bottom);
         }
 
         void propagateTouch(unsigned int button, int x, int y) {
             if (onTouch && contains(x, y)) onTouch(this, button, x, y);
-            for (Area& area: areas) {
-                if (contains(area)) area.propagateTouch(button, x, y);
+            for (Area* area: areas) {
+                if (contains(area)) area->propagateTouch(button, x, y);
             }
         }
 
         void propagateRelease(unsigned int button, int x, int y) {
             if (onRelease && contains(x, y)) onRelease(this, button, x, y);
-            for (Area& area: areas) {
-                if (contains(area)) area.propagateRelease(button, x, y);
+            for (Area* area: areas) {
+                if (contains(area)) area->propagateRelease(button, x, y);
             }
         }
 
         void propagateMove(int x, int y) {
             if (onMove && contains(x, y)) onMove(this, x, y);
-            for (Area& area: areas) {
-                if (contains(area)) area.propagateMove(x, y);
+            for (Area* area: areas) {
+                if (contains(area)) area->propagateMove(x, y);
             }
         }
 
-        void draw() const {
-            int top = getTop();
-            int left = getLeft();
-            int width = getWidth();
-            int height = getHeight();
-            const string text = getText();
-            int right = left + width;
-            int bottom = top + height;
-            gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
-            // TODO: draw borders: PUSHED, RELEASED, NONE
+        void drawBorder(int left, int top, int right, int bottom) const {
             Border border = getBorder();
             Color borderColor;
             Color borderColorLight;
             Color borderColorDark;
-            LOG(left, ", ", top, ", ", right, ", ", bottom, " border:", (int)border);
             switch (border) {
 
                 case NONE:
@@ -560,56 +585,55 @@ namespace gfx {
                     throw runtime_error("Invalid border");
                     break;
             }
+        }
+
+        void drawBorder() const {
+            int top = getTop();
+            int left = getLeft();
+            int width = getWidth();
+            int height = getHeight();
+            int right = left + width;
+            int bottom = top + height;
+            drawBorder(left, top, right, bottom);
+        }
+
+        void draw() {
+            int top = getTop();
+            int left = getLeft();
+            int width = getWidth();
+            int height = getHeight();
+            int right = left + width;
+            int bottom = top + height;
+            const string text = getText();
+            LOG("fillRectangle (in draw): ", left, " ", top, " ", right, " ", bottom);
+            gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
+
+            drawBorder(left, top, right, bottom);
             
-            int textWidth, textHeight;
-            gwin->getTextSize(text, textWidth, textHeight);
-            int textLeft, textTop;
-            Align textAlign = getTextAlign();
-            switch (textAlign) {
+            if(!text.empty()) {
+                int textWidth, textHeight;
+                gwin->getTextSize(text, textWidth, textHeight);
+                int textLeft, textTop;
+                Align textAlign = getTextAlign();
+                switch (textAlign) {
 
-                case CENTER:
-                    textLeft = left + ((width - textWidth) / 2);
-                    textTop = top + ((height - textHeight) / 2) + 16; // ??16
-                    break;
-                
-                default:
-                    throw runtime_error("Invalid text align");
-                    break;
-            }
-            gwin->writeText(textLeft, textTop, text, getTextColor());
-
-            for (const Area& area: areas) {
-                if (contains(area)) area.draw();
+                    case CENTER:
+                        textLeft = left + ((width - textWidth) / 2);
+                        textTop = top + ((height - textHeight) / 2) + 16; // ??16
+                        break;
+                    
+                    default:
+                        throw runtime_error("Invalid text align");
+                        break;
+                }
+                gwin->writeText(textLeft, textTop, text, getTextColor());
             }
 
-        }
-    };
+            for (Area* area: areas) {
+                if (contains(area)) area->draw();
+            }
 
-    class Button: public Area {
-    protected:
-        
-        static void touch(void* context, unsigned int button, int x, int y) {
-            Button* that = (Button*)context;
-            LOG("Button touch: ", button, " ", x, ":", y);
-            that->setBorder(PUSHED);
-            that->draw();
-        }
-        
-        static void release(void* context, unsigned int button, int x, int y) {
-            Button* that = (Button*)context;
-            LOG("Button release: ", button, " ", x, ":", y);
-            that->setBorder(BUTTON);
-            that->draw();
-        }
-
-    public:
-        Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
-            const string text, const Align textAlign = Area::defaultAreaTextAlign
-        ):
-            Area(gwin, left, top, width, height, text, textAlign, BUTTON)
-        {
-            onTouch = touch;
-            onRelease = release;
+            if (onDraw) onDraw(this);
         }
     };
 
@@ -661,6 +685,84 @@ namespace gfx {
 
         void loop(unsigned long ms = GraphicsWindow::defaultLoopMs) const {
             gwin->eventLoop(ms);
+        }
+    };
+
+    class Button: public Area {
+    protected:
+        
+        static void touch(void* context, unsigned int button, int x, int y) {
+            Button* that = (Button*)context;
+            LOG("Button touch: ", button, " (", that->getText().c_str() , ") ", x, ":", y);
+            that->setBorder(PUSHED);
+            that->drawBorder();
+        }
+        
+        static void release(void* context, unsigned int button, int x, int y) {
+            Button* that = (Button*)context;
+            LOG("Button release: ", button, " ", x, ":", y);
+            that->setBorder(BUTTON);
+            that->drawBorder();
+        }
+
+    public:
+        Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
+            const string text, const Align textAlign = Area::defaultAreaTextAlign
+        ): Area(gwin, left, top, width, height, text, textAlign, BUTTON) 
+        {
+            onTouch = touch;
+            onRelease = release;
+        }
+    };
+
+    class Drag: public Area {
+    public:
+
+        static const Border defaultScrollBorder = PUSHED;
+        static const Color defaultScrollBackgroundColor = Theme::scrollBackgroundColor;
+
+    protected:
+
+        bool drag = false;
+        int dragStartedX, dragStartedY, dragScrollStartedX, dragScrollStartedY;
+
+        static void touch(void* context, unsigned int button, int x, int y) {
+            Drag* that = (Drag*)context;
+            LOG("Drag touch: ", button, " ", x, ":", y);
+            that->drag = true;
+            that->dragStartedX = x;
+            that->dragStartedY = y;
+            that->dragScrollStartedX = that->getScrollX();
+            that->dragScrollStartedY = that->getScrollY();
+        }
+        
+        static void release(void* context, unsigned int button, int x, int y) {
+            Drag* that = (Drag*)context;
+            LOG("Drag release: ", button, " ", x, ":", y);
+            that->drag = false;
+        }
+        
+        static void move(void* context, int x, int y) {
+            Drag* that = (Drag*)context;
+            if (that->drag) {
+                that->setScrollXY(
+                    that->dragScrollStartedX + (that->dragStartedX - x), 
+                    that->dragScrollStartedY + (that->dragStartedY - y)
+                );
+                LOG("Drag scrollTo: ", that->scrollX, ":", that->scrollY);
+                that->draw();
+            }
+        }
+
+    public:
+        Drag(GraphicsWindow* gwin, int left, int top, int width, int height,
+            const Border border = defaultScrollBorder,
+            const Color backgroundColor = defaultScrollBackgroundColor
+        ): Area(gwin, left, top, width, height, "", CENTER, border, backgroundColor)
+        {
+            onTouch = touch;
+            onRelease = release;
+            onMove = move;
         }
     };
 
