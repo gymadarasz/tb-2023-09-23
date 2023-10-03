@@ -58,6 +58,12 @@ namespace gfx {
     };
     
     class GraphicsWindow: public EventHandler {
+    public:
+
+        static const unsigned long defaultLoopMs = 100;
+        static const Color defaultWindowColor = gray;
+        static const char* defaultWindowFont;
+
     private:
 
         void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) {
@@ -71,11 +77,11 @@ namespace gfx {
         static Display *display;
         Window window;
         GC gc;
-        XFontStruct *fontInfo = NULL;        
+        XFontStruct *fontInfo = NULL;
 
     public:
 
-        void openWindow(int width, int height, Color color) {
+        void openWindow(int width, int height, Color color = defaultWindowColor, const char* font = defaultWindowFont) {
             // Initialize the X display
             if (!display) display = XOpenDisplay(NULL);
             if (!display) throw runtime_error("Unable to open display.");
@@ -93,6 +99,8 @@ namespace gfx {
             XSelectInput(display, window, 
                 ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | 
                 ButtonReleaseMask | PointerMotionMask);
+
+            setFont(font);
 
             eventContext = this;
         }
@@ -175,7 +183,7 @@ namespace gfx {
             height = 0;
         }
 
-        void eventLoop(unsigned long ms = 100) {
+        void eventLoop(unsigned long ms = defaultLoopMs) {
             if (onSetup && XPending(display) <= 0) {
                 Tools::sleep(ms);
                 onSetup(eventContext);
@@ -244,5 +252,125 @@ namespace gfx {
     };
 
     Display* GraphicsWindow::display = NULL;
+    const char* GraphicsWindow::defaultWindowFont = "10x20";
+
+
+    enum Align {
+        CENTER,
+    };
+
+    class Area: public EventHandler {
+    public:
+
+        static const Align defaultAreaTextAlign = CENTER;
+        static const Align defaultAreaBorderColor = CENTER;
+        static const Color defaultAreaTextColor = black;
+
+    protected:
+        const int left, top, width, height;
+        const string text;
+        const Align textAlign;
+        const Color backgroundColor = GraphicsWindow::defaultWindowColor;
+        const Color borderColor = defaultAreaBorderColor;
+        const Color textColor = defaultAreaTextColor;
+    public:
+
+        Area(int left, int top, int width, int height, const string text = "", const Align textAlign = defaultAreaTextAlign):
+            left(left), top(top), width(width), height(height), text(text), textAlign(textAlign) {}
+
+        int getLeft() {
+            return left;
+        }
+
+        int getTop() {
+            return top;
+        }
+
+        int getWidth() {
+            return width;
+        }
+
+        int getHeight() {
+            return height;
+        }
+
+        string getText() {
+            return text;
+        }
+
+        Align getTextAlign() {
+            return textAlign;
+        }
+
+        Color getBackgroundColor() {
+            return backgroundColor;
+        }
+
+        Color getBorderColor() {
+            return borderColor;
+        }
+
+        Color getTextColor() {
+            return textColor;
+        }
+
+        void draw(GraphicsWindow* gwin) {
+            int top = getTop();
+            int left = getLeft();
+            int width = getWidth();
+            int height = getHeight();
+            int right = left + width;
+            int bottom = top + height;
+            gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
+            // TODO: draw borders: PUSHED, RELEASED, NONE
+            gwin->drawRectangle(left, top, right, bottom, getBorderColor());
+            int textWidth, textHeight;
+            const string text = getText();
+            gwin->getTextSize(text, textWidth, textHeight);
+            int textLeft, textTop;
+            Align textAlign = getTextAlign();
+            switch (textAlign)
+            {
+                case CENTER:
+                    textLeft = left + ((width - textWidth) / 2);
+                    textTop = top + ((height - textHeight) / 2) + 14; // ??14
+                    break;
+                
+                default:
+                    throw runtime_error("Invalid text align");
+                    break;
+            }
+            gwin->writeText(textLeft, textTop, text, getTextColor());
+        }
+    };
+
+    class GUI: public GraphicsWindow {
+    protected:
+        vector<Area> areas;
+
+        static void drawUI(void* context) {
+            LOG("Draw UI");
+            GUI* that = (GUI*)context;
+            for (Area& area: that->areas) {
+                area.draw(that);
+            }
+        }
+
+    public:
+        GUI(int width, int height, Color color = defaultWindowColor) {
+            openWindow(width, height, color);
+            eventContext = this;
+            onSetup = drawUI;
+        }
+
+        ~GUI() {
+            closeWindow();
+        }
+
+        void button(int left, int top, int width, int height, const string text, const Align align = Area::defaultAreaTextAlign) {
+            Area button(left, top, width, height, text, align);
+            areas.push_back(button);
+        }
+    };
 
 }

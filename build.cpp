@@ -21,7 +21,8 @@ public:
     const string buildPath = "build/";
     string mainPath = "./src";
     string main = "main";
-    string flags = "-Wall -Werror -pedantic -Wextra -Wunused -Wuninitialized -Wshadow -Wformat -Wconversion -Wcast-align -Wnull-dereference -Wlogical-op -Wfloat-conversion -Wdouble-promotion -Wsign-conversion -Wsign-promo -Wcast-qual -Wdisabled-optimization -Werror=return-type -Werror=main -Wsuggest-final-methods -std=c++17"; // for debug, add: "-g";
+    // -Wshadow
+    string flags = "-Wall -Werror -pedantic -Wextra -Wunused -Wuninitialized -Wformat -Wconversion -Wcast-align -Wnull-dereference -Wlogical-op -Wfloat-conversion -Wdouble-promotion -Wsign-conversion -Wsign-promo -Wcast-qual -Wdisabled-optimization -Werror=return-type -Werror=main -Wsuggest-final-methods -std=c++17"; // for debug, add: "-g";
     const string flagsLibs = "-lX11";
     const string cppExtension = ".cpp";
     bool executeMain = true;
