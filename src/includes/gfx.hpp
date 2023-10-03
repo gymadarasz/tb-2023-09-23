@@ -32,6 +32,13 @@ namespace gfx {
     const Color lightPurple = 0xFF00FF;
     const Color yellow = 0xFFFF00;
 
+    class ColorMixer {
+    public:
+        static Color mix(Color color1, Color color2) {
+            return (color1 + color2) / 2;
+        }
+    };
+
     class EventHandler {
     public:
 
@@ -259,12 +266,20 @@ namespace gfx {
         CENTER,
     };
 
+    enum Border {
+        NONE,
+        SIMPLE,
+        BUTTON,
+        PUSHED,
+    };
+
     class Area: public EventHandler {
     public:
 
         static const Align defaultAreaTextAlign = CENTER;
         static const Align defaultAreaBorderColor = CENTER;
         static const Color defaultAreaTextColor = black;
+        static const Border defaultAreaBorder = NONE;
 
     protected:
         const int left, top, width, height;
@@ -273,10 +288,15 @@ namespace gfx {
         const Color backgroundColor = GraphicsWindow::defaultWindowColor;
         const Color borderColor = defaultAreaBorderColor;
         const Color textColor = defaultAreaTextColor;
+        const Border border = defaultAreaBorder;
     public:
 
-        Area(int left, int top, int width, int height, const string text = "", const Align textAlign = defaultAreaTextAlign):
-            left(left), top(top), width(width), height(height), text(text), textAlign(textAlign) {}
+        Area(int left, int top, int width, int height, 
+            const string text = "", const Align textAlign = defaultAreaTextAlign,
+            const Border border = defaultAreaBorder
+        ):
+            left(left), top(top), width(width), height(height), 
+            text(text), textAlign(textAlign), border(border) {}
 
         int getLeft() {
             return left;
@@ -292,6 +312,10 @@ namespace gfx {
 
         int getHeight() {
             return height;
+        }
+
+        Border getBorder() {
+            return border;
         }
 
         string getText() {
@@ -319,13 +343,45 @@ namespace gfx {
             int left = getLeft();
             int width = getWidth();
             int height = getHeight();
+            const string text = getText();            
             int right = left + width;
             int bottom = top + height;
             gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
             // TODO: draw borders: PUSHED, RELEASED, NONE
-            gwin->drawRectangle(left, top, right, bottom, getBorderColor());
+            Border border = getBorder();
+            Color borderColor;
+            Color borderColorLight;
+            Color borderColorDark;
+            switch (border) {
+                case NONE:
+                    break;
+                case SIMPLE:
+                    gwin->drawRectangle(left, top, right, bottom, getBorderColor());
+                    break;
+                case BUTTON:
+                    borderColor = getBorderColor();
+                    borderColorLight = ColorMixer::mix(borderColor, white);
+                    borderColorDark = ColorMixer::mix(borderColor, black);
+                    gwin->drawHorizontalLine(left, top, right, borderColorLight);
+                    gwin->drawHorizontalLine(left, bottom, right, borderColorDark);
+                    gwin->drawVerticalLine(left, top, bottom, borderColorLight);
+                    gwin->drawVerticalLine(right, top, bottom, borderColorDark);
+                    break;
+                case PUSHED:
+                    borderColor = getBorderColor();
+                    borderColorLight = ColorMixer::mix(borderColor, white);
+                    borderColorDark = ColorMixer::mix(borderColor, black);
+                    gwin->drawHorizontalLine(left, top, right, borderColorDark);
+                    gwin->drawHorizontalLine(left, bottom, right, borderColorLight);
+                    gwin->drawVerticalLine(left, top, bottom, borderColorDark);
+                    gwin->drawVerticalLine(right, top, bottom, borderColorLight);
+                    break;
+                default:
+                    throw runtime_error("Invalid border");
+                    break;
+            }
+            
             int textWidth, textHeight;
-            const string text = getText();
             gwin->getTextSize(text, textWidth, textHeight);
             int textLeft, textTop;
             Align textAlign = getTextAlign();
@@ -368,7 +424,7 @@ namespace gfx {
         }
 
         void button(int left, int top, int width, int height, const string text, const Align align = Area::defaultAreaTextAlign) {
-            Area button(left, top, width, height, text, align);
+            Area button(left, top, width, height, text, align, BUTTON);
             areas.push_back(button);
         }
     };
