@@ -146,7 +146,6 @@ namespace gfx {
         typedef void (*onTouchHandler)(void*, unsigned int, int, int);
         typedef void (*onReleaseHandler)(void*, unsigned int, int, int);
         typedef void (*onDragHandler)(void*, int, int);
-        typedef void (*onOpenHandler)(void*);
         typedef void (*onLoopHandler)(void*);
         
         onResizeHandler onResize = NULL;
@@ -155,7 +154,6 @@ namespace gfx {
         onTouchHandler onTouch = NULL;
         onReleaseHandler onRelease = NULL;
         onDragHandler onDrag = NULL;
-        onOpenHandler onSetup = NULL;
         onLoopHandler onLoop = NULL;
 
     };
@@ -287,10 +285,8 @@ namespace gfx {
         }
 
         void eventLoop(unsigned long ms = defaultLoopMs) {
-            if (onSetup && XPending(display) <= 0) {
-                Tools::sleep(ms);
-                onSetup(eventContext);
-            }
+            LOG("Window event loop starts");
+            
 
             while (true) {
 
@@ -317,32 +313,27 @@ namespace gfx {
                     case KeyPress:
                         // Handle key press event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        LOG("Key pressed: ", text);
                         if (onKeyPress) onKeyPress(eventContext, key);
                         break;
 
                     case KeyRelease:
                         // Handle key release event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        LOG("Key released: ", text);
                         if (onKeyRelease) onKeyRelease(eventContext, key);
                         break;
 
                     case ButtonPress:
                         // Handle mouse button press event
                         if (onTouch) onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
-                        LOG("Mouse button pressed: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
                         break;
 
                     case ButtonRelease:
                         // Handle mouse button release event
-                        LOG("Mouse button released: ", event.xbutton.button, " at (", event.xbutton.x, ", ", event.xbutton.y, ")");
                         if (onRelease) onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         break;
 
                     case MotionNotify:
                         // Handle mouse motion event
-                        LOG("Mouse moved to (", event.xmotion.x, ", ", event.xmotion.y, ")");
                         if (onDrag) onDrag(eventContext, event.xbutton.x, event.xbutton.y);
                         break;
 
@@ -368,40 +359,67 @@ namespace gfx {
         static const Border defaultAreaBorder = NONE;
 
     protected:
-        const int left, top, width, height;
+        GraphicsWindow* gwin = NULL;
+
+        const int left, top;
+        int width, height;
         const string text;
         const Align textAlign;
         const Color backgroundColor = GraphicsWindow::defaultWindowColor;
         const Color borderColor = defaultAreaBorderColor;
         const Color textColor = defaultAreaTextColor;
-        const Border border = defaultAreaBorder;
+        Border border = defaultAreaBorder;
+
+        vector<Area> areas;
+
     public:
 
-        Area(int left, int top, int width, int height, 
+        Area(GraphicsWindow* gwin, int left, int top, int width, int height, 
             const string text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder
         ):
+            gwin(gwin),
             left(left), top(top), width(width), height(height), 
             text(text), textAlign(textAlign), border(border) {}
 
-        int getLeft() {
+        GraphicsWindow* getGraphicsWindow() {
+            return gwin;
+        }
+
+        void child(const Area& area) {
+            areas.push_back(area);
+        }
+
+        int getLeft() const {
             return left;
         }
 
-        int getTop() {
+        int getTop() const {
             return top;
         }
 
-        int getWidth() {
+        int getWidth() const {
             return width;
         }
 
-        int getHeight() {
+        void setWidth(int width) {
+            this->width = width;
+        }
+
+        int getHeight() const {
             return height;
+        }
+
+        void setHeight(int height) {
+            this->height = height;
         }
 
         Border getBorder() {
             return border;
+        }
+
+        void setBorder(Border border) {
+            this->border = border;
         }
 
         string getText() {
@@ -424,12 +442,20 @@ namespace gfx {
             return textColor;
         }
 
-        void draw(GraphicsWindow* gwin) {
+        bool contains(int x, int y) const {
+            int left = getLeft();
+            int top = getTop();
+            return
+                x >= left && x <= left + getWidth() &&
+                y >= top && y <= top + getHeight();
+        }
+
+        void draw() {
             int top = getTop();
             int left = getLeft();
             int width = getWidth();
             int height = getHeight();
-            const string text = getText();            
+            const string text = getText();
             int right = left + width;
             int bottom = top + height;
             gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
@@ -483,35 +509,94 @@ namespace gfx {
                     break;
             }
             gwin->writeText(textLeft, textTop, text, getTextColor());
+
+            for (Area& area: areas) {
+                area.draw();
+            }
+
         }
     };
 
-    class GUI: public GraphicsWindow {
+    class Button: public Area {
     protected:
-        vector<Area> areas;
+        
+        static void touch(void* context, unsigned int button, int x, int y) {
+            Button* that = (Button*)context;
+            LOG("Button touch: ", button, " ", x, ":", y);
+            that->setBorder(PUSHED);
+            that->draw();
+        }
+        
+        static void release(void* context, unsigned int button, int x, int y) {
+            Button* that = (Button*)context;
+            LOG("Button release: ", button, " ", x, ":", y);
+            that->setBorder(BUTTON);
+            that->draw();
+        }
 
-        static void drawUI(void* context) {
-            LOG("Draw UI");
+    public:
+        Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
+            const string text, const Align textAlign = Area::defaultAreaTextAlign
+        ):
+            Area(gwin, left, top, width, height, text, textAlign, BUTTON)
+        {
+            onTouch = touch;
+            onRelease = release;
+        }
+    };
+
+    class GUI: public Area {
+    protected:
+        // GraphicsWindow* gwin = NULL;
+
+        static void resize(void* context, int width, int height) {
+            GUI* that = (GUI*)context;
+            that->setWidth(width);
+            that->setHeight(height);
+            that->draw();
+        }
+
+        static void touch(void* context, unsigned int button, int x, int y) {
+            LOG("Touch UI: ", button, " ", x, ":", y);
             GUI* that = (GUI*)context;
             for (Area& area: that->areas) {
-                area.draw(that);
+                if (area.onTouch && area.contains(x, y)) {
+                    area.onTouch(&area, button, x - area.getLeft(), y - area.getTop());
+                }
+            }
+        }
+
+        static void release(void* context, unsigned int button, int x, int y) {
+            LOG("Release UI: ", button, " ", x, ":", y);
+            GUI* that = (GUI*)context;
+            for (Area& area: that->areas) {
+                if (area.onRelease && area.contains(x, y)) {
+                    area.onRelease(&area, button, x - area.getLeft(), y - area.getTop());
+                }
             }
         }
 
     public:
-        GUI(int width, int height, Color color = defaultWindowColor) {
-            openWindow(width, height, color);
-            eventContext = this;
-            onSetup = drawUI;
+        GUI(int width, int height,
+            Color color = GraphicsWindow::defaultWindowColor
+        ):
+            Area(NULL, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
+        {
+            gwin = new GraphicsWindow();
+            gwin->openWindow(width, height, color);
+            gwin->eventContext = this;
+            gwin->onResize = resize;
+            gwin->onTouch = touch;
+            gwin->onRelease = release;
         }
 
         ~GUI() {
-            closeWindow();
+            gwin->closeWindow();
+            delete gwin;
         }
 
-        void button(int left, int top, int width, int height, const string text, const Align align = Area::defaultAreaTextAlign) {
-            Area button(left, top, width, height, text, align, BUTTON);
-            areas.push_back(button);
+        void loop(unsigned long ms = GraphicsWindow::defaultLoopMs) {
+            gwin->eventLoop(ms);
         }
     };
 
