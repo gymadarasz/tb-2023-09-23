@@ -160,7 +160,7 @@ namespace gfx {
         onLoopHandler onLoop = NULL;
 
     };
-    
+
     class GraphicsWindow: public EventHandler {
     public:
 
@@ -240,10 +240,10 @@ namespace gfx {
             XFillRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
         }
 
-        void drawLine(int x1, int y1, int x2, int y2, Color color) const {            
-            setupDrawing(x1, y1, x2, y2, color);
-            XDrawLine(display, window, gc, x1, y1, x2, y2);
-        }
+        // void drawLine(int x1, int y1, int x2, int y2, Color color) const {            
+        //     setupDrawing(x1, y1, x2, y2, color);
+        //     XDrawLine(display, window, gc, x1, y1, x2, y2);
+        // }
 
         void drawVerticalLine(int x1, int y1, int y2, Color color) const {            
             setupDrawing(x1, y1, x1, y2, color);
@@ -251,7 +251,7 @@ namespace gfx {
         }
         
         void drawHorizontalLine(int x1, int y1, int x2, Color color) const {            
-            setupDrawing(x1, y1, x1, y1, color);
+            setupDrawing(x1, y1, x2, y1, color);
             XDrawLine(display, window, gc, x1, y1, x2, y1);
         }
 
@@ -401,7 +401,8 @@ namespace gfx {
             gwin(gwin),
             left(left), top(top), width(width), height(height), 
             text(text), textAlign(textAlign), border(border), 
-            backgroundColor(backgroundColor), scrollMargin(scrollMargin) {}
+            backgroundColor(backgroundColor), scrollMargin(scrollMargin)
+        {}
 
         GraphicsWindow* getGraphicsWindow() const {
             return gwin;
@@ -452,7 +453,7 @@ namespace gfx {
         int getLeft() const {
             Area* parent = getParent();
             return left + (parent ? parent->getLeft() - parent->getScrollX() : 0);
-        }
+        }        
 
         int getWidth() const {
             return width;
@@ -468,6 +469,30 @@ namespace gfx {
 
         void setHeight(int height) {
             this->height = height;
+        }
+
+        int getRight() const {
+            return getLeft() + getWidth();
+        }
+
+        int getRight(int left) const {
+            return left + getWidth();
+        }
+
+        int getRight(int left, int width) const {
+            return left + width;
+        }
+
+        int getBottom() const {
+            return getTop() + getHeight();
+        }
+
+        int getBottom(int top) const {
+            return top + getHeight();
+        }
+
+        int getBottom(int top, int height) const {
+            return top + height;
         }
 
         Border getBorder() const {
@@ -507,41 +532,49 @@ namespace gfx {
         }
 
         bool contains(int x, int y) const {
-            int left = getLeft();
             int top = getTop();
+            int left = getLeft();
+            int right = getRight(left);
+            int bottom = getBottom(top);
             return
-                x >= left && x <= left + getWidth() &&
-                y >= top && y <= top + getHeight();
+                x >= left && x <= right &&
+                y >= top && y <= bottom;
         }
 
         bool contains(int x1, int y1, int x2, int y2) const {
-            return contains(x1, y1) && contains(x2, y2);
+            int top = getTop();
+            int left = getLeft();
+            int right = getRight(left);
+            int bottom = getBottom(top);
+            return !(left >= x2 || x1 >= right || top >= y2 || y1 >= bottom);
         }
 
         bool contains(Area* area) const {
             int left = area->getLeft();
             int top = area->getTop();
-            int right = left + area->getWidth();
-            int bottom = top + area->getHeight();
+            int right = area->getRight(left);
+            int bottom = area->getBottom(top);
             return contains(left, top, right, bottom);
         }
 
         void propagateTouch(unsigned int button, int x, int y) {
-            if (onTouch && contains(x, y)) onTouch(this, button, x, y);
-            for (Area* area: areas) {
-                if (contains(area)) area->propagateTouch(button, x, y);
+            if (contains(x, y)) {
+                if (onTouch) onTouch(this, button, x, y);
+                for (Area* area: areas) {
+                    if (contains(area)) area->propagateTouch(button, x, y);
+                }
             }
         }
 
         void propagateRelease(unsigned int button, int x, int y) {
-            if (onRelease && contains(x, y)) onRelease(this, button, x, y);
+            if (onRelease) onRelease(this, button, x, y);
             for (Area* area: areas) {
                 if (contains(area)) area->propagateRelease(button, x, y);
             }
         }
 
         void propagateMove(int x, int y) {
-            if (onMove && contains(x, y)) onMove(this, x, y);
+            if (onMove) onMove(this, x, y);
             for (Area* area: areas) {
                 if (contains(area)) area->propagateMove(x, y);
             }
@@ -590,10 +623,8 @@ namespace gfx {
         void drawBorder() const {
             int top = getTop();
             int left = getLeft();
-            int width = getWidth();
-            int height = getHeight();
-            int right = left + width;
-            int bottom = top + height;
+            int right = getRight(left);
+            int bottom = getBottom(top);
             drawBorder(left, top, right, bottom);
         }
 
@@ -602,8 +633,9 @@ namespace gfx {
             int left = getLeft();
             int width = getWidth();
             int height = getHeight();
-            int right = left + width;
-            int bottom = top + height;
+            int right = getRight(left, width);
+            int bottom = getBottom(top, height);
+            
             const string text = getText();
             LOG("fillRectangle (in draw): ", left, " ", top, " ", right, " ", bottom);
             gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
@@ -690,19 +722,24 @@ namespace gfx {
 
     class Button: public Area {
     protected:
+
+        bool pushed = false;
         
         static void touch(void* context, unsigned int button, int x, int y) {
             Button* that = (Button*)context;
             LOG("Button touch: ", button, " (", that->getText().c_str() , ") ", x, ":", y);
             that->setBorder(PUSHED);
             that->drawBorder();
+            that->pushed = true;
         }
         
         static void release(void* context, unsigned int button, int x, int y) {
             Button* that = (Button*)context;
+            if (!that->pushed) return;
             LOG("Button release: ", button, " ", x, ":", y);
             that->setBorder(BUTTON);
             that->drawBorder();
+            that->pushed = false;
         }
 
     public:
