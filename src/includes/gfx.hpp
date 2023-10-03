@@ -167,7 +167,7 @@ namespace gfx {
 
     private:
 
-        void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) {
+        void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) const {
             XSetForeground(display, gc, color);
             if (x1 > x2) Tools::replace(x1, x2);
             if (y1 > y2) Tools::replace(y1, y2);
@@ -206,48 +206,48 @@ namespace gfx {
             eventContext = this;
         }
 
-        void closeWindow() {            
+        void closeWindow() const {            
             if (fontInfo) XFreeFont(display, fontInfo);
             XFreeGC(display, gc);
             XDestroyWindow(display, window);
             XCloseDisplay(display);
         }
 
-        void getWindowSize(int &width, int &height) {            
+        void getWindowSize(int &width, int &height) const {            
             XWindowAttributes attr;
             XGetWindowAttributes(display, window, &attr);
             width = attr.width;
             height = attr.height;
         }
 
-        void clearWindow(Color color) {            
+        void clearWindow(Color color) const {            
             XSetForeground(display, gc, color);
             int width, height;
             getWindowSize(width, height);
             XFillRectangle(display, window, gc, 0, 0, (unsigned)width, (unsigned)height);
         }
 
-        void drawRectangle(int x1, int y1, int x2, int y2, Color color) {            
+        void drawRectangle(int x1, int y1, int x2, int y2, Color color) const {            
             setupDrawing(x1, y1, x2, y2, color);
             XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
         }
 
-        void fillRectangle(int x1, int y1, int x2, int y2, Color color) {            
+        void fillRectangle(int x1, int y1, int x2, int y2, Color color) const {            
             setupDrawing(x1, y1, x2, y2, color);
             XFillRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
         }
 
-        void drawLine(int x1, int y1, int x2, int y2, Color color) {            
+        void drawLine(int x1, int y1, int x2, int y2, Color color) const {            
             setupDrawing(x1, y1, x2, y2, color);
             XDrawLine(display, window, gc, x1, y1, x2, y2);
         }
 
-        void drawVerticalLine(int x1, int y1, int y2, Color color) {            
+        void drawVerticalLine(int x1, int y1, int y2, Color color) const {            
             setupDrawing(x1, y1, x1, y2, color);
             XDrawLine(display, window, gc, x1, y1, x1, y2);
         }
         
-        void drawHorizontalLine(int x1, int y1, int x2, Color color) {            
+        void drawHorizontalLine(int x1, int y1, int x2, Color color) const {            
             setupDrawing(x1, y1, x1, y1, color);
             XDrawLine(display, window, gc, x1, y1, x2, y1);
         }
@@ -262,12 +262,12 @@ namespace gfx {
             XSetFont(display, gc, fontInfo->fid);
         }
         
-        void writeText(int x, int y, const string text, Color color) {            
+        void writeText(int x, int y, const string text, Color color) const {            
             XSetForeground(display, gc, color);
             XDrawString(display, window, gc, x, y, text.c_str(), (int)text.length());
         }
 
-        void getTextSize(const string text, int &width, int &height) {            
+        void getTextSize(const string text, int &width, int &height) const {            
             if (fontInfo) {
                 XCharStruct overall;
                 int direction, ascent, descent; // TODO: add these retrievable
@@ -284,10 +284,9 @@ namespace gfx {
             height = 0;
         }
 
-        void eventLoop(unsigned long ms = defaultLoopMs) {
+        void eventLoop(unsigned long ms = defaultLoopMs) const {
             LOG("Window event loop starts");
             
-
             while (true) {
 
                 if (onLoop && XPending(display) <= 0) {
@@ -384,7 +383,7 @@ namespace gfx {
             left(left), top(top), width(width), height(height), 
             text(text), textAlign(textAlign), border(border) {}
 
-        GraphicsWindow* getGraphicsWindow() {
+        GraphicsWindow* getGraphicsWindow() const {
             return gwin;
         }
 
@@ -440,7 +439,7 @@ namespace gfx {
             this->height = height;
         }
 
-        Border getBorder() {
+        Border getBorder() const {
             return border;
         }
 
@@ -448,19 +447,19 @@ namespace gfx {
             this->border = border;
         }
 
-        string getText() {
+        string getText() const {
             return text;
         }
 
-        Align getTextAlign() {
+        Align getTextAlign() const {
             return textAlign;
         }
 
-        Color getBackgroundColor() {
+        Color getBackgroundColor() const {
             return backgroundColor;
         }
 
-        Color getBorderColor() {
+        Color getBorderColor() const {
             return borderColor;
         }
 
@@ -468,7 +467,7 @@ namespace gfx {
             this->borderColor = borderColor;
         }
 
-        Color getTextColor() {
+        Color getTextColor() const {
             return textColor;
         }
 
@@ -513,7 +512,7 @@ namespace gfx {
             }
         }
 
-        void draw() {
+        void draw() const {
             int top = getTop();
             int left = getLeft();
             int width = getWidth();
@@ -579,7 +578,7 @@ namespace gfx {
             }
             gwin->writeText(textLeft, textTop, text, getTextColor());
 
-            for (Area& area: areas) {
+            for (const Area& area: areas) {
                 if (contains(area)) area.draw();
             }
 
@@ -660,7 +659,7 @@ namespace gfx {
             delete gwin;
         }
 
-        void loop(unsigned long ms = GraphicsWindow::defaultLoopMs) {
+        void loop(unsigned long ms = GraphicsWindow::defaultLoopMs) const {
             gwin->eventLoop(ms);
         }
     };
