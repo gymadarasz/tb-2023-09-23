@@ -372,6 +372,7 @@ namespace gfx {
 
         vector<Area> areas;
         Area* parent = NULL;
+        int scrollX = 0, scrollY = 0;
 
     public:
 
@@ -398,16 +399,29 @@ namespace gfx {
         void child(Area& area) {
             area.setParent(this);
             areas.push_back(area);
-        }        
+        }
+
+        int getScrollX() const {
+            return scrollX;
+        }
+
+        int getScrollY() const {
+            return scrollY;
+        }
+
+        void scroll(int x, int y) {
+            scrollX = x;
+            scrollY = y;
+        }
 
         int getTop() const {
             Area* parent = getParent();
-            return top + (parent ? parent->getTop() : 0);
+            return top + (parent ? parent->getTop() - parent->getScrollY() : 0);
         }
 
         int getLeft() const {
             Area* parent = getParent();
-            return left + (parent ? parent->getLeft() : 0);
+            return left + (parent ? parent->getLeft() - parent->getScrollX() : 0);
         }
 
         int getWidth() const {

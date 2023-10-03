@@ -14,6 +14,7 @@ int main()
     Button button2(gwin, 210, 10, 80, 30, "Hello2");
     area.child(button);
     area.child(button2);
+    area.scroll(100, 0);
     gui.child(area);
     gui.loop();
  
