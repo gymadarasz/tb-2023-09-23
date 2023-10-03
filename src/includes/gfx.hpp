@@ -161,20 +161,39 @@ namespace gfx {
 
     };
 
+    struct Rectangle {
+        int x1, y1, x2, y2;
+        Rectangle(int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0):
+            x1(x1), y1(y1), x2(x2), y2(y2)
+        {
+            if (this->x1 > this->x2) Tools::replace(this->x1, this->x2);
+            if (this->y1 > this->y2) Tools::replace(this->y1, this->y2);
+        }
+
+        bool intersect(int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0) {
+            // Calculate the intersection of the current viewport with the given viewport
+            if (this->x1 < x1) this->x1 = x1;
+            if (this->y1 < y1) this->y1 = y1;
+            if (this->x2 > x2) this->x2 = x2;
+            if (this->y2 > y2) this->y2 = y2;
+
+            // Check if the resulting viewport is still valid (non-empty)
+            if (this->x1 >= this->x2 || this->y1 >= this->y2) {
+                // The viewports do not intersect, so set them to an empty viewport
+                this->x1 = this->y1 = this->x2 = this->y2 = 0;
+                return false;
+            }
+
+            return true;
+        }
+    };
+
     class GraphicsWindow: public EventHandler {
     public:
 
         static const unsigned long defaultLoopMs = Theme::eventLoopMs;
         static const Color defaultWindowColor = Theme::windowColor;
         static const char* defaultWindowFont;
-
-    private:
-
-        void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) const {
-            XSetForeground(display, gc, color);
-            if (x1 > x2) Tools::replace(x1, x2);
-            if (y1 > y2) Tools::replace(y1, y2);
-        }
 
     protected:
 
@@ -183,7 +202,25 @@ namespace gfx {
         GC gc;
         XFontStruct *fontInfo = NULL;
 
+        Rectangle viewport;
+
+        void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) const {
+            XSetForeground(display, gc, color);
+            if (x1 > x2) Tools::replace(x1, x2);
+            if (y1 > y2) Tools::replace(y1, y2);
+            Rectangle intersection(x1-1, y1-1, x2+1, y2+1);
+            intersection.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
+            x1 = intersection.x1;
+            y1 = intersection.y1;
+            x2 = intersection.x2;
+            y2 = intersection.y2;
+        }
+
     public:
+
+        void setViewport(Rectangle viewport) {
+            this->viewport = viewport;
+        }
 
         void openWindow(int width, int height, Color color = defaultWindowColor, const char* font = defaultWindowFont) {
             // Initialize the X display
@@ -267,6 +304,7 @@ namespace gfx {
         
         void writeText(int x, int y, const string text, Color color) const {            
             XSetForeground(display, gc, color);
+            
             XDrawString(display, window, gc, x, y, text.c_str(), (int)text.length());
         }
 
@@ -620,11 +658,28 @@ namespace gfx {
             }
         }
 
-        void drawBorder() const {
+        void reduceViewport(Rectangle& viewport) {
+            if (parent) {
+                int parentTop = parent->getTop();
+                int parentLeft = parent->getLeft();
+                int parentRight = parent->getRight(parentLeft);
+                int parentBottom = parent->getBottom(parentTop);
+                if (viewport.intersect(parentLeft, parentTop, parentRight, parentBottom)) {
+                    parent->reduceViewport(viewport);
+                }
+            }
+        }
+
+        void drawBorder() {
             int top = getTop();
             int left = getLeft();
             int right = getRight(left);
             int bottom = getBottom(top);
+
+            Rectangle viewport(left, top, right, bottom);
+            reduceViewport(viewport);
+            gwin->setViewport(viewport);
+
             drawBorder(left, top, right, bottom);
         }
 
@@ -635,6 +690,10 @@ namespace gfx {
             int height = getHeight();
             int right = getRight(left, width);
             int bottom = getBottom(top, height);
+
+            Rectangle viewport(left, top, right, bottom);
+            reduceViewport(viewport);
+            gwin->setViewport(viewport);
             
             const string text = getText();
             LOG("fillRectangle (in draw): ", left, " ", top, " ", right, " ", bottom);
@@ -736,7 +795,7 @@ namespace gfx {
         static void release(void* context, unsigned int button, int x, int y) {
             Button* that = (Button*)context;
             if (!that->pushed) return;
-            LOG("Button release: ", button, " ", x, ":", y);
+            LOG("Button release: ", button, " (", that->getText().c_str() , ") ", " ", x, ":", y);
             that->setBorder(BUTTON);
             that->drawBorder();
             that->pushed = false;
