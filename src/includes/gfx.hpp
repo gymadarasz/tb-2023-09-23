@@ -145,7 +145,7 @@ namespace gfx {
         typedef void (*onKeyReleaseHandler)(void*, unsigned long);
         typedef void (*onTouchHandler)(void*, unsigned int, int, int);
         typedef void (*onReleaseHandler)(void*, unsigned int, int, int);
-        typedef void (*onDragHandler)(void*, int, int);
+        typedef void (*onMoveHandler)(void*, int, int);
         typedef void (*onLoopHandler)(void*);
         
         onResizeHandler onResize = NULL;
@@ -153,7 +153,7 @@ namespace gfx {
         onKeyReleaseHandler onKeyRelease = NULL;
         onTouchHandler onTouch = NULL;
         onReleaseHandler onRelease = NULL;
-        onDragHandler onDrag = NULL;
+        onMoveHandler onMove = NULL;
         onLoopHandler onLoop = NULL;
 
     };
@@ -334,7 +334,7 @@ namespace gfx {
 
                     case MotionNotify:
                         // Handle mouse motion event
-                        if (onDrag) onDrag(eventContext, event.xbutton.x, event.xbutton.y);
+                        if (onMove) onMove(eventContext, event.xbutton.x, event.xbutton.y);
                         break;
 
                     default:
@@ -366,11 +366,12 @@ namespace gfx {
         const string text;
         const Align textAlign;
         const Color backgroundColor = GraphicsWindow::defaultWindowColor;
-        const Color borderColor = defaultAreaBorderColor;
+        Color borderColor = defaultAreaBorderColor;
         const Color textColor = defaultAreaTextColor;
         Border border = defaultAreaBorder;
 
         vector<Area> areas;
+        Area* parent = NULL;
 
     public:
 
@@ -386,16 +387,27 @@ namespace gfx {
             return gwin;
         }
 
-        void child(const Area& area) {
+        void setParent(Area* parent) {
+            this->parent = parent;
+        }
+
+        Area* getParent() const {
+            return parent;
+        } 
+
+        void child(Area& area) {
+            area.setParent(this);
             areas.push_back(area);
+        }        
+
+        int getTop() const {
+            Area* parent = getParent();
+            return top + (parent ? parent->getTop() : 0);
         }
 
         int getLeft() const {
-            return left;
-        }
-
-        int getTop() const {
-            return top;
+            Area* parent = getParent();
+            return left + (parent ? parent->getLeft() : 0);
         }
 
         int getWidth() const {
@@ -438,6 +450,10 @@ namespace gfx {
             return borderColor;
         }
 
+        void setBorderColor(Color borderColor) {
+            this->borderColor = borderColor;
+        }
+
         Color getTextColor() {
             return textColor;
         }
@@ -448,6 +464,21 @@ namespace gfx {
             return
                 x >= left && x <= left + getWidth() &&
                 y >= top && y <= top + getHeight();
+        }
+
+        void propagateTouch(unsigned int button, int x, int y) {
+            if (onTouch && contains(x, y)) onTouch(this, button, x, y);
+            for (Area& area: areas) area.propagateTouch(button, x, y);
+        }
+
+        void propagateRelease(unsigned int button, int x, int y) {
+            if (onRelease && contains(x, y)) onRelease(this, button, x, y);
+            for (Area& area: areas) area.propagateRelease(button, x, y);
+        }
+
+        void propagateMove(int x, int y) {
+            if (onMove && contains(x, y)) onMove(this, x, y);
+            for (Area& area: areas) area.propagateMove(x, y);
         }
 
         void draw() {
@@ -464,12 +495,16 @@ namespace gfx {
             Color borderColor;
             Color borderColorLight;
             Color borderColorDark;
+            LOG(left, ", ", top, ", ", right, ", ", bottom, " border:", (int)border);
             switch (border) {
+                
                 case NONE:
                     break;
+
                 case SIMPLE:
                     gwin->drawRectangle(left, top, right, bottom, getBorderColor());
                     break;
+
                 case BUTTON:
                     borderColor = getBorderColor();
                     borderColorLight = ColorMixer::light(borderColor);
@@ -479,6 +514,7 @@ namespace gfx {
                     gwin->drawVerticalLine(left, top, bottom, borderColorLight);
                     gwin->drawVerticalLine(right, top, bottom, borderColorDark);
                     break;
+
                 case PUSHED:
                     borderColor = getBorderColor();
                     borderColorLight = ColorMixer::light(borderColor);
@@ -488,6 +524,7 @@ namespace gfx {
                     gwin->drawVerticalLine(left, top, bottom, borderColorDark);
                     gwin->drawVerticalLine(right, top, bottom, borderColorLight);
                     break;
+
                 default:
                     throw runtime_error("Invalid border");
                     break;
@@ -497,8 +534,8 @@ namespace gfx {
             gwin->getTextSize(text, textWidth, textHeight);
             int textLeft, textTop;
             Align textAlign = getTextAlign();
-            switch (textAlign)
-            {
+            switch (textAlign) {
+
                 case CENTER:
                     textLeft = left + ((width - textWidth) / 2);
                     textTop = top + ((height - textHeight) / 2) + 16; // ??16
@@ -557,23 +594,18 @@ namespace gfx {
         }
 
         static void touch(void* context, unsigned int button, int x, int y) {
-            LOG("Touch UI: ", button, " ", x, ":", y);
-            GUI* that = (GUI*)context;
-            for (Area& area: that->areas) {
-                if (area.onTouch && area.contains(x, y)) {
-                    area.onTouch(&area, button, x - area.getLeft(), y - area.getTop());
-                }
-            }
+            Area* that = (Area*)context;
+            that->propagateTouch(button, x, y);
         }
 
         static void release(void* context, unsigned int button, int x, int y) {
-            LOG("Release UI: ", button, " ", x, ":", y);
             GUI* that = (GUI*)context;
-            for (Area& area: that->areas) {
-                if (area.onRelease && area.contains(x, y)) {
-                    area.onRelease(&area, button, x - area.getLeft(), y - area.getTop());
-                }
-            }
+            that->propagateRelease(button, x, y);
+        }
+
+        static void move(void* context, int x, int y) {
+            GUI* that = (GUI*)context;
+            that->propagateMove(x, y);
         }
 
     public:
@@ -588,6 +620,7 @@ namespace gfx {
             gwin->onResize = resize;
             gwin->onTouch = touch;
             gwin->onRelease = release;
+            gwin->onMove = move;
         }
 
         ~GUI() {
