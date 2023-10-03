@@ -113,6 +113,27 @@ namespace gfx {
             }
         }
     };
+    
+    enum Align {
+        CENTER,
+    };
+
+    enum Border {
+        NONE,
+        SIMPLE,
+        BUTTON,
+        PUSHED,
+    };
+
+    struct Theme {
+        static const unsigned long eventLoopMs = 100;
+        static const Color windowColor = gray;
+        static const char* windowFont;
+        static const Align textAlign = CENTER;
+        static const Color borderColor = gray;
+        static const Color textColor = black;
+    };
+    const char* Theme::windowFont = "10x20";
 
     class EventHandler {
     public:
@@ -142,8 +163,8 @@ namespace gfx {
     class GraphicsWindow: public EventHandler {
     public:
 
-        static const unsigned long defaultLoopMs = 100;
-        static const Color defaultWindowColor = gray;
+        static const unsigned long defaultLoopMs = Theme::eventLoopMs;
+        static const Color defaultWindowColor = Theme::windowColor;
         static const char* defaultWindowFont;
 
     private:
@@ -334,26 +355,16 @@ namespace gfx {
     };
 
     Display* GraphicsWindow::display = NULL;
-    const char* GraphicsWindow::defaultWindowFont = "10x20";
+    const char* GraphicsWindow::defaultWindowFont = Theme::windowFont;
 
 
-    enum Align {
-        CENTER,
-    };
-
-    enum Border {
-        NONE,
-        SIMPLE,
-        BUTTON,
-        PUSHED,
-    };
 
     class Area: public EventHandler {
     public:
 
-        static const Align defaultAreaTextAlign = CENTER;
-        static const Color defaultAreaBorderColor = gray;
-        static const Color defaultAreaTextColor = black;
+        static const Align defaultAreaTextAlign = Theme::textAlign;
+        static const Color defaultAreaBorderColor = Theme::borderColor;
+        static const Color defaultAreaTextColor = Theme::textColor;
         static const Border defaultAreaBorder = NONE;
 
     protected:
@@ -464,7 +475,7 @@ namespace gfx {
             {
                 case CENTER:
                     textLeft = left + ((width - textWidth) / 2);
-                    textTop = top + ((height - textHeight) / 2) + 14; // ??14
+                    textTop = top + ((height - textHeight) / 2) + 16; // ??16
                     break;
                 
                 default:
