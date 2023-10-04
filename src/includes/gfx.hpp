@@ -473,6 +473,18 @@ namespace gfx {
             if (scrollY > scrollYMax) scrollY = scrollYMax;
         }
 
+        void reduceViewport(Rectangle& viewport) {
+            if (parent) {
+                int parentTop = parent->getTop();
+                int parentLeft = parent->getLeft();
+                int parentRight = parent->getRight(parentLeft);
+                int parentBottom = parent->getBottom(parentTop);
+                if (viewport.intersect(parentLeft, parentTop, parentRight, parentBottom)) {
+                    parent->reduceViewport(viewport);
+                }
+            }
+        }
+
     public:
 
         Area(GraphicsWindow* gwin, int left, int top, int width, int height, 
@@ -711,18 +723,6 @@ namespace gfx {
                 default:
                     throw runtime_error("Invalid border");
                     break;
-            }
-        }
-
-        void reduceViewport(Rectangle& viewport) {
-            if (parent) {
-                int parentTop = parent->getTop();
-                int parentLeft = parent->getLeft();
-                int parentRight = parent->getRight(parentLeft);
-                int parentBottom = parent->getBottom(parentTop);
-                if (viewport.intersect(parentLeft, parentTop, parentRight, parentBottom)) {
-                    parent->reduceViewport(viewport);
-                }
             }
         }
 
