@@ -178,7 +178,7 @@ namespace gfx {
             if (this->y2 > y2) this->y2 = y2;
 
             // Check if the resulting viewport is still valid (non-empty)
-            if (this->x1 >= this->x2 || this->y1 >= this->y2) {
+            if (this->x1 > this->x2 || this->y1 > this->y2) {
                 // The viewports do not intersect, so set them to an empty viewport
                 this->x1 = this->y1 = this->x2 = this->y2 = 0;
                 return false;
@@ -208,7 +208,7 @@ namespace gfx {
             XSetForeground(display, gc, color);
             if (x1 > x2) Tools::replace(x1, x2);
             if (y1 > y2) Tools::replace(y1, y2);
-            Rectangle intersection(x1-1, y1-1, x2+1, y2+1);
+            Rectangle intersection(x1, y1, x2, y2);
             intersection.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             x1 = intersection.x1;
             y1 = intersection.y1;
