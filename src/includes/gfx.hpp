@@ -705,8 +705,8 @@ namespace gfx {
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
                     gwin->drawHorizontalLine(left, top, right, borderColorLight);
-                    gwin->drawHorizontalLine(left, bottom, right, borderColorDark);
                     gwin->drawVerticalLine(left, top, bottom, borderColorLight);
+                    gwin->drawHorizontalLine(left, bottom, right, borderColorDark);
                     gwin->drawVerticalLine(right, top, bottom, borderColorDark);
                     break;
 
@@ -715,10 +715,10 @@ namespace gfx {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gwin->drawHorizontalLine(left, top, right, borderColorDark);
                     gwin->drawHorizontalLine(left, bottom, right, borderColorLight);
-                    gwin->drawVerticalLine(left, top, bottom, borderColorDark);
                     gwin->drawVerticalLine(right, top, bottom, borderColorLight);
+                    gwin->drawHorizontalLine(left, top, right, borderColorDark);
+                    gwin->drawVerticalLine(left, top, bottom, borderColorDark);
                     break;
 
                 default:
