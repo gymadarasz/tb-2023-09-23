@@ -116,6 +116,8 @@ namespace gfx {
     
     enum Align {
         CENTER,
+        LEFT,
+        RIGHT,
     };
 
     enum Border {
@@ -135,6 +137,8 @@ namespace gfx {
         static const Color backgroundColor = gray;
         static const Color scrollBackgroundColor = darkGray;
         static const int scrollMargin = 10;
+        static const int textPadding = 10;
+        static const Align labelTextAlign = LEFT;
     };
     const char* Theme::windowFont = "10x20";
 
@@ -444,6 +448,7 @@ namespace gfx {
         static const Border defaultAreaBorder = NONE;
         static const Color defaultAreaBackgroundColor = GraphicsWindow::defaultWindowColor;
         static const int defaultScrollMargin = Theme::scrollMargin;
+        static const int defaultTextMargin = Theme::textPadding;
 
         typedef void (*onDrawHandler)(void*);
         
@@ -461,6 +466,7 @@ namespace gfx {
         Border border;
         Color backgroundColor;
         int scrollMargin;
+        int textPadding;
 
         vector<Area*> areas;
         Area* parent = NULL;
@@ -491,12 +497,14 @@ namespace gfx {
             const string text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder,
             const Color backgroundColor = defaultAreaBackgroundColor,
-            const int scrollMargin = defaultScrollMargin
+            const int scrollMargin = defaultScrollMargin,
+            const int textPadding = defaultTextMargin
         ):
             gwin(gwin),
             left(left), top(top), width(width), height(height), 
             text(text), textAlign(textAlign), border(border), 
-            backgroundColor(backgroundColor), scrollMargin(scrollMargin)
+            backgroundColor(backgroundColor), scrollMargin(scrollMargin),
+            textPadding(textPadding)
         {}
 
         GraphicsWindow* getGraphicsWindow() const {
@@ -769,6 +777,16 @@ namespace gfx {
                         textLeft = left + ((width - textWidth) / 2);
                         textTop = top + ((height - textHeight) / 2) + 16; // ??16
                         break;
+
+                    case LEFT:
+                        textLeft = left + textPadding;
+                        textTop = top + ((height - textHeight) / 2) + 16; // ??16
+                        break;
+
+                    case RIGHT:
+                        textLeft = left + width - textPadding - textWidth;
+                        textTop = top + ((height - textHeight) / 2) + 16; // ??16
+                        break;
                     
                     default:
                         throw runtime_error("Invalid text align");
@@ -836,38 +854,6 @@ namespace gfx {
         }
     };
 
-    class Button: public Area {
-    protected:
-
-        bool pushed = false;
-        
-        static void touch(void* context, unsigned int button, int x, int y) {
-            Button* that = (Button*)context;
-            LOG("Button touch: ", button, " (", that->getText().c_str() , ") ", x, ":", y);
-            that->setBorder(BUTTON_PUSHED);
-            that->drawBorder();
-            that->pushed = true;
-        }
-        
-        static void release(void* context, unsigned int button, int x, int y) {
-            Button* that = (Button*)context;
-            if (!that->pushed) return;
-            LOG("Button release: ", button, " (", that->getText().c_str() , ") ", " ", x, ":", y);
-            that->setBorder(BUTTON_RELEASED);
-            that->drawBorder();
-            that->pushed = false;
-        }
-
-    public:
-        Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
-            const string text, const Align textAlign = Area::defaultAreaTextAlign
-        ): Area(gwin, left, top, width, height, text, textAlign, BUTTON_RELEASED) 
-        {
-            onTouchHandlers.push_back(touch);
-            onReleaseHandlers.push_back(release);
-        }
-    };
-
     class Drag: public Area {
     public:
 
@@ -919,4 +905,74 @@ namespace gfx {
         }
     };
 
+
+    class Button: public Area {
+    protected:
+
+        bool pushed = false;
+        
+        static void touch(void* context, unsigned int button, int x, int y) {
+            Button* that = (Button*)context;
+            LOG("Button touch: ", button, " (", that->getText().c_str() , ") ", x, ":", y);
+            
+            if (that->sticky) {
+                if (that->pushed) {
+                    that->release();
+                } else {
+                    that->push();
+                }
+                return;
+            }
+            
+            that->push();
+        }
+        
+        static void release(void* context, unsigned int button, int x, int y) {
+            Button* that = (Button*)context;
+            LOG("Button release: ", button, " (", that->getText().c_str() , ") ", " ", x, ":", y);
+
+            if (that->sticky) {
+                return;
+            }
+                
+            that->release();
+        }
+
+    public:
+        bool sticky = false;
+
+        Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
+            const string text, const Align textAlign = Area::defaultAreaTextAlign
+        ): Area(gwin, left, top, width, height, text, textAlign, BUTTON_RELEASED) 
+        {
+            onTouchHandlers.push_back(touch);
+            onReleaseHandlers.push_back(release);
+        }
+
+        void push() {
+            setBorder(BUTTON_PUSHED);
+            drawBorder();
+            pushed = true;
+        }
+
+        void release() {
+            setBorder(BUTTON_RELEASED);
+            drawBorder();
+            pushed = false;
+        }
+    };
+
+
+    class Label: public Area {
+    public:
+
+        static const Align defaultLabelTextAlign = Theme::labelTextAlign;
+
+    public:
+        Label(GraphicsWindow* gwin, int left, int top, int width, int height, 
+            const string text, const Align textAlign = defaultLabelTextAlign
+        ): Area(gwin, left, top, width, height, text, textAlign, NONE) 
+        {}
+    };
+    
 }
