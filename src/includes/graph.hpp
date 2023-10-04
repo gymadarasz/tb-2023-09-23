@@ -11,7 +11,7 @@
 
 using namespace std;
 
-namespace gfx {
+namespace graph {
 
     typedef unsigned long Color;
 
@@ -192,7 +192,7 @@ namespace gfx {
         }
     };
 
-    class GraphicsWindow: public EventHandler {
+    class GFX: public EventHandler {
     public:
 
         static const unsigned long defaultLoopMs = Theme::eventLoopMs;
@@ -434,8 +434,8 @@ namespace gfx {
         }
     };
 
-    Display* GraphicsWindow::display = NULL;
-    const char* GraphicsWindow::defaultWindowFont = Theme::windowFont;
+    Display* GFX::display = NULL;
+    const char* GFX::defaultWindowFont = Theme::windowFont;
 
 
 
@@ -446,7 +446,7 @@ namespace gfx {
         static const Color defaultAreaBorderColor = Theme::borderColor;
         static const Color defaultAreaTextColor = Theme::textColor;
         static const Border defaultAreaBorder = NONE;
-        static const Color defaultAreaBackgroundColor = GraphicsWindow::defaultWindowColor;
+        static const Color defaultAreaBackgroundColor = GFX::defaultWindowColor;
         static const int defaultScrollMargin = Theme::scrollMargin;
         static const int defaultTextMargin = Theme::textPadding;
 
@@ -455,7 +455,7 @@ namespace gfx {
         onDrawHandler onDraw = NULL;
 
     protected:
-        GraphicsWindow* gwin = NULL;
+        GFX* gfx = NULL;
 
         const int left, top;
         int width, height;
@@ -493,22 +493,22 @@ namespace gfx {
 
     public:
 
-        Area(GraphicsWindow* gwin, int left, int top, int width, int height, 
+        Area(GFX* gfx, int left, int top, int width, int height, 
             const string text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder,
             const Color backgroundColor = defaultAreaBackgroundColor,
             const int scrollMargin = defaultScrollMargin,
             const int textPadding = defaultTextMargin
         ):
-            gwin(gwin),
+            gfx(gfx),
             left(left), top(top), width(width), height(height), 
             text(text), textAlign(textAlign), border(border), 
             backgroundColor(backgroundColor), scrollMargin(scrollMargin),
             textPadding(textPadding)
         {}
 
-        GraphicsWindow* getGraphicsWindow() const {
-            return gwin;
+        GFX* getGFX() const {
+            return gfx;
         }
 
         void setParent(Area* parent) {
@@ -704,7 +704,7 @@ namespace gfx {
                     break;
 
                 case SIMPLE:
-                    gwin->drawRectangle(left, top, right, bottom, getBorderColor());
+                    gfx->drawRectangle(left, top, right, bottom, getBorderColor());
                     break;
 
                 case BUTTON_RELEASED:
@@ -712,10 +712,10 @@ namespace gfx {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gwin->drawHorizontalLine(left, top, right, borderColorLight);
-                    gwin->drawVerticalLine(left, top, bottom, borderColorLight);
-                    gwin->drawHorizontalLine(left, bottom, right, borderColorDark);
-                    gwin->drawVerticalLine(right, top, bottom, borderColorDark);
+                    gfx->drawHorizontalLine(left, top, right, borderColorLight);
+                    gfx->drawVerticalLine(left, top, bottom, borderColorLight);
+                    gfx->drawHorizontalLine(left, bottom, right, borderColorDark);
+                    gfx->drawVerticalLine(right, top, bottom, borderColorDark);
                     break;
 
                 case BUTTON_PUSHED:
@@ -723,10 +723,10 @@ namespace gfx {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gwin->drawHorizontalLine(left, bottom, right, borderColorLight);
-                    gwin->drawVerticalLine(right, top, bottom, borderColorLight);
-                    gwin->drawHorizontalLine(left, top, right, borderColorDark);
-                    gwin->drawVerticalLine(left, top, bottom, borderColorDark);
+                    gfx->drawHorizontalLine(left, bottom, right, borderColorLight);
+                    gfx->drawVerticalLine(right, top, bottom, borderColorLight);
+                    gfx->drawHorizontalLine(left, top, right, borderColorDark);
+                    gfx->drawVerticalLine(left, top, bottom, borderColorDark);
                     break;
 
                 default:
@@ -743,7 +743,7 @@ namespace gfx {
 
             Rectangle viewport(left, top, right, bottom);
             reduceViewport(viewport);
-            gwin->setViewport(viewport);
+            gfx->setViewport(viewport);
 
             drawBorder(left, top, right, bottom);
         }
@@ -758,17 +758,17 @@ namespace gfx {
 
             Rectangle viewport(left, top, right, bottom);
             reduceViewport(viewport);
-            gwin->setViewport(viewport);
+            gfx->setViewport(viewport);
             
             const string text = getText();
             LOG("fillRectangle (in draw): ", left, " ", top, " ", right, " ", bottom);
-            gwin->fillRectangle(left, top, right, bottom, getBackgroundColor());
+            gfx->fillRectangle(left, top, right, bottom, getBackgroundColor());
 
             drawBorder(left, top, right, bottom);
             
             if(!text.empty()) {
                 int textWidth, textHeight;
-                gwin->getTextSize(text, textWidth, textHeight);
+                gfx->getTextSize(text, textWidth, textHeight);
                 int textLeft, textTop;
                 Align textAlign = getTextAlign();
                 switch (textAlign) {
@@ -792,7 +792,7 @@ namespace gfx {
                         throw runtime_error("Invalid text align");
                         break;
                 }
-                gwin->writeText(textLeft, textTop, text, getTextColor());
+                gfx->writeText(textLeft, textTop, text, getTextColor());
             }
 
             for (Area* area: areas) {
@@ -805,7 +805,7 @@ namespace gfx {
 
     class GUI: public Area {
     protected:
-        // GraphicsWindow* gwin = NULL;
+        // GFX* gfx = NULL;
 
         static void resize(void* context, int width, int height) {
             GUI* that = (GUI*)context;
@@ -829,28 +829,36 @@ namespace gfx {
             that->propagateMove(x, y);
         }
 
+        void init(int width, int height, Color color = GFX::defaultWindowColor) {
+            gfx->openWindow(width, height, color);
+            gfx->eventContext = this;
+            gfx->onResizeHandlers.push_back(resize);
+            gfx->onTouchHandlers.push_back(touch);
+            gfx->onReleaseHandlers.push_back(release);
+            gfx->onMoveHandlers.push_back(move);
+        }
+
     public:
-        GUI(int width, int height,
-            Color color = GraphicsWindow::defaultWindowColor
-        ):
+        GUI(GFX* gfx, int width, int height, Color color = GFX::defaultWindowColor):
+            Area(gfx, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
+        {
+            init(width, height, color);
+        }
+
+        GUI(int width, int height, Color color = GFX::defaultWindowColor):
             Area(NULL, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
         {
-            gwin = new GraphicsWindow();
-            gwin->openWindow(width, height, color);
-            gwin->eventContext = this;
-            gwin->onResizeHandlers.push_back(resize);
-            gwin->onTouchHandlers.push_back(touch);
-            gwin->onReleaseHandlers.push_back(release);
-            gwin->onMoveHandlers.push_back(move);
+            gfx = new GFX();
+            init(width, height, color);
         }
 
         ~GUI() {
-            gwin->closeWindow();
-            delete gwin;
+            gfx->closeWindow();
+            delete gfx;
         }
 
-        void loop(unsigned long ms = GraphicsWindow::defaultLoopMs) const {
-            gwin->eventLoop(ms);
+        void loop(unsigned long ms = GFX::defaultLoopMs) const {
+            gfx->eventLoop(ms);
         }
     };
 
@@ -883,7 +891,7 @@ namespace gfx {
         
         static void move(void* context, int x, int y) {
             Drag* that = (Drag*)context;
-            if (that->drag) {
+            if (!that->fixed && that->drag) {
                 that->setScrollXY(
                     that->dragScrollStartedX + (that->dragStartedX - x), 
                     that->dragScrollStartedY + (that->dragStartedY - y)
@@ -894,10 +902,13 @@ namespace gfx {
         }
 
     public:
-        Drag(GraphicsWindow* gwin, int left, int top, int width, int height,
+
+        bool fixed = false;
+
+        Drag(GFX* gfx, int left, int top, int width, int height,
             const Border border = defaultScrollBorder,
             const Color backgroundColor = defaultScrollBackgroundColor
-        ): Area(gwin, left, top, width, height, "", CENTER, border, backgroundColor)
+        ): Area(gfx, left, top, width, height, "", CENTER, border, backgroundColor)
         {
             onTouchHandlers.push_back(touch);
             onReleaseHandlers.push_back(release);
@@ -941,9 +952,9 @@ namespace gfx {
     public:
         bool sticky = false;
 
-        Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
+        Button(GFX* gfx, int left, int top, int width, int height, 
             const string text, const Align textAlign = Area::defaultAreaTextAlign
-        ): Area(gwin, left, top, width, height, text, textAlign, BUTTON_RELEASED) 
+        ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) 
         {
             onTouchHandlers.push_back(touch);
             onReleaseHandlers.push_back(release);
@@ -969,9 +980,9 @@ namespace gfx {
         static const Align defaultLabelTextAlign = Theme::labelTextAlign;
 
     public:
-        Label(GraphicsWindow* gwin, int left, int top, int width, int height, 
+        Label(GFX* gfx, int left, int top, int width, int height, 
             const string text, const Align textAlign = defaultLabelTextAlign
-        ): Area(gwin, left, top, width, height, text, textAlign, NONE) 
+        ): Area(gfx, left, top, width, height, text, textAlign, NONE) 
         {}
     };
     
