@@ -121,8 +121,8 @@ namespace gfx {
     enum Border {
         NONE,
         SIMPLE,
-        BUTTON,
-        PUSHED,
+        BUTTON_RELEASED,
+        BUTTON_PUSHED,
     };
 
     struct Theme {
@@ -610,9 +610,8 @@ namespace gfx {
             return backgroundColor;
         }
 
-        void setBackgroundColor(Color color) {
-            backgroundColor = color;
-            draw();
+        void setBackgroundColor(Color backgroundColor) {
+            this->backgroundColor = backgroundColor;
         }
 
         Color getBorderColor() const {
@@ -700,8 +699,9 @@ namespace gfx {
                     gwin->drawRectangle(left, top, right, bottom, getBorderColor());
                     break;
 
-                case BUTTON:
-                    borderColor = getBorderColor();
+                case BUTTON_RELEASED:
+                    // button borders get the background color
+                    borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
                     gwin->drawHorizontalLine(left, top, right, borderColorLight);
@@ -710,8 +710,9 @@ namespace gfx {
                     gwin->drawVerticalLine(right, top, bottom, borderColorDark);
                     break;
 
-                case PUSHED:
-                    borderColor = getBorderColor();
+                case BUTTON_PUSHED:
+                    // button borders get the background color
+                    borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
                     gwin->drawHorizontalLine(left, top, right, borderColorDark);
@@ -843,7 +844,7 @@ namespace gfx {
         static void touch(void* context, unsigned int button, int x, int y) {
             Button* that = (Button*)context;
             LOG("Button touch: ", button, " (", that->getText().c_str() , ") ", x, ":", y);
-            that->setBorder(PUSHED);
+            that->setBorder(BUTTON_PUSHED);
             that->drawBorder();
             that->pushed = true;
         }
@@ -852,7 +853,7 @@ namespace gfx {
             Button* that = (Button*)context;
             if (!that->pushed) return;
             LOG("Button release: ", button, " (", that->getText().c_str() , ") ", " ", x, ":", y);
-            that->setBorder(BUTTON);
+            that->setBorder(BUTTON_RELEASED);
             that->drawBorder();
             that->pushed = false;
         }
@@ -860,7 +861,7 @@ namespace gfx {
     public:
         Button(GraphicsWindow* gwin, int left, int top, int width, int height, 
             const string text, const Align textAlign = Area::defaultAreaTextAlign
-        ): Area(gwin, left, top, width, height, text, textAlign, BUTTON) 
+        ): Area(gwin, left, top, width, height, text, textAlign, BUTTON_RELEASED) 
         {
             onTouchHandlers.push_back(touch);
             onReleaseHandlers.push_back(release);
@@ -870,7 +871,7 @@ namespace gfx {
     class Drag: public Area {
     public:
 
-        static const Border defaultScrollBorder = PUSHED;
+        static const Border defaultScrollBorder = BUTTON_PUSHED;
         static const Color defaultScrollBackgroundColor = Theme::scrollBackgroundColor;
 
     protected:
