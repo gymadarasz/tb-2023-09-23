@@ -151,13 +151,13 @@ namespace gfx {
         typedef void (*onMoveHandler)(void*, int, int);
         typedef void (*onLoopHandler)(void*);
         
-        onResizeHandler onResize = NULL;
-        onKeyPressHandler onKeyPress = NULL;
-        onKeyReleaseHandler onKeyRelease = NULL;
-        onTouchHandler onTouch = NULL;
-        onReleaseHandler onRelease = NULL;
-        onMoveHandler onMove = NULL;
-        onLoopHandler onLoop = NULL;
+        vector<onResizeHandler> onResizeHandlers;
+        vector<onKeyPressHandler> onKeyPressHandlers;
+        vector<onKeyReleaseHandler> onKeyReleaseHandlers;
+        vector<onTouchHandler> onTouchHandlers;
+        vector<onReleaseHandler> onReleaseHandlers;
+        vector<onMoveHandler> onMoveHandlers;
+        vector<onLoopHandler> onLoopHandlers;
 
     };
 
@@ -362,9 +362,10 @@ namespace gfx {
             
             while (true) {
 
-                if (onLoop && XPending(display) <= 0) {
+                if (!onLoopHandlers.empty() && XPending(display) <= 0) {
                     Tools::sleep(ms);
-                    onLoop(eventContext);
+                    for (const onLoopHandler& onLoop: onLoopHandlers) 
+                        onLoop(eventContext);
                     continue;
                 }
 
@@ -379,34 +380,46 @@ namespace gfx {
                         // Handle expose event (e.g., redraw)
                         getWindowSize(width, height);
                         LOG("Windows expose: ", width, ":", height);
-                        if (onResize) onResize(eventContext, width, height);
+                        if (!onResizeHandlers.empty())
+                            for (const onResizeHandler& onResize: onResizeHandlers)
+                                onResize(eventContext, width, height);
                         break;
 
                     case KeyPress:
                         // Handle key press event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        if (onKeyPress) onKeyPress(eventContext, key);
+                        if (!onKeyPressHandlers.empty()) 
+                            for (const onKeyPressHandler& onKeyPress: onKeyPressHandlers)
+                                onKeyPress(eventContext, key);
                         break;
 
                     case KeyRelease:
                         // Handle key release event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        if (onKeyRelease) onKeyRelease(eventContext, key);
+                        if (!onKeyReleaseHandlers.empty()) 
+                            for (const onKeyReleaseHandler& onKeyRelease: onKeyReleaseHandlers)
+                                onKeyRelease(eventContext, key);
                         break;
 
                     case ButtonPress:
                         // Handle mouse button press event
-                        if (onTouch) onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        if (!onTouchHandlers.empty()) 
+                            for (const onTouchHandler& onTouch: onTouchHandlers)
+                                onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         break;
 
                     case ButtonRelease:
                         // Handle mouse button release event
-                        if (onRelease) onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        if (!onReleaseHandlers.empty()) 
+                            for (const onReleaseHandler& onRelease: onReleaseHandlers)
+                                onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         break;
 
                     case MotionNotify:
                         // Handle mouse motion event
-                        if (onMove) onMove(eventContext, event.xbutton.x, event.xbutton.y);
+                        if (!onMoveHandlers.empty()) 
+                            for (const onMoveHandler& onMove: onMoveHandlers)
+                                onMove(eventContext, event.xbutton.x, event.xbutton.y);
                         break;
 
                     default:
@@ -444,7 +457,7 @@ namespace gfx {
         const string text;
         const Align textAlign;
         Color borderColor = defaultAreaBorderColor;
-        const Color textColor = defaultAreaTextColor;
+        Color textColor = defaultAreaTextColor;
         Border border;
         Color backgroundColor;
         int scrollMargin;
@@ -587,6 +600,7 @@ namespace gfx {
 
         void setBackgroundColor(Color color) {
             backgroundColor = color;
+            draw();
         }
 
         Color getBorderColor() const {
@@ -599,6 +613,10 @@ namespace gfx {
 
         Color getTextColor() const {
             return textColor;
+        }
+
+        void setTextColor(Color textColor) {
+            this->textColor = textColor;
         }
 
         bool contains(int x, int y) const {
@@ -629,7 +647,9 @@ namespace gfx {
 
         void propagateTouch(unsigned int button, int x, int y) {
             if (contains(x, y)) {
-                if (onTouch) onTouch(this, button, x, y);
+                if (!onTouchHandlers.empty()) 
+                    for (const onTouchHandler& onTouch: onTouchHandlers)
+                        onTouch(this, button, x, y);
                 for (Area* area: areas) {
                     if (contains(area)) area->propagateTouch(button, x, y);
                 }
@@ -637,14 +657,18 @@ namespace gfx {
         }
 
         void propagateRelease(unsigned int button, int x, int y) {
-            if (onRelease) onRelease(this, button, x, y);
+            if (!onReleaseHandlers.empty()) 
+                for (const onReleaseHandler& onRelease: onReleaseHandlers)
+                    onRelease(this, button, x, y);
             for (Area* area: areas) {
                 if (contains(area)) area->propagateRelease(button, x, y);
             }
         }
 
         void propagateMove(int x, int y) {
-            if (onMove) onMove(this, x, y);
+            if (!onMoveHandlers.empty()) 
+                for (const onMoveHandler& onMove: onMoveHandlers)
+                    onMove(this, x, y);
             for (Area* area: areas) {
                 if (contains(area)) area->propagateMove(x, y);
             }
@@ -777,12 +801,12 @@ namespace gfx {
         }
 
         static void release(void* context, unsigned int button, int x, int y) {
-            GUI* that = (GUI*)context;
+            Area* that = (Area*)context;
             that->propagateRelease(button, x, y);
         }
 
         static void move(void* context, int x, int y) {
-            GUI* that = (GUI*)context;
+            Area* that = (Area*)context;
             that->propagateMove(x, y);
         }
 
@@ -795,10 +819,10 @@ namespace gfx {
             gwin = new GraphicsWindow();
             gwin->openWindow(width, height, color);
             gwin->eventContext = this;
-            gwin->onResize = resize;
-            gwin->onTouch = touch;
-            gwin->onRelease = release;
-            gwin->onMove = move;
+            gwin->onResizeHandlers.push_back(resize);
+            gwin->onTouchHandlers.push_back(touch);
+            gwin->onReleaseHandlers.push_back(release);
+            gwin->onMoveHandlers.push_back(move);
         }
 
         ~GUI() {
@@ -838,8 +862,8 @@ namespace gfx {
             const string text, const Align textAlign = Area::defaultAreaTextAlign
         ): Area(gwin, left, top, width, height, text, textAlign, BUTTON) 
         {
-            onTouch = touch;
-            onRelease = release;
+            onTouchHandlers.push_back(touch);
+            onReleaseHandlers.push_back(release);
         }
     };
 
@@ -888,9 +912,9 @@ namespace gfx {
             const Color backgroundColor = defaultScrollBackgroundColor
         ): Area(gwin, left, top, width, height, "", CENTER, border, backgroundColor)
         {
-            onTouch = touch;
-            onRelease = release;
-            onMove = move;
+            onTouchHandlers.push_back(touch);
+            onReleaseHandlers.push_back(release);
+            onMoveHandlers.push_back(move);
         }
     };
 
