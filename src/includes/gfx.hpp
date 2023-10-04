@@ -216,6 +216,38 @@ namespace gfx {
             y2 = intersection.y2;
         }
 
+        void setupWriting(int& x, int& y, string& text, Color color) {
+            XSetForeground(display, gc, color);            
+            while (true) {
+                int width, height;
+                getTextSize(text, width, height);
+                const int textYFixer4 = 4; // ??4
+                int x1 = x;
+                int y1 = y + textYFixer4;
+                int x2 = x + width;
+                int y2 = y - height + textYFixer4;
+                if (x1 > x2) Tools::replace(x1, x2);
+                if (y1 > y2) Tools::replace(y1, y2);
+                
+                if (y1 < viewport.y1 || y2 > viewport.y2) text = "";
+                if (text.empty()) return;
+                if (x1 < viewport.x1) {
+                    // Extract the first character.
+                    getTextSize(text.substr(0, 1), width, height); 
+                    x += width;
+                    text = text.substr(1); // This removes the first character.
+                    continue;
+                }
+                if (x2 > viewport.x2) {
+                    // Extract the last character.
+                    getTextSize(text.substr(text.length() - 1), width, height); 
+                    text = text.substr(0, text.length() - 1); // Remove the last character.
+                    continue;
+                }
+                break;
+            }
+        }
+
     public:
 
         void setViewport(Rectangle viewport) {
@@ -302,10 +334,10 @@ namespace gfx {
             XSetFont(display, gc, fontInfo->fid);
         }
         
-        void writeText(int x, int y, const string text, Color color) const {            
-            XSetForeground(display, gc, color);
-            
-            XDrawString(display, window, gc, x, y, text.c_str(), (int)text.length());
+        void writeText(int x, int y, const string text, Color color) {
+            string txt = text;
+            setupWriting(x, y, txt, color);
+            XDrawString(display, window, gc, x, y, txt.c_str(), (int)txt.length());
         }
 
         void getTextSize(const string text, int &width, int &height) const {            
