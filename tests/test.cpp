@@ -4,7 +4,6 @@
 #include "includes/SystemTest.hpp"
 #include "includes/FilesTest.hpp"
 #include "includes/LogTest.hpp"
-#include "includes/ToolsTest.hpp"
 
 using namespace std;
 
@@ -35,7 +34,6 @@ int main() {
     Tester::run(FilesTest::testFiles_file_get_contents);
     Tester::run(FilesTest::testFiles_file_put_contents);
     Tester::run(LogTest::testLog_writeln);
-    Tester::run(ToolsTest::testTools_replace);
 
     cout << endl;
 

@@ -166,12 +166,29 @@ namespace graph {
     };
 
     struct Rectangle {
+    protected:
+
+    public:
+
         int x1, y1, x2, y2;
+
         Rectangle(int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0):
             x1(x1), y1(y1), x2(x2), y2(y2)
         {
-            if (this->x1 > this->x2) Tools::replace(this->x1, this->x2);
-            if (this->y1 > this->y2) Tools::replace(this->y1, this->y2);
+            fix();
+        }
+
+        void set(int x1, int y1, int x2, int y2) {
+            this->x1 = x1;
+            this->y1 = y1;
+            this->x2 = x2;
+            this->y2 = y2;
+            fix();
+        }
+
+        void fix() {
+            if (this->x1 > this->x2) swap(this->x1, this->x2);
+            if (this->y1 > this->y2) swap(this->y1, this->y2);
         }
 
         bool intersect(int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0) {
@@ -189,6 +206,38 @@ namespace graph {
             }
 
             return true;
+        }
+
+        bool intersect(const Rectangle& other) {
+            return intersect(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool insideOf(int x1, int y1, int x2, int y2) const {
+            return (this->x1 >= x1 && this->y1 >= y1 && this->x2 <= x2 && this->y2 <= y2);
+        }
+
+        bool insideOf(const Rectangle& other) const {
+            return insideOf(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool containsCompletely(int x1, int y1, int x2, int y2) const {
+            // Check if 'other' rectangle is completely inside 'this' rectangle
+            return (x1 >= this->x1 && y1 >= this->y1 && x2 <= this->x2 && y2 <= this->y2);
+        }
+
+        bool containsCompletely(const Rectangle& other) const {
+            // Check if 'other' rectangle is completely inside 'this' rectangle
+            return containsCompletely(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool containsPartially(int x1, int y1, int x2, int y2) const {
+            // Check if 'other' rectangle partially overlaps with 'this' rectangle
+            return !(x2 < this->x1 || x1 > this->x2 || y2 < this->y1 || y1 > this->y2);
+        }
+
+        bool containsPartially(const Rectangle& other) const {
+            // Check if 'other' rectangle partially overlaps with 'this' rectangle
+            return containsPartially(other.x1, other.y1, other.x2, other.y2);
         }
     };
 
@@ -208,51 +257,9 @@ namespace graph {
 
         Rectangle viewport;
 
-        void setupDrawing(int &x1, int &y1, int &x2, int &y2, Color color) const {
-            XSetForeground(display, gc, color);
-            if (x1 > x2) Tools::replace(x1, x2);
-            if (y1 > y2) Tools::replace(y1, y2);
-            Rectangle intersection(x1, y1, x2, y2);
-            intersection.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
-            x1 = intersection.x1;
-            y1 = intersection.y1;
-            x2 = intersection.x2;
-            y2 = intersection.y2;
-        }
-
-        void setupWriting(int& x, int& y, string& text, Color color) {
-            XSetForeground(display, gc, color);            
-            while (true) {
-                int width, height;
-                getTextSize(text, width, height);
-                const int textYFixer4 = 4; // ??4
-                int x1 = x;
-                int y1 = y + textYFixer4;
-                int x2 = x + width;
-                int y2 = y - height + textYFixer4;
-                if (x1 > x2) Tools::replace(x1, x2);
-                if (y1 > y2) Tools::replace(y1, y2);
-                
-                if (y1 < viewport.y1 || y2 > viewport.y2) text = "";
-                if (text.empty()) return;
-                if (x1 < viewport.x1) {
-                    // Extract the first character.
-                    getTextSize(text.substr(0, 1), width, height); 
-                    x += width;
-                    text = text.substr(1); // This removes the first character.
-                    continue;
-                }
-                if (x2 > viewport.x2) {
-                    // Extract the last character.
-                    getTextSize(text.substr(text.length() - 1), width, height); 
-                    text = text.substr(0, text.length() - 1); // Remove the last character.
-                    continue;
-                }
-                break;
-            }
-        }
-
     public:
+
+        bool close = false;
 
         void setViewport(Rectangle viewport) {
             this->viewport = viewport;
@@ -303,29 +310,121 @@ namespace graph {
             XFillRectangle(display, window, gc, 0, 0, (unsigned)width, (unsigned)height);
         }
 
-        void drawRectangle(int x1, int y1, int x2, int y2, Color color) const {            
-            setupDrawing(x1, y1, x2, y2, color);
-            XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
+        void drawRectangle(int x1, int y1, int x2, int y2, Color color) const {
+            Rectangle rect(x1, y1, x2, y2);
+            XSetForeground(display, gc, color);
+            if (rect.insideOf(viewport)) {
+                XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
+                return;
+            }
+            if (rect.containsPartially(x1, y1, x2, y1)) drawHorizontalLine(x1, y1, x2, color);
+            if (rect.containsPartially(x1, y2, x2, y2)) drawHorizontalLine(x1, y2, x2, color);
+            if (rect.containsPartially(x2, y1, x2, y2)) drawVerticalLine(x2, y1, y2, color);
+            if (rect.containsPartially(x1, y1, x1, y2)) drawVerticalLine(x1, y1, y2, color);
         }
 
-        void fillRectangle(int x1, int y1, int x2, int y2, Color color) const {            
-            setupDrawing(x1, y1, x2, y2, color);
-            XFillRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
+        void fillRectangle(int x1, int y1, int x2, int y2, Color color) const {
+            Rectangle rect(x1, y1, x2, y2);
+            rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
+
+            XSetForeground(display, gc, color);
+            XFillRectangle(display, window, gc, rect.x1, rect.y1, (unsigned)(rect.x2 - rect.x1), (unsigned)(rect.y2 - rect.y1));
         }
 
-        // void drawLine(int x1, int y1, int x2, int y2, Color color) const {            
-        //     setupDrawing(x1, y1, x2, y2, color);
-        //     XDrawLine(display, window, gc, x1, y1, x2, y2);
-        // }
+        void drawLine(int x1, int y1, int x2, int y2, Color color) const {
+            Rectangle rect(x1, y1, x2, y2);
+            
+            if (x1 == x2) {
+                drawVerticalLine(x1, y1, y2, color);
+                return;
+            }
+            
+            if (y1 == y2) {
+                drawHorizontalLine(x1, y1, x2, color);
+                return;
+            }
 
-        void drawVerticalLine(int x1, int y1, int y2, Color color) const {            
-            setupDrawing(x1, y1, x1, y2, color);
-            XDrawLine(display, window, gc, x1, y1, x1, y2);
+            // Fix the line first, it's always goes left to right
+            if (x1 > x2) {
+                swap(x1, x2);
+                swap(y1, y2);
+            }
+
+            if (!viewport.containsCompletely(rect)) {
+                // Clip the line to fit within the viewport
+                    
+                if (x1 < viewport.x1) {
+                    if (x2 < viewport.x1) return; // Stop if out of scope...
+
+                    // Clip the left overflow at viewport.x1 and assign the new values to x1 and y1
+                    y1 = y2 - ((y2 - y1) * (x2 - viewport.x1)) / (x2 - x1);
+                    x1 = viewport.x1;
+                }
+
+                if (y1 < viewport.y1) {
+                    if (y2 < viewport.y1) return; // Stop if out of scope...
+
+                    // Clip the top overflow at viewport.y1 and assign the new values to x1 and y1
+                    x1 = x1 + ((x2 - x1) * (viewport.y1 - y1)) / (y2 - y1);
+                    y1 = viewport.y1;
+                }
+
+                if (x2 > viewport.x2) {
+                    if (x1 > viewport.x2) return; // Stop if out of scope...
+
+                    // Clip the right overflow at viewport.x2 and assign the new values to x2 and y2
+                    y2 = y2 - ((y2 - y1) * (x2 - viewport.x2)) / (x2 - x1);
+                    x2 = viewport.x2;
+                }
+
+                if (y2 > viewport.y2) {
+                    if (y1 > viewport.y2) return; // Stop if out of scope...
+
+                    // Clip the bottom overflow at viewport.y2 and assign the new values to x2 and y2
+                    x2 = x1 + ((y2 - y1) * (viewport.y2 - y1)) / (x2 - x1);
+                    y2 = viewport.y2;
+                }
+
+                if (y1 > y2) { // rise
+
+                    if (y2 < viewport.y1) {
+                        if (y1 < viewport.y1) return; // Stop if out of scope...
+
+                        // Clip the top overflow at viewport.y1 and assign the new values to x2 and y2
+                        x2 = x1 + ((x2 - x1) * (y1 - viewport.y1)) / (y1 - y2);
+                        y2 = viewport.y1;
+                    }
+
+                    if (y1 > viewport.y2) {
+                        if (y2 > viewport.y2) return; // Stop if out of scope...
+
+                        // Clip the bottom overflow at viewport.y2 and assign the new values to x1 and y1
+                        x1 = x2 - ((x2 - x1) * (viewport.y2 - y2)) / (y1 - y2);
+                        y1 = viewport.y2;
+                    }
+
+                }
+            }
+
+            // Set the foreground color and draw the clipped line
+            XSetForeground(display, gc, color);
+            XDrawLine(display, window, gc, x1, y1, x2, y2);
+        }
+
+        void drawVerticalLine(int x1, int y1, int y2, Color color) const {
+            Rectangle rect(x1, y1, x1, y2);
+            rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
+
+            XSetForeground(display, gc, color);
+            XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x1, rect.y2);
         }
         
-        void drawHorizontalLine(int x1, int y1, int x2, Color color) const {            
-            setupDrawing(x1, y1, x2, y1, color);
-            XDrawLine(display, window, gc, x1, y1, x2, y1);
+        void drawHorizontalLine(int x1, int y1, int x2, Color color) const {
+            Rectangle rect(x1, y1, x2, y1);
+            rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
+
+            XSetForeground(display, gc, color);
+            XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x2, rect.y1);
         }
 
         void setFont(const char* font) {            
@@ -339,8 +438,37 @@ namespace graph {
         }
         
         void writeText(int x, int y, const string text, Color color) {
-            string txt = text;
-            setupWriting(x, y, txt, color);
+            // Cut text to fit into the viewport first
+            string txt = text;            
+            while (!txt.empty()) {
+                int width, height;
+                getTextSize(txt, width, height);
+                const int textYFixer4 = 4; // ??4
+                int x1 = x;
+                int y1 = y + textYFixer4;
+                int x2 = x + width;
+                int y2 = y - height + textYFixer4;
+                if (x1 > x2) swap(x1, x2);
+                if (y1 > y2) swap(y1, y2);
+                
+                if (y1 < viewport.y1 || y2 > viewport.y2) return;
+                if (x1 < viewport.x1) {
+                    // Extract the first character.
+                    getTextSize(txt.substr(0, 1), width, height); 
+                    x += width;
+                    txt = txt.substr(1); // This removes the first character.
+                    continue;
+                }
+                if (x2 > viewport.x2) {
+                    // Extract the last character.
+                    getTextSize(txt.substr(txt.length() - 1), width, height); 
+                    txt = txt.substr(0, txt.length() - 1); // Remove the last character.
+                    continue;
+                }
+                break;
+            }
+
+            XSetForeground(display, gc, color);
             XDrawString(display, window, gc, x, y, txt.c_str(), (int)txt.length());
         }
 
@@ -362,12 +490,11 @@ namespace graph {
         }
 
         void eventLoop(unsigned long ms = defaultLoopMs) const {
-            LOG("Window event loop starts");
-            
-            while (true) {
+
+            while (!close) {
 
                 if (!onLoopHandlers.empty() && XPending(display) <= 0) {
-                    Tools::sleep(ms);
+                    sleep(ms);
                     for (const onLoopHandler& onLoop: onLoopHandlers) 
                         onLoop(eventContext);
                     continue;
@@ -383,47 +510,40 @@ namespace graph {
                     case Expose:
                         // Handle expose event (e.g., redraw)
                         getWindowSize(width, height);
-                        LOG("Windows expose: ", width, ":", height);
-                        if (!onResizeHandlers.empty())
-                            for (const onResizeHandler& onResize: onResizeHandlers)
-                                onResize(eventContext, width, height);
+                        for (const onResizeHandler& onResize: onResizeHandlers)
+                            onResize(eventContext, width, height);
                         break;
 
                     case KeyPress:
                         // Handle key press event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        if (!onKeyPressHandlers.empty()) 
-                            for (const onKeyPressHandler& onKeyPress: onKeyPressHandlers)
-                                onKeyPress(eventContext, key);
+                        for (const onKeyPressHandler& onKeyPress: onKeyPressHandlers)
+                            onKeyPress(eventContext, key);
                         break;
 
                     case KeyRelease:
                         // Handle key release event
                         XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
-                        if (!onKeyReleaseHandlers.empty()) 
-                            for (const onKeyReleaseHandler& onKeyRelease: onKeyReleaseHandlers)
-                                onKeyRelease(eventContext, key);
+                        for (const onKeyReleaseHandler& onKeyRelease: onKeyReleaseHandlers)
+                            onKeyRelease(eventContext, key);
                         break;
 
                     case ButtonPress:
                         // Handle mouse button press event
-                        if (!onTouchHandlers.empty()) 
-                            for (const onTouchHandler& onTouch: onTouchHandlers)
-                                onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        for (const onTouchHandler& onTouch: onTouchHandlers)
+                            onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         break;
 
                     case ButtonRelease:
                         // Handle mouse button release event
-                        if (!onReleaseHandlers.empty()) 
-                            for (const onReleaseHandler& onRelease: onReleaseHandlers)
-                                onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        for (const onReleaseHandler& onRelease: onReleaseHandlers)
+                            onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
                         break;
 
                     case MotionNotify:
                         // Handle mouse motion event
-                        if (!onMoveHandlers.empty()) 
-                            for (const onMoveHandler& onMove: onMoveHandlers)
-                                onMove(eventContext, event.xbutton.x, event.xbutton.y);
+                        for (const onMoveHandler& onMove: onMoveHandlers)
+                            onMove(eventContext, event.xbutton.x, event.xbutton.y);
                         break;
 
                     default:
@@ -445,14 +565,14 @@ namespace graph {
         static const Align defaultAreaTextAlign = Theme::textAlign;
         static const Color defaultAreaBorderColor = Theme::borderColor;
         static const Color defaultAreaTextColor = Theme::textColor;
-        static const Border defaultAreaBorder = NONE;
+        static const Border defaultAreaBorder = NONE; // TODO: to theme
         static const Color defaultAreaBackgroundColor = GFX::defaultWindowColor;
         static const int defaultScrollMargin = Theme::scrollMargin;
         static const int defaultTextMargin = Theme::textPadding;
 
         typedef void (*onDrawHandler)(void*);
         
-        onDrawHandler onDraw = NULL;
+        vector<onDrawHandler> onDrawHandlers;
 
     protected:
         GFX* gfx = NULL;
@@ -479,16 +599,27 @@ namespace graph {
             if (scrollY > scrollYMax) scrollY = scrollYMax;
         }
 
-        void reduceViewport(Rectangle& viewport) {
-            if (parent) {
-                int parentTop = parent->getTop();
-                int parentLeft = parent->getLeft();
-                int parentRight = parent->getRight(parentLeft);
-                int parentBottom = parent->getBottom(parentTop);
-                if (viewport.intersect(parentLeft, parentTop, parentRight, parentBottom)) {
-                    parent->reduceViewport(viewport);
-                }
-            }
+        void reduceViewport(Rectangle& viewport) const {
+            if (!parent) return;
+            int parentTop = parent->getTop() + 1;
+            int parentLeft = parent->getLeft() + 1;
+            int parentRight = parent->getRight(parentLeft) - 2;
+            int parentBottom = parent->getBottom(parentTop) - 2;
+            if (viewport.intersect(parentLeft, parentTop, parentRight, parentBottom))
+                parent->reduceViewport(viewport);
+        }
+
+        void prepare(int &x1, int &y1, int &x2, int &y2) const {
+            int leftAndScroll = getLeft() - scrollX;
+            int topAndScroll = getTop() - scrollY;
+            x1 += leftAndScroll;
+            y1 += topAndScroll;
+            x2 += leftAndScroll;
+            y2 += topAndScroll;
+
+            Rectangle viewport;
+            getViewport(viewport);
+            gfx->setViewport(viewport);
         }
 
     public:
@@ -505,7 +636,45 @@ namespace graph {
             text(text), textAlign(textAlign), border(border), 
             backgroundColor(backgroundColor), scrollMargin(scrollMargin),
             textPadding(textPadding)
-        {}
+        {
+            setScrollXYMax(width, height);
+        }
+
+        const Rectangle& getViewport(Rectangle& viewport) const {
+            int top = getTop();
+            int left = getLeft();
+            int right = getRight(left);
+            int bottom = getBottom(top);
+            viewport.set(left, top, right, bottom);
+            return viewport;
+        }
+
+        void rect(int x1, int y1, int x2, int y2, Color color) const {
+            prepare(x1, y1, x2, y2);
+            gfx->drawRectangle(x1, y1, x2, y2, color);
+        }
+
+        void fillRect(int x1, int y1, int x2, int y2, Color color) const {
+            prepare(x1, y1, x2, y2);
+            gfx->fillRectangle(x1, y1, x2, y2, color);
+        }
+
+        void line(int x1, int y1, int x2, int y2, Color color) const {
+            prepare(x1, y1, x2, y2);
+            gfx->drawLine(x1, y1, x2, y2, color);
+        }
+
+        void hLine(int x1, int y1, int x2, Color color) const {
+            int y2;
+            prepare(x1, y1, x2, y2);
+            gfx->drawHorizontalLine(x1, y1, x2, color);
+        }
+
+        void vLine(int x1, int y1, int y2, Color color) const {
+            int x2;
+            prepare(x1, y1, x2, y2);
+            gfx->drawVerticalLine(x1, y1, y2, color);
+        }
 
         GFX* getGFX() const {
             return gfx;
@@ -522,10 +691,18 @@ namespace graph {
         void child(Area* area) {
             area->setParent(this);
             areas.push_back(area);
-            int xMax = (area->left + area->width) - width + scrollMargin;
-            int yMax = (area->top + area->height) - height + scrollMargin;
+            setScrollXYMax(
+                area->left + area->width + scrollMargin,
+                area->top + area->height + scrollMargin
+            );
+        }
+
+        void setScrollXYMax(int x, int y) {
+            int xMax = x - width;
+            int yMax = y - height;
             if (xMax > scrollXMax) scrollXMax = xMax;
             if (yMax > scrollYMax) scrollYMax = yMax;
+            forceScrollInRange();
         }
 
         void setScrollXY(int x, int y) {
@@ -665,32 +842,25 @@ namespace graph {
         }
 
         void propagateTouch(unsigned int button, int x, int y) {
-            if (contains(x, y)) {
-                if (!onTouchHandlers.empty()) 
-                    for (const onTouchHandler& onTouch: onTouchHandlers)
-                        onTouch(this, button, x, y);
-                for (Area* area: areas) {
-                    if (contains(area)) area->propagateTouch(button, x, y);
-                }
-            }
+            if (!contains(x, y)) return;
+            for (const onTouchHandler& onTouch: onTouchHandlers)
+                onTouch(this, button, x, y);
+            for (Area* area: areas)
+                if (contains(area)) area->propagateTouch(button, x, y);
         }
 
         void propagateRelease(unsigned int button, int x, int y) {
-            if (!onReleaseHandlers.empty()) 
-                for (const onReleaseHandler& onRelease: onReleaseHandlers)
-                    onRelease(this, button, x, y);
-            for (Area* area: areas) {
+            for (const onReleaseHandler& onRelease: onReleaseHandlers)
+                onRelease(this, button, x, y);
+            for (Area* area: areas)
                 if (contains(area)) area->propagateRelease(button, x, y);
-            }
         }
 
         void propagateMove(int x, int y) {
-            if (!onMoveHandlers.empty()) 
-                for (const onMoveHandler& onMove: onMoveHandlers)
-                    onMove(this, x, y);
-            for (Area* area: areas) {
+            for (const onMoveHandler& onMove: onMoveHandlers)
+                onMove(this, x, y);
+            for (Area* area: areas)
                 if (contains(area)) area->propagateMove(x, y);
-            }
         }
 
         void drawBorder(int left, int top, int right, int bottom) const {
@@ -760,52 +930,48 @@ namespace graph {
             reduceViewport(viewport);
             gfx->setViewport(viewport);
             
-            const string text = getText();
-            LOG("fillRectangle (in draw): ", left, " ", top, " ", right, " ", bottom);
             gfx->fillRectangle(left, top, right, bottom, getBackgroundColor());
 
             drawBorder(left, top, right, bottom);
-            
+
+            const string text = getText();
             if(!text.empty()) {
                 int textWidth, textHeight;
                 gfx->getTextSize(text, textWidth, textHeight);
-                int textLeft, textTop;
+                int textLeft;
                 Align textAlign = getTextAlign();
                 switch (textAlign) {
 
                     case CENTER:
                         textLeft = left + ((width - textWidth) / 2);
-                        textTop = top + ((height - textHeight) / 2) + 16; // ??16
                         break;
 
                     case LEFT:
                         textLeft = left + textPadding;
-                        textTop = top + ((height - textHeight) / 2) + 16; // ??16
                         break;
 
                     case RIGHT:
                         textLeft = left + width - textPadding - textWidth;
-                        textTop = top + ((height - textHeight) / 2) + 16; // ??16
                         break;
                     
                     default:
                         throw runtime_error("Invalid text align");
                         break;
                 }
+                int textTop = top + ((height - textHeight) / 2) + 16; // ??16
                 gfx->writeText(textLeft, textTop, text, getTextColor());
             }
 
-            for (Area* area: areas) {
+            for (Area* area: areas)
                 if (contains(area)) area->draw();
-            }
 
-            if (onDraw) onDraw(this);
+            for (const onDrawHandler& onDraw: onDrawHandlers) onDraw(this);
+
         }
     };
 
     class GUI: public Area {
     protected:
-        // GFX* gfx = NULL;
 
         static void resize(void* context, int width, int height) {
             GUI* that = (GUI*)context;
@@ -845,16 +1011,8 @@ namespace graph {
             init(width, height, color);
         }
 
-        GUI(int width, int height, Color color = GFX::defaultWindowColor):
-            Area(NULL, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
-        {
-            gfx = new GFX();
-            init(width, height, color);
-        }
-
         ~GUI() {
             gfx->closeWindow();
-            delete gfx;
         }
 
         void loop(unsigned long ms = GFX::defaultLoopMs) const {
@@ -862,10 +1020,10 @@ namespace graph {
         }
     };
 
-    class Drag: public Area {
+    class Frame: public Area {
     public:
 
-        static const Border defaultScrollBorder = BUTTON_PUSHED;
+        static const Border defaultScrollBorder = BUTTON_PUSHED; // TODO: to theme
         static const Color defaultScrollBackgroundColor = Theme::scrollBackgroundColor;
 
     protected:
@@ -873,9 +1031,8 @@ namespace graph {
         bool drag = false;
         int dragStartedX, dragStartedY, dragScrollStartedX, dragScrollStartedY;
 
-        static void touch(void* context, unsigned int button, int x, int y) {
-            Drag* that = (Drag*)context;
-            LOG("Drag touch: ", button, " ", x, ":", y);
+        static void touch(void* context, unsigned int, int x, int y) {
+            Frame* that = (Frame*)context;
             that->drag = true;
             that->dragStartedX = x;
             that->dragStartedY = y;
@@ -883,20 +1040,18 @@ namespace graph {
             that->dragScrollStartedY = that->getScrollY();
         }
         
-        static void release(void* context, unsigned int button, int x, int y) {
-            Drag* that = (Drag*)context;
-            LOG("Drag release: ", button, " ", x, ":", y);
+        static void release(void* context, unsigned int, int, int) {
+            Frame* that = (Frame*)context;
             that->drag = false;
         }
         
         static void move(void* context, int x, int y) {
-            Drag* that = (Drag*)context;
+            Frame* that = (Frame*)context;
             if (!that->fixed && that->drag) {
                 that->setScrollXY(
                     that->dragScrollStartedX + (that->dragStartedX - x), 
                     that->dragScrollStartedY + (that->dragStartedY - y)
                 );
-                LOG("Drag scrollTo: ", that->scrollX, ":", that->scrollY);
                 that->draw();
             }
         }
@@ -905,7 +1060,7 @@ namespace graph {
 
         bool fixed = false;
 
-        Drag(GFX* gfx, int left, int top, int width, int height,
+        Frame(GFX* gfx, int left, int top, int width, int height,
             const Border border = defaultScrollBorder,
             const Color backgroundColor = defaultScrollBackgroundColor
         ): Area(gfx, left, top, width, height, "", CENTER, border, backgroundColor)
@@ -922,31 +1077,23 @@ namespace graph {
 
         bool pushed = false;
         
-        static void touch(void* context, unsigned int button, int x, int y) {
+        static void touch(void* context, unsigned int, int, int) {
             Button* that = (Button*)context;
-            LOG("Button touch: ", button, " (", that->getText().c_str() , ") ", x, ":", y);
             
             if (that->sticky) {
-                if (that->pushed) {
-                    that->release();
-                } else {
-                    that->push();
-                }
+                that->pushed ? that->release() : that->push();                
                 return;
             }
             
-            that->push();
+            if (!that->pushed) that->push();
         }
         
-        static void release(void* context, unsigned int button, int x, int y) {
+        static void release(void* context, unsigned int, int, int) {
             Button* that = (Button*)context;
-            LOG("Button release: ", button, " (", that->getText().c_str() , ") ", " ", x, ":", y);
 
-            if (that->sticky) {
-                return;
-            }
+            if (that->sticky) return;
                 
-            that->release();
+            if (that->pushed) that->release();
         }
 
     public:
@@ -954,7 +1101,7 @@ namespace graph {
 
         Button(GFX* gfx, int left, int top, int width, int height, 
             const string text, const Align textAlign = Area::defaultAreaTextAlign
-        ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) 
+        ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
         {
             onTouchHandlers.push_back(touch);
             onReleaseHandlers.push_back(release);
@@ -982,7 +1129,7 @@ namespace graph {
     public:
         Label(GFX* gfx, int left, int top, int width, int height, 
             const string text, const Align textAlign = defaultLabelTextAlign
-        ): Area(gfx, left, top, width, height, text, textAlign, NONE) 
+        ): Area(gfx, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
         {}
     };
     
