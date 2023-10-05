@@ -262,6 +262,10 @@ namespace madlib::graph {
 
         bool close = false;
 
+        void setColor(Color color) const {
+            XSetForeground(display, gc, color);
+        }
+
         void setViewport(Rectangle viewport) {
             this->viewport = viewport;
         }
@@ -286,6 +290,7 @@ namespace madlib::graph {
                 ButtonReleaseMask | PointerMotionMask);
 
             setFont(font);
+            setColor(color);
 
             eventContext = this;
         }
@@ -304,44 +309,40 @@ namespace madlib::graph {
             height = attr.height;
         }
 
-        void clearWindow(Color color) const {            
-            XSetForeground(display, gc, color);
+        void clearWindow() const {
             int width, height;
             getWindowSize(width, height);
             XFillRectangle(display, window, gc, 0, 0, (unsigned)width, (unsigned)height);
         }
 
-        void drawRectangle(int x1, int y1, int x2, int y2, Color color) const {
+        void drawRectangle(int x1, int y1, int x2, int y2) const {
             Rectangle rect(x1, y1, x2, y2);
-            XSetForeground(display, gc, color);
             if (rect.insideOf(viewport)) {
                 XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
                 return;
             }
-            if (rect.containsPartially(x1, y1, x2, y1)) drawHorizontalLine(x1, y1, x2, color);
-            if (rect.containsPartially(x1, y2, x2, y2)) drawHorizontalLine(x1, y2, x2, color);
-            if (rect.containsPartially(x2, y1, x2, y2)) drawVerticalLine(x2, y1, y2, color);
-            if (rect.containsPartially(x1, y1, x1, y2)) drawVerticalLine(x1, y1, y2, color);
+            if (rect.containsPartially(x1, y1, x2, y1)) drawHorizontalLine(x1, y1, x2);
+            if (rect.containsPartially(x1, y2, x2, y2)) drawHorizontalLine(x1, y2, x2);
+            if (rect.containsPartially(x2, y1, x2, y2)) drawVerticalLine(x2, y1, y2);
+            if (rect.containsPartially(x1, y1, x1, y2)) drawVerticalLine(x1, y1, y2);
         }
 
-        void fillRectangle(int x1, int y1, int x2, int y2, Color color) const {
+        void fillRectangle(int x1, int y1, int x2, int y2) const {
             Rectangle rect(x1, y1, x2, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
-
-            XSetForeground(display, gc, color);
             XFillRectangle(display, window, gc, rect.x1, rect.y1, (unsigned)(rect.x2 - rect.x1), (unsigned)(rect.y2 - rect.y1));
         }
 
-        void drawLine(int x1, int y1, int x2, int y2, Color color) const {
+        void drawLine(int x1, int y1, int x2, int y2) const {
             Rectangle rect(x1, y1, x2, y2);
             
             if (x1 == x2) {
-                drawVerticalLine(x1, y1, y2, color);
+                drawVerticalLine(x1, y1, y2);
                 return;
             }
             
             if (y1 == y2) {
-                drawHorizontalLine(x1, y1, x2, color);
+                drawHorizontalLine(x1, y1, x2);
                 return;
             }
 
@@ -407,24 +408,19 @@ namespace madlib::graph {
                 }
             }
 
-            // Set the foreground color and draw the clipped line
-            XSetForeground(display, gc, color);
+            // Draw the clipped line
             XDrawLine(display, window, gc, x1, y1, x2, y2);
         }
 
-        void drawVerticalLine(int x1, int y1, int y2, Color color) const {
+        void drawVerticalLine(int x1, int y1, int y2) const {
             Rectangle rect(x1, y1, x1, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
-
-            XSetForeground(display, gc, color);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x1, rect.y2);
         }
         
-        void drawHorizontalLine(int x1, int y1, int x2, Color color) const {
+        void drawHorizontalLine(int x1, int y1, int x2) const {
             Rectangle rect(x1, y1, x2, y1);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
-
-            XSetForeground(display, gc, color);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x2, rect.y1);
         }
 
@@ -438,7 +434,7 @@ namespace madlib::graph {
             XSetFont(display, gc, fontInfo->fid);
         }
         
-        void writeText(int x, int y, const string text, Color color) {
+        void writeText(int x, int y, const string text) {
             // Cut text to fit into the viewport first
             string txt = text;            
             while (!txt.empty()) {
@@ -468,8 +464,7 @@ namespace madlib::graph {
                 }
                 break;
             }
-
-            XSetForeground(display, gc, color);
+            
             XDrawString(display, window, gc, x, y, txt.c_str(), (int)txt.length());
         }
 
@@ -651,31 +646,35 @@ namespace madlib::graph {
             return viewport;
         }
 
-        void rect(int x1, int y1, int x2, int y2, Color color) const {
-            prepare(x1, y1, x2, y2);
-            gfx->drawRectangle(x1, y1, x2, y2, color);
+        void color(Color color) const {
+            gfx->setColor(color);
         }
 
-        void fillRect(int x1, int y1, int x2, int y2, Color color) const {
+        void rect(int x1, int y1, int x2, int y2) const {
             prepare(x1, y1, x2, y2);
-            gfx->fillRectangle(x1, y1, x2, y2, color);
+            gfx->drawRectangle(x1, y1, x2, y2);
         }
 
-        void line(int x1, int y1, int x2, int y2, Color color) const {
+        void fillRect(int x1, int y1, int x2, int y2) const {
             prepare(x1, y1, x2, y2);
-            gfx->drawLine(x1, y1, x2, y2, color);
+            gfx->fillRectangle(x1, y1, x2, y2);
         }
 
-        void hLine(int x1, int y1, int x2, Color color) const {
+        void line(int x1, int y1, int x2, int y2) const {
+            prepare(x1, y1, x2, y2);
+            gfx->drawLine(x1, y1, x2, y2);
+        }
+
+        void hLine(int x1, int y1, int x2) const {
             int y2;
             prepare(x1, y1, x2, y2);
-            gfx->drawHorizontalLine(x1, y1, x2, color);
+            gfx->drawHorizontalLine(x1, y1, x2);
         }
 
-        void vLine(int x1, int y1, int y2, Color color) const {
+        void vLine(int x1, int y1, int y2) const {
             int x2;
             prepare(x1, y1, x2, y2);
-            gfx->drawVerticalLine(x1, y1, y2, color);
+            gfx->drawVerticalLine(x1, y1, y2);
         }
 
         GFX* getGFX() const {
@@ -876,7 +875,8 @@ namespace madlib::graph {
                     break;
 
                 case SIMPLE:
-                    gfx->drawRectangle(left, top, right, bottom, getBorderColor());
+                    gfx->setColor(getBorderColor());
+                    gfx->drawRectangle(left, top, right, bottom);
                     break;
 
                 case BUTTON_RELEASED:
@@ -884,10 +884,12 @@ namespace madlib::graph {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gfx->drawHorizontalLine(left, top, right, borderColorLight);
-                    gfx->drawVerticalLine(left, top, bottom, borderColorLight);
-                    gfx->drawHorizontalLine(left, bottom, right, borderColorDark);
-                    gfx->drawVerticalLine(right, top, bottom, borderColorDark);
+                    gfx->setColor(borderColorLight);
+                    gfx->drawHorizontalLine(left, top, right);
+                    gfx->drawVerticalLine(left, top, bottom);
+                    gfx->setColor(borderColorDark);
+                    gfx->drawHorizontalLine(left, bottom, right);
+                    gfx->drawVerticalLine(right, top, bottom);
                     break;
 
                 case BUTTON_PUSHED:
@@ -895,10 +897,12 @@ namespace madlib::graph {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gfx->drawHorizontalLine(left, bottom, right, borderColorLight);
-                    gfx->drawVerticalLine(right, top, bottom, borderColorLight);
-                    gfx->drawHorizontalLine(left, top, right, borderColorDark);
-                    gfx->drawVerticalLine(left, top, bottom, borderColorDark);
+                    gfx->setColor(borderColorLight);
+                    gfx->drawHorizontalLine(left, bottom, right);
+                    gfx->drawVerticalLine(right, top, bottom);
+                    gfx->setColor(borderColorDark);
+                    gfx->drawHorizontalLine(left, top, right);
+                    gfx->drawVerticalLine(left, top, bottom);
                     break;
 
                 default:
@@ -932,7 +936,8 @@ namespace madlib::graph {
             reduceViewport(viewport);
             gfx->setViewport(viewport);
             
-            gfx->fillRectangle(left, top, right, bottom, getBackgroundColor());
+            gfx->setColor(getBackgroundColor());
+            gfx->fillRectangle(left, top, right, bottom);
 
             drawBorder(left, top, right, bottom);
 
@@ -961,7 +966,8 @@ namespace madlib::graph {
                         break;
                 }
                 int textTop = top + ((height - textHeight) / 2) + 16; // ??16
-                gfx->writeText(textLeft, textTop, text, getTextColor());
+                gfx->setColor(getTextColor());
+                gfx->writeText(textLeft, textTop, text);
             }
 
             for (Area* area: areas)

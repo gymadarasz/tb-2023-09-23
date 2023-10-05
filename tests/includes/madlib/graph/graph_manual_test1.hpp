@@ -19,18 +19,24 @@ void doit(void*, unsigned int, int, int) {
 }
 
 void draw(void*) {
-    frame2.rect(10, 10, 50, 50, green);
-    frame2.line(10, 10, 50, 50, red);
-    frame2.line(50, 10, 10, 50, blue);
-    frame2.rect(100, 100, 150, 150, green);
-    frame2.line(100, 100, 150, 150, red);
-    frame2.fillRect(220, 220, 300, 300, green);
-    frame2.line(220, 220, 300, 300, red);
-    frame2.line(300, 220, 220, 300, blue);
-    frame2.rect(25, 25, 325, 325, blue);
-    frame2.line(325, 25, 25, 325, black);
-    frame2.hLine(30, 30, 130, orange);
-    frame2.vLine(30, 30, 130, yellow);
+    frame2.color(green);
+    frame2.rect(10, 10, 50, 50);
+    frame2.rect(100, 100, 150, 150);
+    frame2.fillRect(220, 220, 300, 300);
+    frame2.color(red);
+    frame2.line(10, 10, 50, 50);
+    frame2.line(100, 100, 150, 150);
+    frame2.line(220, 220, 300, 300);
+    frame2.color(blue);
+    frame2.line(50, 10, 10, 50);
+    frame2.line(300, 220, 220, 300);
+    frame2.rect(25, 25, 325, 325);
+    frame2.color(black);
+    frame2.line(325, 25, 25, 325);
+    frame2.color(orange);
+    frame2.hLine(30, 30, 130);
+    frame2.color(yellow);
+    frame2.vLine(30, 30, 130);
     // TODO: bach painting...
 }
 
@@ -40,7 +46,8 @@ void close(void*, unsigned int, int, int) {
 
 void lbtn_draw(void* context) {
     Area* area = (Area*)context;
-    area->fillRect(5, 5, 25, 25, red);
+    area->color(red);
+    area->fillRect(5, 5, 25, 25);
 }
 
 int graph_manual_test1()
