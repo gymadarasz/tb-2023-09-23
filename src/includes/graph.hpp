@@ -619,6 +619,7 @@ namespace graph {
 
             Rectangle viewport;
             getViewport(viewport);
+            reduceViewport(viewport);
             gfx->setViewport(viewport);
         }
 
@@ -1033,6 +1034,11 @@ namespace graph {
 
         static void touch(void* context, unsigned int, int x, int y) {
             Frame* that = (Frame*)context;
+
+            // drag & scroll only if no child in the event focus
+            for (Area* area: that->areas)
+                if (area->contains(x, y)) return;
+
             that->drag = true;
             that->dragStartedX = x;
             that->dragStartedY = y;
