@@ -6,12 +6,13 @@
 #include <X11/keysym.h>
 #include <stdexcept>
 #include <vector>
-#include "Log.hpp"
-#include "Tools.hpp"
+#include "../Log.hpp"
+#include "../Tools.hpp"
 
 using namespace std;
+using namespace madlib;
 
-namespace graph {
+namespace madlib::graph {
 
     typedef unsigned long Color;
 

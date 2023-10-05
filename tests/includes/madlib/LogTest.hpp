@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cassert>
-#include "../../src/includes/Log.hpp"
+#include "../../../src/includes/madlib/Log.hpp"
+
+using namespace madlib;
 
 class LogTest {
 public:

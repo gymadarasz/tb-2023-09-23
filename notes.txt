@@ -12,6 +12,9 @@ Tradebot:
 - extract the steps to-do here...
 Project:
 - creating basic UI elements and event handlers
+- add more UI elements (Scroll, Slider, Switch, Interval, etc)
+- add zoom to UI elements
+- create tests for GFX and GUI
 - UI on different thread
 Tests:
 X making test framework

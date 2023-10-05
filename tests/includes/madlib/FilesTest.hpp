@@ -8,9 +8,10 @@
 #include <fstream>
 #include <sys/stat.h>
 
-#include "../../src/includes/Files.hpp"
+#include "../../../src/includes/madlib/Files.hpp"
 
 using namespace std;
+using namespace madlib;
 
 class FilesTest {
 protected:

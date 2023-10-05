@@ -1,10 +1,11 @@
 #include <iostream>
 #include <string>
-#include "src/includes/Files.hpp"
-#include "src/includes/System.hpp"
-#include "src/includes/Vector.hpp"
+#include "src/includes/madlib/Files.hpp"
+#include "src/includes/madlib/System.hpp"
+#include "src/includes/madlib/Vector.hpp"
 
 using namespace std;
+using namespace madlib;
 
 class Arguments {
 public:

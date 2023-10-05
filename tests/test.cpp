@@ -1,9 +1,12 @@
 #include <iostream>
 
-#include "includes/VectorTest.hpp"
-#include "includes/SystemTest.hpp"
-#include "includes/FilesTest.hpp"
-#include "includes/LogTest.hpp"
+#include "includes/madlib/VectorTest.hpp"
+#include "includes/madlib/SystemTest.hpp"
+#include "includes/madlib/FilesTest.hpp"
+#include "includes/madlib/LogTest.hpp"
+
+// Manual tests
+#include "includes/madlib/graph/graph_manual_test1.hpp"
 
 using namespace std;
 
@@ -37,7 +40,11 @@ int main() {
 
     cout << endl;
 
+    cout << "Manual tests..." << endl;
+    graph_manual_test1();
+
     cout << "\033[92mAll tests are passed\033[39m" << endl;
+
 
     return 0;
 }

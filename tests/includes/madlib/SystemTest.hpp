@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "../../src/includes/System.hpp"
+#include "../../../src/includes/madlib/System.hpp"
 
 using namespace std;
+using namespace madlib;
 
 class SystemTest {
 public:

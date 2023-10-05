@@ -4,9 +4,10 @@
 #include <string>
 #include <cassert>
 
-#include "../../src/includes/Vector.hpp"
+#include "../../../src/includes/madlib/Vector.hpp"
 
 using namespace std;
+using namespace madlib;
 
 class VectorTest {
 public:
