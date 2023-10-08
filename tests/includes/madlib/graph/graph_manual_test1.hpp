@@ -7,6 +7,7 @@ using namespace madlib::graph;
 
 GFX gfx;
 GUI gui(&gfx, 800, 600);
+Button closeOkBtn(&gfx, 10, 10, 100, 30, "Ok");
 Button button(&gfx, 10, 10, 80, 30, "Hello");
 Button button2(&gfx, 110, 10, 80, 30, "Click!");
 Frame frame2(&gfx, 320, 100, 200, 200);
@@ -21,11 +22,11 @@ void doit(void*, unsigned int, int, int) {
 void draw(void*) {
     frame2.color(green);
     frame2.rect(10, 10, 50, 50);
-    frame2.rect(100, 100, 150, 150);
+    frame2.rect(120, 100, 150, 150);
     frame2.fillRect(220, 220, 300, 300);
     frame2.color(red);
     frame2.line(10, 10, 50, 50);
-    frame2.line(100, 100, 150, 150);
+    frame2.line(120, 100, 150, 150);
     frame2.line(220, 220, 300, 300);
     frame2.color(blue);
     frame2.line(50, 10, 10, 50);
@@ -52,8 +53,13 @@ void lbtn_draw(void* context) {
 
 int graph_manual_test1()
 {
+    closeOkBtn.setBackgroundColor(green);
+    closeOkBtn.setTextColor(white);
+    closeOkBtn.onTouchHandlers.push_back(close);
+    gui.child(&closeOkBtn);
+
     Frame frame(&gfx, 100, 100, 200, 200);
-    // frame.fixed = true;
+    // frame.fixed = true;    
     button2.onTouchHandlers.push_back(doit);
     Button button3(&gfx, 210, 10, 80, 30, "Sticky");
     button3.sticky = true;

@@ -315,6 +315,11 @@ namespace madlib::graph {
             XFillRectangle(display, window, gc, 0, 0, (unsigned)width, (unsigned)height);
         }
 
+        void drawPoint(int x, int y) const {
+            //TODO: ??? if (viewport.containsCompletely(x, y, x, y))
+                XDrawPoint(display, window, gc, x, y);
+        }
+
         void drawRectangle(int x1, int y1, int x2, int y2) const {
             Rectangle rect(x1, y1, x2, y2);
             if (rect.insideOf(viewport)) {
@@ -434,7 +439,7 @@ namespace madlib::graph {
             XSetFont(display, gc, fontInfo->fid);
         }
         
-        void writeText(int x, int y, const string text) {
+        void writeText(int x, int y, const string text) const {
             // Cut text to fit into the viewport first
             string txt = text;            
             while (!txt.empty()) {
@@ -554,8 +559,21 @@ namespace madlib::graph {
     const char* GFX::defaultWindowFont = Theme::windowFont;
 
 
+    class Painter {
+    public:
+        virtual void color(Color) const {};
+        virtual void point(int, int) const {};
+        virtual void rect(int, int, int, int) const {};
+        virtual void fillRect(int, int, int, int) const {};
+        virtual void line(int, int, int, int) const {};
+        virtual void hLine(int, int, int) const {};
+        virtual void vLine(int, int, int) const {};
+        virtual void font(const char*) const {};
+        virtual void write(int, int, const string) const {};
+    };
 
-    class Area: public EventHandler {
+
+    class Area: public EventHandler, public Painter {
     public:
 
         static const Align defaultAreaTextAlign = Theme::textAlign;
@@ -646,35 +664,51 @@ namespace madlib::graph {
             return viewport;
         }
 
-        void color(Color color) const {
+        void color(Color color) const override {
             gfx->setColor(color);
         }
 
-        void rect(int x1, int y1, int x2, int y2) const {
+        void point(int x, int y) const override {
+            int x2, y2;
+            prepare(x, y, x2, y2);
+            gfx->drawPoint(x, y);
+        }
+
+        void rect(int x1, int y1, int x2, int y2) const override {
             prepare(x1, y1, x2, y2);
             gfx->drawRectangle(x1, y1, x2, y2);
         }
 
-        void fillRect(int x1, int y1, int x2, int y2) const {
+        void fillRect(int x1, int y1, int x2, int y2) const override {
             prepare(x1, y1, x2, y2);
             gfx->fillRectangle(x1, y1, x2, y2);
         }
 
-        void line(int x1, int y1, int x2, int y2) const {
+        void line(int x1, int y1, int x2, int y2) const override {
             prepare(x1, y1, x2, y2);
             gfx->drawLine(x1, y1, x2, y2);
         }
 
-        void hLine(int x1, int y1, int x2) const {
+        void hLine(int x1, int y1, int x2) const override {
             int y2;
             prepare(x1, y1, x2, y2);
             gfx->drawHorizontalLine(x1, y1, x2);
         }
 
-        void vLine(int x1, int y1, int y2) const {
+        void vLine(int x1, int y1, int y2) const override {
             int x2;
             prepare(x1, y1, x2, y2);
             gfx->drawVerticalLine(x1, y1, y2);
+        }
+
+        void font(const char* font) const override {
+            gfx->setFont(font);
+        }
+
+        void write(int x, int y, const string text) const override {
+            int x2, y2;
+            prepare(x, y, x2, y2);
+            gfx->writeText(x, y, text);
         }
 
         GFX* getGFX() const {
