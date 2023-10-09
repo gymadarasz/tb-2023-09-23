@@ -161,12 +161,12 @@ public:
 class Chart {
 protected:
 
-    const Painter& painter;
+    Painter& painter;
     Color borderColor = white;
     
 public:
 
-    Chart(const Painter& painter): painter(painter) {}
+    Chart(Painter& painter): painter(painter) {}
     
     void drawPoint(int x, int y) {
         painter.point(x, painter.getHeight() - y);
@@ -242,7 +242,7 @@ int main()
         realPoints.push_back(realPoint);
         scale.adaptY(y);
     }
-    frame.setScrollXYMax(scale.projectX(scaleXMax), 500);
+    // frame.setScrollXYMax(scale.projectX(scaleXMax), 500);
 
     scale.project(realPoints, projectedPoints);
 

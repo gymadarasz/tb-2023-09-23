@@ -562,14 +562,14 @@ namespace madlib::graph {
     class Painter {
     public:
         virtual void color(Color) const {};
-        virtual void point(int, int) const {};
-        virtual void rect(int, int, int, int) const {};
-        virtual void fillRect(int, int, int, int) const {};
-        virtual void line(int, int, int, int) const {};
-        virtual void hLine(int, int, int) const {};
-        virtual void vLine(int, int, int) const {};
+        virtual void point(int, int) {};
+        virtual void rect(int, int, int, int) {};
+        virtual void fillRect(int, int, int, int) {};
+        virtual void line(int, int, int, int) {};
+        virtual void hLine(int, int, int) {};
+        virtual void vLine(int, int, int) {};
         virtual void font(const char*) const {};
-        virtual void write(int, int, const string) const {};
+        virtual void write(int, int, const string) {};
         virtual int getWidth() const { return 0; };
         virtual int getHeight() const { return 0; };
     };
@@ -681,34 +681,45 @@ namespace madlib::graph {
             gfx->setColor(color);
         }
 
-        void point(int x, int y) const override {
+        void point(int x, int y) override {
+            setScrollXYMax(x, y);
             prepare(x, y);
             gfx->drawPoint(x, y);
         }
 
-        void rect(int x1, int y1, int x2, int y2) const override {
+        void rect(int x1, int y1, int x2, int y2) override {
+            setScrollXYMax(x1, y1);
+            setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
             gfx->drawRectangle(x1, y1, x2, y2);
         }
 
-        void fillRect(int x1, int y1, int x2, int y2) const override {
+        void fillRect(int x1, int y1, int x2, int y2) override {
+            setScrollXYMax(x1, y1);
+            setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
             gfx->fillRectangle(x1, y1, x2, y2);
         }
 
-        void line(int x1, int y1, int x2, int y2) const override {
+        void line(int x1, int y1, int x2, int y2) override {
+            setScrollXYMax(x1, y1);
+            setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
             gfx->drawLine(x1, y1, x2, y2);
         }
 
-        void hLine(int x1, int y1, int x2) const override {
-            int y2;
+        void hLine(int x1, int y1, int x2) override {
+            int y2 = y1;
+            setScrollXYMax(x1, y1);
+            setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
             gfx->drawHorizontalLine(x1, y1, x2);
         }
 
-        void vLine(int x1, int y1, int y2) const override {
-            int x2;
+        void vLine(int x1, int y1, int y2) override {
+            int x2 = x1;
+            setScrollXYMax(x1, y1);
+            setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
             gfx->drawVerticalLine(x1, y1, y2);
         }
@@ -717,9 +728,9 @@ namespace madlib::graph {
             gfx->setFont(font);
         }
 
-        void write(int x, int y, const string text) const override {
-            int x2, y2;
-            prepare(x, y, x2, y2);
+        void write(int x, int y, const string text) override {
+            setScrollXYMax(x, y);
+            prepare(x, y);
             gfx->writeText(x, y, text);
         }
 
