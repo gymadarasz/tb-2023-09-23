@@ -316,7 +316,7 @@ namespace madlib::graph {
         }
 
         void drawPoint(int x, int y) const {
-            //TODO: ??? if (viewport.containsCompletely(x, y, x, y))
+            if (viewport.containsCompletely(x, y, x, y))
                 XDrawPoint(display, window, gc, x, y);
         }
 
@@ -570,6 +570,8 @@ namespace madlib::graph {
         virtual void vLine(int, int, int) const {};
         virtual void font(const char*) const {};
         virtual void write(int, int, const string) const {};
+        virtual int getWidth() const { return 0; };
+        virtual int getHeight() const { return 0; };
     };
 
 
@@ -623,6 +625,21 @@ namespace madlib::graph {
                 parent->reduceViewport(viewport);
         }
 
+        void prepareSetViewport() const {
+            Rectangle viewport;
+            getViewport(viewport);
+            reduceViewport(viewport);
+            gfx->setViewport(viewport);
+        }
+
+        void prepare(int &x, int &y) const {
+            int leftAndScroll = getLeft() - scrollX;
+            int topAndScroll = getTop() - scrollY;
+            x += leftAndScroll;
+            y += topAndScroll;
+            prepareSetViewport();
+        }
+
         void prepare(int &x1, int &y1, int &x2, int &y2) const {
             int leftAndScroll = getLeft() - scrollX;
             int topAndScroll = getTop() - scrollY;
@@ -630,11 +647,7 @@ namespace madlib::graph {
             y1 += topAndScroll;
             x2 += leftAndScroll;
             y2 += topAndScroll;
-
-            Rectangle viewport;
-            getViewport(viewport);
-            reduceViewport(viewport);
-            gfx->setViewport(viewport);
+            prepareSetViewport();
         }
 
     public:
@@ -669,8 +682,7 @@ namespace madlib::graph {
         }
 
         void point(int x, int y) const override {
-            int x2, y2;
-            prepare(x, y, x2, y2);
+            prepare(x, y);
             gfx->drawPoint(x, y);
         }
 
