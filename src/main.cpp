@@ -178,7 +178,9 @@ public:
 
     void drawPoints(vector<ProjectedPoint> projectedPoints, Color color) {
         painter.color(color);
-        for (const ProjectedPoint& projectedPoint: projectedPoints) drawPoint(projectedPoint);
+        int painterHeight = painter.getHeight();
+        for (const ProjectedPoint& projectedPoint: projectedPoints) 
+            painter.point(projectedPoint.getX(), painterHeight - projectedPoint.getY());
     }
 
     void drawLine(int x1, int y1, int x2, int y2) {
@@ -190,10 +192,11 @@ public:
         if (projectedPoints.empty()) return;
         int x1 = projectedPoints[0].getX();
         int y1 = projectedPoints[0].getY();
+        int painterHeight = painter.getHeight();
         for (const ProjectedPoint& projectedPoint: projectedPoints) {
             int x2 = projectedPoint.getX();
             int y2 = projectedPoint.getY();
-            drawLine(x1, y1, x2, y2);
+            painter.line(x1, painterHeight - y1, x2, painterHeight - y2);
             x1 = x2;
             y1 = y2;
         }
@@ -242,7 +245,6 @@ int main()
         realPoints.push_back(realPoint);
         scale.adaptY(y);
     }
-    // frame.setScrollXYMax(scale.projectX(scaleXMax), 500);
 
     scale.project(realPoints, projectedPoints);
 
