@@ -92,6 +92,20 @@ public:
         if (ymax < y) ymax = y;
     }
 
+    void adaptXY(double x, double y) {
+        adaptX(x);
+        adaptY(y);
+    }
+
+    void adaptXY(RealPoint realPoint) {
+        adaptXY(realPoint.getX(), realPoint.getY());
+    }
+
+    void adaptXY(const vector<RealPoint>& realPoints) {
+        reset();
+        for (const RealPoint realPoint: realPoints) adaptXY(realPoint);
+    }
+
     RealPoint& zoomToX(const RealPoint realPoint, RealPoint& resultRealPoint) {
         resultRealPoint.setX(realPoint.getX() * zoomX);
         return resultRealPoint;
@@ -136,22 +150,26 @@ public:
     }
 
 
-    int projectX(double x) const {
+    int projectX(double x) {
+        adaptX(x);
         return (int)(((x*zoomX - xmin) * width) / (xmax - xmin));
     }
 
-    int projectY(double y) const {
+    int projectY(double y) {
+        adaptY(y);
         return (int)(((y*zoomY - ymin) * height) / (ymax - ymin));
     }
     
-    ProjectedPoint& project(double x, double y, ProjectedPoint& result) const {
+    ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
+        adaptXY(x, y);
         result.setX(projectX(x));
         result.setY(projectY(y));
         return result;
     }
 
-    vector<ProjectedPoint> project(vector<RealPoint> realPoints, vector<ProjectedPoint>& resultProjectedPoints) const {
+    vector<ProjectedPoint> project(const vector<RealPoint>& realPoints, vector<ProjectedPoint>& resultProjectedPoints) {
         resultProjectedPoints.clear();
+        adaptXY(realPoints);
         ProjectedPoint projectedPoint;
         for (const RealPoint& realPoint: realPoints) resultProjectedPoints.push_back(project(realPoint.getX(), realPoint.getY(), projectedPoint));
         return resultProjectedPoints;
@@ -164,9 +182,28 @@ protected:
     Painter& painter;
     Color borderColor = white;
     
+    vector<Scale> scales;
+
 public:
 
-    Chart(Painter& painter): painter(painter) {}
+    Chart(Painter& painter, double zoomX = 1, double zoomY = 1): painter(painter) {
+        addScale(zoomX, zoomY);
+    }
+
+    const vector<Scale>& getScales() const {
+        return scales;
+    }
+
+    Scale& getScaleAt(size_t at) {
+        return scales[at];
+    }
+
+    size_t addScale(double zoomX = 1, double zoomY = 1) {
+        Scale scale(painter.getWidth(), painter.getHeight());
+        scale.setZoomXY(zoomX, zoomY);
+        scales.push_back(scale);
+        return scales.size() - 1;
+    }
     
     void drawPoint(int x, int y) {
         painter.point(x, painter.getHeight() - y);
@@ -176,7 +213,7 @@ public:
         painter.point(projectedPoint.getX(), painter.getHeight() - projectedPoint.getY());
     }
 
-    void drawPoints(vector<ProjectedPoint> projectedPoints, Color color) {
+    void drawPoints(const vector<ProjectedPoint>& projectedPoints, Color color) {
         painter.color(color);
         int painterHeight = painter.getHeight();
         for (const ProjectedPoint& projectedPoint: projectedPoints) 
@@ -187,7 +224,7 @@ public:
         painter.line(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
     }
 
-    void drawLines(vector<ProjectedPoint> projectedPoints, Color color) {
+    void drawLines(const vector<ProjectedPoint>& projectedPoints, Color color) {
         painter.color(color);
         if (projectedPoints.empty()) return;
         int x1 = projectedPoints[0].getX();
@@ -206,47 +243,57 @@ public:
 
 const double scaleXMin = 0;
 const double scaleXMax = 1000;
+const double zoomX = 2;
 
 GFX gfx;
 GUI gui(&gfx, 800, 600);
 Frame frame(&gfx, 50, 50, 700, 500);
-Chart chart(frame);
+Chart chart(frame, zoomX);
 
-vector<ProjectedPoint> projectedPoints;
+vector<ProjectedPoint> projectedPoints0;
+vector<ProjectedPoint> projectedPoints1;
 
 void draw(void* /*context*/) {
     // Painter* painter = (Painter*)context;
-    chart.drawLines(projectedPoints, lightGreen);
-    chart.drawPoints(projectedPoints, white);
+    chart.drawLines(projectedPoints0, lightGreen);
+    chart.drawPoints(projectedPoints0, white);
+
+    chart.drawLines(projectedPoints1, lightCyan);
+}
+
+void generateRealPoints(vector<RealPoint>& realPoints) {
+    realPoints.clear();
+
+    double y_ = randd(0, 5);
+    for (double x = scaleXMin; x <= scaleXMax; x += 1) {
+
+        double y = y_ + randd(0, 5);
+        y_++;
+        if (y_ > 100 + randd(0, 5)) y_ = randd(0, 5);
+
+        RealPoint realPoint(x, y);
+        // scale.adaptXY(realPoint);
+        realPoints.push_back(realPoint);
+    }
 }
 
 int main()
 {
-    const double zoomX = 2;
-
+    // set up UI
     frame.fixed = false;
     frame.setBackgroundColor(black);
-
     gui.child(&frame);
     frame.onDrawHandlers.push_back(draw);
-
-    Scale scale(frame.getWidth(), frame.getHeight());
-    scale.setXMinMax(scaleXMin, scaleXMax);
-    // scale.setYMinMax(0, 100);
-    scale.setZoomX(zoomX);
     
+    // generate data and show on scales
     vector<RealPoint> realPoints;
-    double y_ = randd(0, 5);
-    for (double x = scaleXMin; x <= scaleXMax; x += 1) {
-        double y = y_ + randd(0, 5);
-        y_++;
-        if (y_ > 100 + randd(0, 5)) y_ = randd(0, 5);
-        RealPoint realPoint(x, y);
-        realPoints.push_back(realPoint);
-        scale.adaptY(y);
-    }
+    generateRealPoints(realPoints);
 
-    scale.project(realPoints, projectedPoints);
+    chart.getScaleAt(0).project(realPoints, projectedPoints0);
+
+    chart.addScale();
+    chart.getScaleAt(1).project(realPoints, projectedPoints1);
+    
 
     gui.loop();
     
