@@ -42,16 +42,43 @@ namespace madlib::graph {
         using PointTemplate<int>::PointTemplate;
     };
 
+    enum Shape {
+        DOT, LINE, BOX, FILLED, CANDLE, TEXT
+    };
+
     class Scale {
+    protected:
 
         double xmin, ymin, xmax, ymax, zoomX = 1, zoomY = 1;
-        int width = 0, height = 0;
+        int width, height;
+        Color color;
+        Shape shape;
 
         vector<ProjectedPoint> projectedPoints;
+        vector<string> texts;
 
+        int projectX(double x) {
+            adaptX(x);
+            return (int)(((x*zoomX - xmin) * width) / (xmax - xmin));
+        }
+
+        int projectY(double y) {
+            adaptY(y);
+            return (int)(((y*zoomY - ymin) * height) / (ymax - ymin));
+        }
+        
+        ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
+            adaptXY(x, y);
+            result.setX(projectX(x));
+            result.setY(projectY(y));
+            return result;
+        }
+        
     public:
 
-        Scale(int width, int height): width(width), height(height) {
+        Scale(int width, int height, Color color = lightGreen, Shape shape = LINE): 
+            width(width), height(height), color(color), shape(shape)
+        {
             reset();
         }
 
@@ -63,8 +90,20 @@ namespace madlib::graph {
             projectedPoints.clear();
         }
 
-        vector<ProjectedPoint>& getProjectedPoints() {
+        Color getColor() const {
+            return color;
+        }
+
+        Shape getShape() const {
+            return shape;
+        }
+
+        const vector<ProjectedPoint>& getProjectedPoints() const {
             return projectedPoints;
+        }
+
+        const vector<string>& getTexts() const {
+            return texts;
         }
 
         void setZoomX(double zoomX) {
@@ -157,30 +196,17 @@ namespace madlib::graph {
             return resultRealPoints;
         }
 
-
-        int projectX(double x) {
-            adaptX(x);
-            return (int)(((x*zoomX - xmin) * width) / (xmax - xmin));
-        }
-
-        int projectY(double y) {
-            adaptY(y);
-            return (int)(((y*zoomY - ymin) * height) / (ymax - ymin));
-        }
-        
-        ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
-            adaptXY(x, y);
-            result.setX(projectX(x));
-            result.setY(projectY(y));
-            return result;
-        }
-
         vector<ProjectedPoint>& project(const vector<RealPoint>& realPoints) {
             projectedPoints.clear();
             adaptXY(realPoints);
             ProjectedPoint projectedPoint;
             for (const RealPoint& realPoint: realPoints) projectedPoints.push_back(project(realPoint.getX(), realPoint.getY(), projectedPoint));
             return projectedPoints;
+        }
+
+        void project(const vector<RealPoint>& realPoints, const vector<string> texts) {
+            project(realPoints);
+            this->texts = texts;
         }
     };
 
@@ -191,6 +217,20 @@ namespace madlib::graph {
         Color borderColor = white;
         
         vector<Scale> scales;
+
+        typedef void (*DrawPairFunction)(Painter*, int, int, int, int);
+
+        static void drawPairAsLine(Painter* painter, int x1, int y1, int x2, int y2) {
+            painter->line(x1, y1, x2, y2);
+        }
+
+        static void drawPairAsBox(Painter* painter, int x1, int y1, int x2, int y2) {
+            painter->rect(x1, y1, x2, y2);
+        }
+
+        static void drawPairAsFilled(Painter* painter, int x1, int y1, int x2, int y2) {
+            painter->fillRect(x1, y1, x2, y2);
+        }
 
     public:
 
@@ -203,17 +243,19 @@ namespace madlib::graph {
         }
 
         Scale& getScaleAt(size_t at) {
+            if (scales.size() <= at) throw runtime_error("Invalid index: " + to_string(at));
             return scales[at];
         }
 
-        size_t addScale(double zoomX = 1, double zoomY = 1) {
-            Scale scale(painter.getWidth(), painter.getHeight());
+        size_t addScale(double zoomX = 1, double zoomY = 1, Shape shape = LINE, Color color = white) {
+            Scale scale(painter.getWidth(), painter.getHeight(), color, shape);
             scale.setZoomXY(zoomX, zoomY);
+
             scales.push_back(scale);
             return scales.size() - 1;
         }
         
-        void drawPoint(int x, int y) {
+        void drawPoint(int x, int y) const {
             painter.point(x, painter.getHeight() - y);
         }
 
@@ -221,7 +263,7 @@ namespace madlib::graph {
             painter.point(projectedPoint.getX(), painter.getHeight() - projectedPoint.getY());
         }
 
-        void drawPoints(size_t scale, Color color) {
+        void drawPoints(const size_t scale, const Color color) const {
             vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
@@ -230,26 +272,148 @@ namespace madlib::graph {
                 painter.point(projectedPoint.getX(), painterHeight - projectedPoint.getY());
         }
 
-        void drawLine(int x1, int y1, int x2, int y2) {
+        void drawLine(int x1, int y1, int x2, int y2) const {
             painter.line(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
         }
 
-        void drawLines(size_t scale, Color color) {
+        void drawRect(int x1, int y1, int x2, int y2) const {
+            painter.rect(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
+        }
+
+        void fillRect(int x1, int y1, int x2, int y2) const {
+            painter.fillRect(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
+        }
+
+        void drawPairs(const size_t scale, const Color color, const Shape shape) const {
             vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
             int x1 = projectedPoints[0].getX();
             int y1 = projectedPoints[0].getY();
             int painterHeight = painter.getHeight();
+            DrawPairFunction func;
+            switch (shape) {
+                case LINE:
+                    func = drawPairAsLine;
+                    break;
+                case BOX:
+                    func = drawPairAsBox;
+                    break;
+                case FILLED:
+                    func = drawPairAsFilled;
+                    break;
+                default:
+                    throw runtime_error("Invalid pair shape: " + shape);
+            }
             for (const ProjectedPoint& projectedPoint: projectedPoints) {
                 int x2 = projectedPoint.getX();
                 int y2 = projectedPoint.getY();
-                painter.line(x1, painterHeight - y1, x2, painterHeight - y2);
+                func(&painter, x1, painterHeight - y1, x2, painterHeight - y2);
                 x1 = x2;
                 y1 = y2;
             }
-
         }
+
+        void drawLines(const size_t scale, const Color color) const {
+            drawPairs(scale, color, LINE);
+        }
+
+        void drawRectangles(const size_t scale, const Color color) const {
+            drawPairs(scale, color, BOX);
+        }
+
+        void fillRectangles(const size_t scale, const Color color) const {
+            drawPairs(scale, color, FILLED);
+        }
+
+        void drawCandle(
+            int openX, int openY,
+            int closeX, int closeY,
+            int lowX, int lowY,
+            int highX, int highY
+        ) const {
+            int painterHeight = painter.getHeight();
+            painter.fillRect(openX, painterHeight - openY, closeX, painterHeight - closeY);
+            painter.line(lowX, painterHeight - lowY, highX, painterHeight - highY);
+        }
+
+        void drawCandles(const size_t scale, const Color colorInc = green, const Color colorDec = red) const {
+            vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
+            if (projectedPoints.empty()) return;
+            size_t size = projectedPoints.size();
+            int painterHeight = painter.getHeight();
+            for (size_t i = 0; i < size; i += 4) {
+                ProjectedPoint open = projectedPoints[i];
+                ProjectedPoint close = projectedPoints[i + 1];
+                ProjectedPoint low = projectedPoints[i + 2];
+                ProjectedPoint high = projectedPoints[i + 4];
+                Color color = low.getY() < high.getY() ? colorInc : colorDec;
+                painter.color(color);
+                painter.fillRect(open.getX(), painterHeight - open.getY(), close.getX(), painterHeight - close.getY());
+                painter.line(low.getX(), painterHeight - low.getY(), high.getX(), painterHeight - high.getY());
+            }
+        }
+
+        void writeText(int x, int y, const string text) const {
+            int painterHeight = painter.getHeight();
+            painter.write(x, painterHeight - y, text);
+        }
+
+        void writeTexts(size_t scale, Color color) const {
+            vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
+            if (projectedPoints.empty()) return;
+            vector<string> texts = scales[scale].getTexts();
+            if (texts.empty()) return;
+            int painterHeight = painter.getHeight();
+            painter.color(color);
+            size_t size = projectedPoints.size();
+            for (size_t i = 0; i < size; i++) {
+                painter.write(projectedPoints[i].getX(), painterHeight - projectedPoints[i].getY(), texts[i]);
+            }
+        }
+
+        // -------- 
+
+
+        void draw() const {
+            size_t at = 0;
+            for (const Scale& scale: scales) {
+                const Shape shape = scale.getShape();
+                const Color color = scale.getColor();
+                switch (shape)
+                {
+                    case DOT:
+                        drawPoints(at, color);
+                        break;
+
+                    case LINE:
+                        drawLines(at, color);
+                        break;
+
+                    case BOX:
+                        drawRectangles(at, color);
+                        break;
+
+                    case FILLED:
+                        fillRectangles(at, color);
+                        break;
+
+                    case CANDLE:
+                        drawCandles(at, color);
+                        break;
+
+                    case TEXT:
+                        writeTexts(at, color);
+                        break;
+                    
+                    default:
+                        throw runtime_error("invalid shape type: " + to_string((int)shape));
+                        break;
+                    }
+                at++;
+            }
+        }
+
     };
     
 }

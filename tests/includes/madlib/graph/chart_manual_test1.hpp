@@ -44,21 +44,21 @@ int chart_manual_test1()
 
     GFX gfx;
     chart_manual_test1_gfxPtr = &gfx;
-    GUI gui(&gfx, 800, 600);
-    Frame frame(&gfx, 50, 50, 700, 500);
+    GUI gui(gfx, 800, 600);
+    Frame frame(gfx, 50, 50, 700, 500);
     Chart chart(frame, zoomX);
     chart_manual_test1_chartPtr = &chart;
 
-    Button closeOkBtn(&gfx, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.onTouchHandlers.push_back(chart_manual_test1_close);
-    gui.child(&closeOkBtn);
+    gui.child(closeOkBtn);
 
     // set up UI
     frame.fixed = false;
     frame.setBackgroundColor(black);
-    gui.child(&frame);
+    gui.child(frame);
     frame.onDrawHandlers.push_back(chart_manual_test1_draw);
     
     // generate data and show on scales

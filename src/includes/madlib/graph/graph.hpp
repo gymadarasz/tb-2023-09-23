@@ -591,7 +591,7 @@ namespace madlib::graph {
         vector<onDrawHandler> onDrawHandlers;
 
     protected:
-        GFX* gfx = NULL;
+        GFX& gfx;
 
         const int left, top;
         int width, height;
@@ -629,7 +629,7 @@ namespace madlib::graph {
             Rectangle viewport;
             getViewport(viewport);
             reduceViewport(viewport);
-            gfx->setViewport(viewport);
+            gfx.setViewport(viewport);
         }
 
         void prepare(int &x, int &y) const {
@@ -652,7 +652,7 @@ namespace madlib::graph {
 
     public:
 
-        Area(GFX* gfx, int left, int top, int width, int height, 
+        Area(GFX& gfx, int left, int top, int width, int height, 
             const string text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder,
             const Color backgroundColor = defaultAreaBackgroundColor,
@@ -678,34 +678,34 @@ namespace madlib::graph {
         }
 
         void color(Color color) const override {
-            gfx->setColor(color);
+            gfx.setColor(color);
         }
 
         void point(int x, int y) override {
             setScrollXYMax(x, y);
             prepare(x, y);
-            gfx->drawPoint(x, y);
+            gfx.drawPoint(x, y);
         }
 
         void rect(int x1, int y1, int x2, int y2) override {
             setScrollXYMax(x1, y1);
             setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx->drawRectangle(x1, y1, x2, y2);
+            gfx.drawRectangle(x1, y1, x2, y2);
         }
 
         void fillRect(int x1, int y1, int x2, int y2) override {
             setScrollXYMax(x1, y1);
             setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx->fillRectangle(x1, y1, x2, y2);
+            gfx.fillRectangle(x1, y1, x2, y2);
         }
 
         void line(int x1, int y1, int x2, int y2) override {
             setScrollXYMax(x1, y1);
             setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx->drawLine(x1, y1, x2, y2);
+            gfx.drawLine(x1, y1, x2, y2);
         }
 
         void hLine(int x1, int y1, int x2) override {
@@ -713,7 +713,7 @@ namespace madlib::graph {
             setScrollXYMax(x1, y1);
             setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx->drawHorizontalLine(x1, y1, x2);
+            gfx.drawHorizontalLine(x1, y1, x2);
         }
 
         void vLine(int x1, int y1, int y2) override {
@@ -721,20 +721,20 @@ namespace madlib::graph {
             setScrollXYMax(x1, y1);
             setScrollXYMax(x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx->drawVerticalLine(x1, y1, y2);
+            gfx.drawVerticalLine(x1, y1, y2);
         }
 
         void font(const char* font) const override {
-            gfx->setFont(font);
+            gfx.setFont(font);
         }
 
         void write(int x, int y, const string text) override {
             setScrollXYMax(x, y);
             prepare(x, y);
-            gfx->writeText(x, y, text);
+            gfx.writeText(x, y, text);
         }
 
-        GFX* getGFX() const {
+        GFX& getGFX() const {
             return gfx;
         }
 
@@ -746,12 +746,12 @@ namespace madlib::graph {
             return parent;
         } 
 
-        void child(Area* area) {
-            area->setParent(this);
-            areas.push_back(area);
+        void child(Area& area) {
+            area.setParent(this);
+            areas.push_back(&area);
             setScrollXYMax(
-                area->left + area->width + scrollMargin,
-                area->top + area->height + scrollMargin
+                area.left + area.width + scrollMargin,
+                area.top + area.height + scrollMargin
             );
         }
 
@@ -932,8 +932,8 @@ namespace madlib::graph {
                     break;
 
                 case SIMPLE:
-                    gfx->setColor(getBorderColor());
-                    gfx->drawRectangle(left, top, right, bottom);
+                    gfx.setColor(getBorderColor());
+                    gfx.drawRectangle(left, top, right, bottom);
                     break;
 
                 case BUTTON_RELEASED:
@@ -941,12 +941,12 @@ namespace madlib::graph {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gfx->setColor(borderColorLight);
-                    gfx->drawHorizontalLine(left, top, right);
-                    gfx->drawVerticalLine(left, top, bottom);
-                    gfx->setColor(borderColorDark);
-                    gfx->drawHorizontalLine(left, bottom, right);
-                    gfx->drawVerticalLine(right, top, bottom);
+                    gfx.setColor(borderColorLight);
+                    gfx.drawHorizontalLine(left, top, right);
+                    gfx.drawVerticalLine(left, top, bottom);
+                    gfx.setColor(borderColorDark);
+                    gfx.drawHorizontalLine(left, bottom, right);
+                    gfx.drawVerticalLine(right, top, bottom);
                     break;
 
                 case BUTTON_PUSHED:
@@ -954,12 +954,12 @@ namespace madlib::graph {
                     borderColor = getBackgroundColor();
                     borderColorLight = ColorMixer::light(borderColor);
                     borderColorDark = ColorMixer::dark(borderColor);
-                    gfx->setColor(borderColorLight);
-                    gfx->drawHorizontalLine(left, bottom, right);
-                    gfx->drawVerticalLine(right, top, bottom);
-                    gfx->setColor(borderColorDark);
-                    gfx->drawHorizontalLine(left, top, right);
-                    gfx->drawVerticalLine(left, top, bottom);
+                    gfx.setColor(borderColorLight);
+                    gfx.drawHorizontalLine(left, bottom, right);
+                    gfx.drawVerticalLine(right, top, bottom);
+                    gfx.setColor(borderColorDark);
+                    gfx.drawHorizontalLine(left, top, right);
+                    gfx.drawVerticalLine(left, top, bottom);
                     break;
 
                 default:
@@ -976,7 +976,7 @@ namespace madlib::graph {
 
             Rectangle viewport(left, top, right, bottom);
             reduceViewport(viewport);
-            gfx->setViewport(viewport);
+            gfx.setViewport(viewport);
 
             drawBorder(left, top, right, bottom);
         }
@@ -991,17 +991,17 @@ namespace madlib::graph {
 
             Rectangle viewport(left, top, right, bottom);
             reduceViewport(viewport);
-            gfx->setViewport(viewport);
+            gfx.setViewport(viewport);
             
-            gfx->setColor(getBackgroundColor());
-            gfx->fillRectangle(left, top, right, bottom);
+            gfx.setColor(getBackgroundColor());
+            gfx.fillRectangle(left, top, right, bottom);
 
             drawBorder(left, top, right, bottom);
 
             const string text = getText();
             if(!text.empty()) {
                 int textWidth, textHeight;
-                gfx->getTextSize(text, textWidth, textHeight);
+                gfx.getTextSize(text, textWidth, textHeight);
                 int textLeft;
                 Align textAlign = getTextAlign();
                 switch (textAlign) {
@@ -1023,8 +1023,8 @@ namespace madlib::graph {
                         break;
                 }
                 int textTop = top + ((height - textHeight) / 2) + 16; // ??16
-                gfx->setColor(getTextColor());
-                gfx->writeText(textLeft, textTop, text);
+                gfx.setColor(getTextColor());
+                gfx.writeText(textLeft, textTop, text);
             }
 
             for (Area* area: areas)
@@ -1061,27 +1061,27 @@ namespace madlib::graph {
         }
 
         void init(int width, int height, Color color = GFX::defaultWindowColor) {
-            gfx->openWindow(width, height, color);
-            gfx->eventContext = this;
-            gfx->onResizeHandlers.push_back(resize);
-            gfx->onTouchHandlers.push_back(touch);
-            gfx->onReleaseHandlers.push_back(release);
-            gfx->onMoveHandlers.push_back(move);
+            gfx.openWindow(width, height, color);
+            gfx.eventContext = this;
+            gfx.onResizeHandlers.push_back(resize);
+            gfx.onTouchHandlers.push_back(touch);
+            gfx.onReleaseHandlers.push_back(release);
+            gfx.onMoveHandlers.push_back(move);
         }
 
     public:
-        GUI(GFX* gfx, int width, int height, Color color = GFX::defaultWindowColor):
+        GUI(GFX& gfx, int width, int height, Color color = GFX::defaultWindowColor):
             Area(gfx, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
         {
             init(width, height, color);
         }
 
         ~GUI() {
-            gfx->closeWindow();
+            gfx.closeWindow();
         }
 
         void loop(unsigned long ms = GFX::defaultLoopMs) const {
-            gfx->eventLoop(ms);
+            gfx.eventLoop(ms);
         }
     };
 
@@ -1130,7 +1130,7 @@ namespace madlib::graph {
 
         bool fixed = false;
 
-        Frame(GFX* gfx, int left, int top, int width, int height,
+        Frame(GFX& gfx, int left, int top, int width, int height,
             const Border border = defaultScrollBorder,
             const Color backgroundColor = defaultScrollBackgroundColor
         ): Area(gfx, left, top, width, height, "", CENTER, border, backgroundColor)
@@ -1169,7 +1169,7 @@ namespace madlib::graph {
     public:
         bool sticky = false;
 
-        Button(GFX* gfx, int left, int top, int width, int height, 
+        Button(GFX& gfx, int left, int top, int width, int height, 
             const string text, const Align textAlign = Area::defaultAreaTextAlign
         ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
         {
@@ -1197,7 +1197,7 @@ namespace madlib::graph {
         static const Align defaultLabelTextAlign = Theme::labelTextAlign;
 
     public:
-        Label(GFX* gfx, int left, int top, int width, int height, 
+        Label(GFX& gfx, int left, int top, int width, int height, 
             const string text, const Align textAlign = defaultLabelTextAlign
         ): Area(gfx, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
         {}
