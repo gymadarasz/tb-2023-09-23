@@ -291,6 +291,7 @@ namespace madlib::graph {
 
             setFont(font);
             setColor(color);
+            clearWindow();
 
             eventContext = this;
         }
@@ -1076,7 +1077,7 @@ namespace madlib::graph {
             init(width, height, color);
         }
 
-        ~GUI() {
+        void close() {
             gfx.closeWindow();
         }
 

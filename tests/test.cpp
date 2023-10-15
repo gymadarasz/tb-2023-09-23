@@ -8,6 +8,7 @@
 // Manual tests
 #include "includes/madlib/graph/graph_manual_test1.hpp"
 #include "includes/madlib/graph/chart_manual_test1.hpp"
+#include "includes/madlib/graph/chart_manual_test2.hpp"
 
 using namespace std;
 
@@ -44,6 +45,7 @@ int main() {
     cout << "Manual tests..." << endl;
     graph_manual_test1();
     chart_manual_test1();
+    chart_manual_test2();
 
     cout << "\033[92mAll tests are passed\033[39m" << endl;
 

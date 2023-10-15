@@ -1,7 +1,13 @@
 Commands:
+build and debug the builder:
+./build-dbg.sh (or vscode)
+
+build and debug the main project and/or tests:
 ./build-run.sh
 ./cleanup.sh | ./build-run.sh
 ./cleanup.sh | ./build-run.sh TESTS
+
+test coverage:
 ./cleanup.sh | ./test-cov.sh
 
 Debug:
