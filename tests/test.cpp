@@ -27,6 +27,8 @@ int main() {
     cout << "Testing in progress.." << endl;
 
     Tester::run(VectorTest::testVector_concat);
+    Tester::run(VectorTest::testVector_save_and_load);
+    // Tester::run(VectorTest::testVector_load_and_load_with_reference);
     Tester::run(SystemTest::testSystem_exec);
     Tester::run(FilesTest::testFiles_findByExtension);
     Tester::run(FilesTest::testFiles_findByExtensions);
