@@ -100,6 +100,10 @@ namespace madlib::graph {
             return shape;
         }
 
+        void setShape(Shape shape) {
+            this->shape = shape;
+        }
+
         const vector<ProjectedPoint>& getProjectedPoints() const {
             return projectedPoints;
         }
@@ -348,8 +352,8 @@ namespace madlib::graph {
                 ProjectedPoint open = projectedPoints[i];
                 ProjectedPoint close = projectedPoints[i + 1];
                 ProjectedPoint low = projectedPoints[i + 2];
-                ProjectedPoint high = projectedPoints[i + 4];
-                Color color = low.getY() < high.getY() ? colorInc : colorDec;
+                ProjectedPoint high = projectedPoints[i + 3];
+                Color color = open.getY() < close.getY() ? colorInc : colorDec;
                 painter.color(color);
                 painter.fillRect(open.getX(), painterHeight - open.getY(), close.getX(), painterHeight - close.getY());
                 painter.line(low.getX(), painterHeight - low.getY(), high.getX(), painterHeight - high.getY());
@@ -401,7 +405,7 @@ namespace madlib::graph {
                         break;
 
                     case CANDLE:
-                        drawCandles(at, color);
+                        drawCandles(at);
                         break;
 
                     case TEXT:

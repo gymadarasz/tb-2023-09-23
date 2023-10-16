@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <../Vector.hpp>
+#include <../Tools.hpp>
 
 using namespace std;
 using namespace madlib;
@@ -76,7 +77,7 @@ namespace madlib::trading {
 
     class History {
     public:
-        virtual vector<Candle> fetch(const string symbol, const string interval, const time_t from, const time_t to) const;
+        virtual vector<Candle> fetch(const string symbol, const time_t interval, const time_t from, const time_t to) const;
         
         void save(const string filename, vector<Candle> candles) const {
             Vector::save<Candle>(filename, candles);
@@ -89,6 +90,19 @@ namespace madlib::trading {
         vector<Candle>& load(const string filename, vector<Candle>& data) const {
             return Vector::load<Candle>(filename, data);
         }
+    };
+
+    class MonteCarloHistory: public History {
+    private:
+        double mean = 1000, stddev = 10;
+    public:
+        MonteCarloHistory(double start, double mean, double stddev): mean(mean), stddev(stddev) {}
+        
+        vector<Candle> fetch(const string, const time_t interval, const time_t from, const time_t to) const override {
+            vector<double> rands;
+            const int count = to - from / interval;
+            randd_norm_dist(mean, stddev, count, rands);
+        };        
     };
 
 }
