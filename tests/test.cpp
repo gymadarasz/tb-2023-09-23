@@ -9,6 +9,7 @@
 #include "includes/madlib/graph/graph_manual_test1.hpp"
 #include "includes/madlib/graph/chart_manual_test1.hpp"
 #include "includes/madlib/graph/chart_manual_test2.hpp"
+#include "includes/madlib/graph/chart_manual_test3_candles.hpp"
 
 using namespace std;
 
@@ -48,6 +49,7 @@ int main() {
     graph_manual_test1();
     chart_manual_test1();
     chart_manual_test2();
+    chart_manual_test3_candles();
 
     cout << "\033[92mAll tests are passed\033[39m" << endl;
 
