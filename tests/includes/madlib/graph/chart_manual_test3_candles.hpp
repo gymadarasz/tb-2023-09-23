@@ -6,11 +6,13 @@ using namespace madlib::graph;
 
 GFX* chart_manual_test3_gfxPtr;
 Chart* chart_manual_test3_chartPtr;
+Button* chart_manual_test3_closeOkBtnPtr;
 
 void chart_manual_test3_draw(void* /*context*/) {
     // Painter* painter = (Painter*)context;
     chart_manual_test3_chartPtr->draw();
     // chart_manual_test3_chartPtr->drawCandle(10, 10, 20, 20, 15, 25, 15, 5);
+    chart_manual_test3_closeOkBtnPtr->draw();
 }
 
 void chart_manual_test3_close(void*, unsigned int, int, int) {
@@ -26,10 +28,11 @@ int chart_manual_test3_candles()
     gui.child(frame);
     Chart chart(frame);
     chart_manual_test3_chartPtr = &chart;
-    gui.onDrawHandlers.push_back(chart_manual_test3_draw);
+    frame.onDrawHandlers.push_back(chart_manual_test3_draw);
 
 
-    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    chart_manual_test3_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.onTouchHandlers.push_back(chart_manual_test3_close);
