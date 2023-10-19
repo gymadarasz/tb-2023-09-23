@@ -3,13 +3,13 @@
 #include <vector>
 #include <string>
 
-// /home/gyula/c/tb-2023-09-23/src/includes/madlib/Vector.hpp
-#include </home/gyula/c/tb-2023-09-23/src/includes/madlib/Vector.hpp>
-// #include <../Tools.hpp>
+#include "../Vector.hpp"
+#include "../graph/Chart.hpp"
 
 using namespace std;
 using namespace chrono;
 using namespace madlib;
+using namespace madlib::graph;
 
 namespace madlib::trading {
 
@@ -128,8 +128,6 @@ namespace madlib::trading {
             ms_t currentStart = startTime;
             ms_t currentEnd = currentStart + period;
             while (tradeEventIter != trades.end()) {
-                cout << ms_to_datetime(currentStart) << " - " << ms_to_datetime(currentEnd) << endl;
-                
                 double open = tradeEventIter->price;
                 double close = open;
                 double low = open;
@@ -279,6 +277,59 @@ namespace madlib::trading {
                 cout << "Event: Volume=" << trade.volume 
                     << ", Price=" << trade.price 
                     << ", Timestamp=" << trade.timestamp;
+            }
+        }
+    };
+
+    class TradeHistoryChartPlugin: public ChartPlugin {
+    protected:
+        const bool showCandles, showPrices, showVolumes;
+
+    public:
+        TradeHistoryChartPlugin(
+            const bool showCandles = true, 
+            const bool showPrices = true, 
+            const bool showVolumes = true
+        ):
+            showCandles(showCandles), 
+            showPrices(showPrices), 
+            showVolumes(showVolumes) 
+        {}
+
+        void project(Chart& chart, void* context) const override {
+            TradeHistory* history = (TradeHistory*)context;
+            if (showCandles) {
+                vector<Candle> candles = history->getCandles();
+                vector<RealPoint> candlesRealPoints;
+                for (const Candle& candle: candles) {
+                    double start = static_cast<double>(candle.getStart());
+                    double end = static_cast<double>(candle.getEnd());
+                    double open = candle.getOpen();
+                    double close = candle.getClose();
+                    double low = candle.getLow();
+                    double high = candle.getHigh();
+                    double middle = start + (end - start) / 2;
+                    candlesRealPoints.push_back(RealPoint(start, open));
+                    candlesRealPoints.push_back(RealPoint(end, close));
+                    candlesRealPoints.push_back(RealPoint(middle, low));
+                    candlesRealPoints.push_back(RealPoint(middle, high));
+                }
+                chart.getScaleAt(chart.addScale(CANDLE)).project(candlesRealPoints);
+            }
+
+            if (showPrices || showVolumes) {
+                vector<Trade> trades = history->getTrades();
+                vector<RealPoint> pricesRealPoints;
+                vector<RealPoint> volumesRealPoints;
+                for (const Trade& trade: trades) {
+                    pricesRealPoints.push_back(
+                        RealPoint(static_cast<double>(trade.timestamp), trade.price));
+                    volumesRealPoints.push_back(
+                        RealPoint(static_cast<double>(trade.timestamp), trade.volume));
+                }
+                
+                if (showPrices) chart.getScaleAt(chart.addScale(LINE, orange)).project(pricesRealPoints);
+                if (showVolumes) chart.getScaleAt(chart.addScale(LINE, darkGray)).project(volumesRealPoints);
             }
         }
     };

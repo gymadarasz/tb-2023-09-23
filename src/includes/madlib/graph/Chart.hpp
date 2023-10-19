@@ -260,6 +260,10 @@ namespace madlib::graph {
             scales.push_back(scale);
             return scales.size() - 1;
         }
+
+        size_t addScale(Shape shape, Color color = white) {
+            return addScale(1, 1, shape, color);
+        }
         
         void drawPoint(int x, int y) const {
             painter.point(x, painter.getHeight() - y);
@@ -451,5 +455,12 @@ namespace madlib::graph {
         }
 
     };
-    
+
+    class ChartPlugin {
+    public:
+        virtual void project(Chart& /*chart*/, void* /*context*/) const {
+            throw ERR_UNIMP;
+        };
+    };
+
 }
