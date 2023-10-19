@@ -28,6 +28,8 @@ namespace madlib::trading {
             {"3d", 3 * MS_PER_DAY},
             {"4d", 4 * MS_PER_DAY},
             {"1w", MS_PER_WEEK},
+            {"2w", 2 * MS_PER_WEEK},
+            {"4w", 4 * MS_PER_WEEK},
         };
         return periods[period];
     }
@@ -198,8 +200,7 @@ namespace madlib::trading {
         double volumeStdDeviation;
         double priceMean;
         double priceStdDeviation;
-        double timeMean;
-        double timeStdDeviation;
+        double timeLambda;
         mt19937 gen;
 
         // Function to init events within a specified time range
@@ -211,12 +212,10 @@ namespace madlib::trading {
             while (previousTime < endTime) {
                 Trade trade;
 
-                // Generate elapsed time ensuring it's always greater than 1 ms
-                ms_t elapsed_time = 0;
-                while (elapsed_time < 1) {
-                    normal_distribution<double> timeDistribution(timeMean, timeStdDeviation);
-                    elapsed_time = (ms_t)abs(timeDistribution(gen));
-                }
+
+                // Generate elapsed time using exponential distribution
+                exponential_distribution<double> timeDistribution(1.0 / timeLambda);
+                ms_t elapsed_time = ((ms_t)timeDistribution(gen)) + 1;
 
                 // Accumulate elapsed time to calculate the timestamp
                 previousTime += elapsed_time;
@@ -252,14 +251,13 @@ namespace madlib::trading {
             const string& symbol, ms_t startTime, ms_t endTime, ms_t period,  
             double volumeMean, double volumeStdDeviation, 
             double priceMean, double priceStdDeviation,
-            double timeMean, double timeStdDeviation,
+            double timeLambda,
             unsigned int seed = random_device()() // Add a seed parameter with a default value
         ):
             TradeHistory(symbol, startTime, endTime, period),
             volumeMean(volumeMean), volumeStdDeviation(volumeStdDeviation),
             priceMean(priceMean), priceStdDeviation(priceStdDeviation),
-            timeMean(timeMean), timeStdDeviation(timeStdDeviation),
-            // startTime(startTime), endTime(endTime), period(period),
+            timeLambda(timeLambda),
             gen(seed)
         {
             // Initialize the random number generator
@@ -293,7 +291,7 @@ namespace madlib::trading {
         ):
             showCandles(showCandles), 
             showPrices(showPrices), 
-            showVolumes(showVolumes) 
+            showVolumes(showVolumes)
         {}
 
         void project(Chart& chart, void* context) const override {

@@ -53,7 +53,7 @@ int graph_manual_test1()
 {
     GFX gfx;
     graph_manual_test1_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600);
+    GUI gui(gfx, 800, 600, "graph_manual_test1");
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
     Button button(gfx, 10, 10, 80, 30, "Hello");
     Button button2(gfx, 110, 10, 80, 30, "Click!");

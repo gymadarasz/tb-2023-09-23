@@ -51,7 +51,7 @@ namespace madlib::graph {
     class Scale {
     protected:
 
-        double xmin, ymin, xmax, ymax, zoomX = 1, zoomY = 1;
+        double xmin, ymin, xmax, ymax;
         int width, height;
         Color color;
         Shape shape;
@@ -59,20 +59,20 @@ namespace madlib::graph {
         vector<ProjectedPoint> projectedPoints;
         vector<string> texts;
 
-        int projectX(double x) {
-            adaptX(x);
-            return (int)(((x*zoomX - xmin) * width) / (xmax - xmin));
+        int projectX(double x, bool adapt = true) {
+            if (adapt) adaptX(x);
+            return (int)(((x - xmin) * width) / (xmax - xmin));
         }
 
-        int projectY(double y) {
-            adaptY(y);
-            return (int)(((y*zoomY - ymin) * height) / (ymax - ymin));
+        int projectY(double y, bool adapt = true) {
+            if (adapt) adaptY(y);
+            return (int)(((y - ymin) * height) / (ymax - ymin));
         }
         
-        ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
-            adaptXY(x, y);
-            result.setX(projectX(x));
-            result.setY(projectY(y));
+        ProjectedPoint& project(double x, double y, ProjectedPoint& result, bool adapt = true) {
+            if (adapt) adaptXY(x, y);
+            result.setX(projectX(x, adapt));
+            result.setY(projectY(y, adapt));
             return result;
         }
         
@@ -112,19 +112,6 @@ namespace madlib::graph {
             return texts;
         }
 
-        void setZoomX(double zoomX) {
-            this->zoomX = zoomX;
-        }
-
-        void setZoomY(double zoomY) {
-            this->zoomY = zoomY;
-        }
-
-        void setZoomXY(double zoomX, double zoomY) {
-            this->zoomX = zoomX;
-            this->zoomY = zoomY;
-        }
-
         void setXMinMax(double min, double max) {
             xmin = min;
             xmax = max;
@@ -159,54 +146,11 @@ namespace madlib::graph {
             for (const RealPoint realPoint: realPoints) adaptXY(realPoint);
         }
 
-        RealPoint& zoomToX(const RealPoint realPoint, RealPoint& resultRealPoint) {
-            resultRealPoint.setX(realPoint.getX() * zoomX);
-            return resultRealPoint;
-        }
-
-        RealPoint& zoomToY(const RealPoint realPoint, RealPoint& resultRealPoint) {
-            resultRealPoint.setY(realPoint.getY() * zoomY);
-            return resultRealPoint;
-        }
-
-        RealPoint& zoomToXY(const RealPoint realPoint, RealPoint& resultRealPoint) {
-            resultRealPoint.setX(realPoint.getX() * zoomX);
-            resultRealPoint.setY(realPoint.getY() * zoomY);
-            return resultRealPoint;
-        }
-
-        vector<RealPoint>& zoomToX(const vector<RealPoint> realPoints, vector<RealPoint>& resultRealPoints) {
-            resultRealPoints.clear();
-            for (const RealPoint& realPoint: realPoints) {
-                RealPoint resultRealPoint(realPoint.getX() * zoomX, realPoint.getY());
-                resultRealPoints.push_back(resultRealPoint);
-            }
-            return resultRealPoints;
-        }
-
-        vector<RealPoint>& zoomToY(const vector<RealPoint> realPoints, vector<RealPoint>& resultRealPoints) {
-            resultRealPoints.clear();
-            for (const RealPoint& realPoint: realPoints) {
-                RealPoint resultRealPoint(realPoint.getY(), realPoint.getY() * zoomY);
-                resultRealPoints.push_back(resultRealPoint);
-            }
-            return resultRealPoints;
-        }
-
-        vector<RealPoint>& zoomToXY(const vector<RealPoint> realPoints, vector<RealPoint>& resultRealPoints) {
-            resultRealPoints.clear();
-            for (const RealPoint& realPoint: realPoints) {
-                RealPoint resultRealPoint(realPoint.getX() * zoomX, realPoint.getY() * zoomY);
-                resultRealPoints.push_back(resultRealPoint);
-            }
-            return resultRealPoints;
-        }
-
         vector<ProjectedPoint>& project(const vector<RealPoint>& realPoints) {
             projectedPoints.clear();
             adaptXY(realPoints);
             ProjectedPoint projectedPoint;
-            for (const RealPoint& realPoint: realPoints) projectedPoints.push_back(project(realPoint.getX(), realPoint.getY(), projectedPoint));
+            for (const RealPoint& realPoint: realPoints) projectedPoints.push_back(project(realPoint.getX(), realPoint.getY(), projectedPoint, false));
             return projectedPoints;
         }
 
@@ -217,6 +161,11 @@ namespace madlib::graph {
     };
 
     class Chart {
+    public:
+
+        static const Shape defaultChartShape = LINE;
+        static const Color defaultChartShapeColor = white;
+
     protected:
 
         Painter& painter;
@@ -240,29 +189,22 @@ namespace madlib::graph {
 
     public:
 
-        Chart(Painter& painter, double zoomX = 1, double zoomY = 1): painter(painter) {
-            addScale(zoomX, zoomY);
-        }
+        Chart(Painter& painter): painter(painter)
+        {}
 
         const vector<Scale>& getScales() const {
             return scales;
         }
 
         Scale& getScaleAt(size_t at) {
-            if (scales.size() <= at) throw runtime_error("Invalid index: " + to_string(at));
+            if (scales.size() <= at) throw runtime_error("Invalid scale index: " + to_string(at));
             return scales[at];
         }
 
-        size_t addScale(double zoomX = 1, double zoomY = 1, Shape shape = LINE, Color color = white) {
+        size_t addScale(Shape shape = LINE, Color color = defaultChartShapeColor) {
             Scale scale(painter.getWidth(), painter.getHeight(), color, shape);
-            scale.setZoomXY(zoomX, zoomY);
-
             scales.push_back(scale);
             return scales.size() - 1;
-        }
-
-        size_t addScale(Shape shape, Color color = white) {
-            return addScale(1, 1, shape, color);
         }
         
         void drawPoint(int x, int y) const {

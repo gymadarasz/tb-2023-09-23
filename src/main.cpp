@@ -25,8 +25,8 @@ int main()
 {
     GFX gfx;
     chart_manual_test4_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600);
-    Frame frame(gfx, 10, 10, 780, 580, BUTTON_PUSHED, black);
+    GUI gui(gfx, 1600, 600);
+    Frame frame(gfx, 10, 10, 1580, 580, BUTTON_PUSHED, black);
     gui.child(frame);
     Chart chart(frame);
     chart_manual_test4_chartPtr = &chart;
@@ -43,23 +43,22 @@ int main()
 
     // Define parameters and desired time range
     const string symbol = "MONTECARLO";
-    const double volumeMean = 50;  // Initial volume
-    const double volumeStdDeviation = 5;
+    const double volumeMean = 100;  // Initial volume
+    const double volumeStdDeviation = 10;
     const double priceMean = 100;  // Initial price
-    const double priceStdDeviation = 5;
-    const double timeMean = 60000;  // Mean time in milliseconds (60 seconds)
-    const double timeStdDeviation = 20000;  // Time standard deviation in milliseconds (20 seconds)
-    const ms_t startTime = datetime_to_ms("2023-01-01"); // Current time as the start time
-    const ms_t endTime = datetime_to_ms("2023-01-02"); // 300 seconds in the future
+    const double priceStdDeviation = 10;
+    const double timeLambda = MS_PER_MIN;
+    const ms_t startTime = datetime_to_ms("2021-01-01"); // Current time as the start time
+    const ms_t endTime = datetime_to_ms("2021-01-07"); // 300 seconds in the future
     const ms_t period = period_to_ms("1h");
-    const unsigned int seed = 3;
+    const unsigned int seed = 6;
 
     // Create a MonteCarloHistory object with the specified parameters
     MonteCarloHistory history(
         symbol, startTime, endTime, period,
         volumeMean, volumeStdDeviation,
         priceMean, priceStdDeviation,
-        timeMean, timeStdDeviation, seed
+        timeLambda, seed
     );
 
     TradeHistoryChartPlugin candlesPlugin;

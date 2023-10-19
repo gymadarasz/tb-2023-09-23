@@ -131,6 +131,7 @@ namespace madlib::graph {
     struct Theme {
         static const unsigned long eventLoopMs = 100;
         static const Color windowColor = gray;
+        static const char* windowTitle;
         static const char* windowFont;
         static const Align textAlign = CENTER;
         static const Color borderColor = gray;
@@ -141,6 +142,7 @@ namespace madlib::graph {
         static const int textPadding = 10;
         static const Align labelTextAlign = LEFT;
     };
+    const char* Theme::windowTitle = "graph";
     const char* Theme::windowFont = "10x20";
 
     class EventHandler {
@@ -247,6 +249,7 @@ namespace madlib::graph {
 
         static const unsigned long defaultLoopMs = Theme::eventLoopMs;
         static const Color defaultWindowColor = Theme::windowColor;
+        static const char* defaultWindowTitle;
         static const char* defaultWindowFont;
 
     protected:
@@ -270,7 +273,7 @@ namespace madlib::graph {
             this->viewport = viewport;
         }
 
-        void openWindow(int width, int height, Color color = defaultWindowColor, const char* font = defaultWindowFont) {
+        void openWindow(int width, int height, const char* title = defaultWindowTitle, Color color = defaultWindowColor, const char* font = defaultWindowFont) {
             // Initialize the X display
             if (!display) display = XOpenDisplay(NULL);
             if (!display) throw runtime_error("Unable to open display.");
@@ -280,6 +283,9 @@ namespace madlib::graph {
             // Create the window
             window = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, (unsigned)width, (unsigned)height, 1, color, color);
             XMapWindow(display, window);
+
+            // Set the window title
+            XStoreName(display, window, title);
 
             // Create a graphics context
             gc = XCreateGC(display, window, 0, NULL);
@@ -557,6 +563,7 @@ namespace madlib::graph {
     };
 
     Display* GFX::display = NULL;
+    const char* GFX::defaultWindowTitle = Theme::windowTitle;
     const char* GFX::defaultWindowFont = Theme::windowFont;
 
 
@@ -1061,8 +1068,8 @@ namespace madlib::graph {
             that->propagateMove(x, y);
         }
 
-        void init(int width, int height, Color color = GFX::defaultWindowColor) {
-            gfx.openWindow(width, height, color);
+        void init(int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor) {
+            gfx.openWindow(width, height, title, color);
             gfx.eventContext = this;
             gfx.onResizeHandlers.push_back(resize);
             gfx.onTouchHandlers.push_back(touch);
@@ -1071,10 +1078,10 @@ namespace madlib::graph {
         }
 
     public:
-        GUI(GFX& gfx, int width, int height, Color color = GFX::defaultWindowColor):
+        GUI(GFX& gfx, int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor):
             Area(gfx, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
         {
-            init(width, height, color);
+            init(width, height, title, color);
         }
 
         void close() {

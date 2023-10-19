@@ -25,7 +25,7 @@ int chart_manual_test4_history()
 {
     GFX gfx;
     chart_manual_test4_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600);
+    GUI gui(gfx, 800, 600, "chart_manual_test4_history");
     Frame frame(gfx, 10, 10, 780, 580, BUTTON_PUSHED, black);
     gui.child(frame);
     Chart chart(frame);
@@ -47,8 +47,7 @@ int chart_manual_test4_history()
     const double volumeStdDeviation = 5;
     const double priceMean = 100;  // Initial price
     const double priceStdDeviation = 5;
-    const double timeMean = 60000;  // Mean time in milliseconds (60 seconds)
-    const double timeStdDeviation = 20000;  // Time standard deviation in milliseconds (20 seconds)
+    const double timeLamda = MS_PER_MIN;  // Mean time in milliseconds (60 seconds)
     const ms_t startTime = datetime_to_ms("2023-01-01"); // Current time as the start time
     const ms_t endTime = datetime_to_ms("2023-01-02"); // 300 seconds in the future
     const ms_t period = period_to_ms("1h");
@@ -59,7 +58,7 @@ int chart_manual_test4_history()
         symbol, startTime, endTime, period,
         volumeMean, volumeStdDeviation,
         priceMean, priceStdDeviation,
-        timeMean, timeStdDeviation, seed
+        timeLamda, seed
     );
 
     TradeHistoryChartPlugin candlesPlugin;

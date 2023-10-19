@@ -26,7 +26,7 @@ int chart_manual_test3_candles()
 {
     GFX gfx;
     chart_manual_test3_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600);
+    GUI gui(gfx, 800, 600, "chart_manual_test3_candles");
     Frame frame(gfx, 10, 10, 780, 580, BUTTON_PUSHED, black);
     gui.child(frame);
     Chart chart(frame);
@@ -68,9 +68,10 @@ int chart_manual_test3_candles()
         candlesRealPoints.push_back(RealPoint((double)middle, low));
         candlesRealPoints.push_back(RealPoint((double)middle, high));
     }
+    chart.addScale();
     chart.getScaleAt(0).setShape(CANDLE);
     chart.getScaleAt(0).project(candlesRealPoints);
-    chart.addScale(1, 1, LINE, orange);
+    chart.addScale(LINE, orange);
     chart.getScaleAt(1).project(pricesRealPoints);
 
     gui.loop();

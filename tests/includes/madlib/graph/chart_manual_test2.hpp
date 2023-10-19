@@ -22,11 +22,12 @@ int chart_manual_test2()
 {
     GFX gfx;
     chart_manual_test2_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, black);
+    GUI gui(gfx, 800, 600, "chart_manual_test2", black);
     Chart chart(gui);
+    chart.addScale();
     chart_manual_test2_chartPtr = &chart;
     gui.onDrawHandlers.push_back(chart_manual_test2_draw);
-    chart.addScale(1, 1, TEXT, black);
+    chart.addScale(TEXT, black);
 
 
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");

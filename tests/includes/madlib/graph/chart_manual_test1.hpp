@@ -42,13 +42,11 @@ void chart_manual_test1_close(void*, unsigned int, int, int) {
 
 int chart_manual_test1()
 {
-    const double zoomX = 2;
-
     GFX gfx;
     chart_manual_test1_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600);
+    GUI gui(gfx, 800, 600, "chart_manual_test1");
     Frame frame(gfx, 50, 50, 700, 500);
-    Chart chart(frame, zoomX);
+    Chart chart(frame);
     chart_manual_test1_chartPtr = &chart;
 
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
@@ -67,10 +65,8 @@ int chart_manual_test1()
     vector<RealPoint> realPoints;
     chart_manual_test1_generateRealPoints(realPoints);
 
-    chart.getScaleAt(0).project(realPoints);
-
-    chart.addScale();
-    chart.getScaleAt(1).project(realPoints);
+    chart.getScaleAt(chart.addScale()).project(realPoints);
+    chart.getScaleAt(chart.addScale()).project(realPoints);
     
 
     gui.loop();
