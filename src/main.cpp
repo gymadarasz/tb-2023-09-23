@@ -21,6 +21,53 @@ void chart_manual_test4_close(void*, unsigned int, int, int) {
     chart_manual_test4_gfxPtr->close = true;
 }
 
+class ChartPlugin {
+public:
+    virtual void show(Chart& /*chart*/, void* /*context*/) const {
+        throw ERR_UNIMP;
+    };
+};
+
+class CandlesChartPlugin: public ChartPlugin {
+public:
+    void show(Chart& chart, void* context) const override {
+        TradeHistory* history = (TradeHistory*)context;
+        vector<Candle> candles = history->getCandles();
+        vector<RealPoint> candlesRealPoints;
+        for (const Candle& candle: candles) {
+            double start = static_cast<double>(candle.getStart());
+            double end = static_cast<double>(candle.getEnd());
+            double open = candle.getOpen();
+            double close = candle.getClose();
+            double low = candle.getLow();
+            double high = candle.getHigh();
+            double middle = start + (end - start) / 2;
+            candlesRealPoints.push_back(RealPoint(start, open));
+            candlesRealPoints.push_back(RealPoint(end, close));
+            candlesRealPoints.push_back(RealPoint(middle, low));
+            candlesRealPoints.push_back(RealPoint(middle, high));
+        }
+
+        vector<Trade> trades = history->getTrades();
+        vector<RealPoint> pricesRealPoints;
+        vector<RealPoint> volumesRealPoints;
+        for (const Trade& trade: trades) {
+            pricesRealPoints.push_back(
+                RealPoint(static_cast<double>(trade.timestamp), trade.price));
+            volumesRealPoints.push_back(
+                RealPoint(static_cast<double>(trade.timestamp), trade.volume));
+        }
+        
+
+        chart.getScaleAt(0).setShape(CANDLE);
+        chart.getScaleAt(0).project(candlesRealPoints);
+        chart.addScale(1, 1, LINE, orange);
+        chart.getScaleAt(1).project(pricesRealPoints);
+        chart.addScale(1, 1, LINE, darkGray);
+        chart.getScaleAt(2).project(volumesRealPoints);
+    }
+};
+
 int main()
 {
     GFX gfx;
@@ -42,56 +89,28 @@ int main()
 
 
     // Define parameters and desired time range
-    double volumeMean = 50;  // Initial volume
-    double volumeStdDeviation = 5;
-    double priceMean = 100;  // Initial price
-    double priceStdDeviation = 5;
-    double timeMean = 60000;  // Mean time in milliseconds (60 seconds)
-    double timeStdDeviation = 20000;  // Time standard deviation in milliseconds (20 seconds)
-    ms_t startTime = datetime_to_ms("2023-01-01"); // Current time as the start time
-    ms_t endTime = datetime_to_ms("2023-01-02"); // 300 seconds in the future
-    ms_t period = period_to_ms("1h");
-    unsigned int seed = 2;
+    const string symbol = "MONTE-CARLO";
+    const double volumeMean = 50;  // Initial volume
+    const double volumeStdDeviation = 5;
+    const double priceMean = 100;  // Initial price
+    const double priceStdDeviation = 5;
+    const double timeMean = 60000;  // Mean time in milliseconds (60 seconds)
+    const double timeStdDeviation = 20000;  // Time standard deviation in milliseconds (20 seconds)
+    const ms_t startTime = datetime_to_ms("2023-01-01"); // Current time as the start time
+    const ms_t endTime = datetime_to_ms("2023-01-02"); // 300 seconds in the future
+    const ms_t period = period_to_ms("1h");
+    const unsigned int seed = 3;
 
     // Create a MonteCarloHistory object with the specified parameters
     MonteCarloHistory history(
-        volumeMean, volumeStdDeviation, priceMean, priceStdDeviation,
-        timeMean, timeStdDeviation, startTime, endTime, period, seed
+        symbol, startTime, endTime, period,
+        volumeMean, volumeStdDeviation,
+        priceMean, priceStdDeviation,
+        timeMean, timeStdDeviation, seed
     );
-    vector<Candle> candles = history.getCandles();
 
-    vector<RealPoint> candlesRealPoints;
-    for (const Candle& candle: candles) {
-        double start = static_cast<double>(candle.getStart());
-        double end = static_cast<double>(candle.getEnd());
-        double open = candle.getOpen();
-        double close = candle.getClose();
-        double low = candle.getLow();
-        double high = candle.getHigh();
-        double middle = start + (end - start) / 2;
-        candlesRealPoints.push_back(RealPoint(start, open));
-        candlesRealPoints.push_back(RealPoint(end, close));
-        candlesRealPoints.push_back(RealPoint(middle, low));
-        candlesRealPoints.push_back(RealPoint(middle, high));
-    }
-
-    vector<TradeEvent> tradeEvents = history.getTradeEvents();
-    vector<RealPoint> pricesRealPoints;
-    vector<RealPoint> volumesRealPoints;
-    for (const TradeEvent& tradeEvent: tradeEvents) {
-        pricesRealPoints.push_back(
-            RealPoint(static_cast<double>(tradeEvent.timestamp), tradeEvent.price));
-        volumesRealPoints.push_back(
-            RealPoint(static_cast<double>(tradeEvent.timestamp), tradeEvent.volume));
-    }
-    
-
-    chart.getScaleAt(0).setShape(CANDLE);
-    chart.getScaleAt(0).project(candlesRealPoints);
-    chart.addScale(1, 1, LINE, orange);
-    chart.getScaleAt(1).project(pricesRealPoints);
-    chart.addScale(1, 1, LINE, darkGray);
-    chart.getScaleAt(2).project(volumesRealPoints);
+    CandlesChartPlugin candlesPlugin;
+    candlesPlugin.show(chart, &history);
 
     gui.loop();
     

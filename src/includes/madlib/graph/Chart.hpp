@@ -343,8 +343,9 @@ namespace madlib::graph {
         ) const {
             Color color = (openY < closeY) ? colorInc : colorDec;
             painterHeight = painterHeight ? painterHeight : painter.getHeight();
-            painter.color(color);
+            painter.color(ColorMixer::light(color));
             painter.vLine(lowX, painterHeight - lowY, painterHeight - highY);
+            painter.color(color);
             if (openY == closeY) {
                 painter.hLine(openX, painterHeight - openY, closeX);
                 return;

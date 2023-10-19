@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <string>
-// #include <../Vector.hpp>
+
+// /home/gyula/c/tb-2023-09-23/src/includes/madlib/Vector.hpp
+#include </home/gyula/c/tb-2023-09-23/src/includes/madlib/Vector.hpp>
 // #include <../Tools.hpp>
 
 using namespace std;
@@ -36,8 +38,8 @@ namespace madlib::trading {
         ms_t start, end; // ms
     public:
         Candle(
-            double open, double close, double low, double high, double volume, 
-            ms_t start, ms_t end
+            double open = 0, double close = 0, double low = 0, double high = 0, double volume = 0, 
+            ms_t start = 0, ms_t end = 0
         ):
             open(open), close(close), low(low), high(high), volume(volume), 
             start(start), end(end) {}
@@ -99,55 +101,33 @@ namespace madlib::trading {
         }
     };
 
-    // class History {
-    // public:
-    //     virtual vector<Candle> fetch(
-    //         const string symbol, 
-    //         const ms_t interval, 
-    //         const ms_t from, 
-    //         const ms_t to) const;
-        
-    //     void save(const string filename, vector<Candle> candles) const {
-    //         Vector::save<Candle>(filename, candles);
-    //     }
-        
-    //     vector<Candle> load(const string filename) const {
-    //         return Vector::load<Candle>(filename);
-    //     }
-        
-    //     vector<Candle>& load(const string filename, vector<Candle>& data) const {
-    //         return Vector::load<Candle>(filename, data);
-    //     }
-    // };
-
     // Define a struct for trade event data
-    struct TradeEvent {
+    struct Trade {
         double volume;
         double price;
         ms_t timestamp; // ms
     };
 
-    class MonteCarloHistory {
+    class TradeHistory {
     protected:
-        double volumeMean;
-        double volumeStdDeviation;
-        double priceMean;
-        double priceStdDeviation;
-        double timeMean;
-        double timeStdDeviation;
-        ms_t startTime; // ms
-        ms_t endTime; // ms
-        ms_t period;
-        mt19937 gen;
-        vector<TradeEvent> tradeEvents;
+
+        const string& symbol;
+        const ms_t startTime; // ms
+        const ms_t endTime; // ms
+        const ms_t period;
+        vector<Trade> trades;
         vector<Candle> candles;
 
-        void generateCandles() {            
-            auto tradeEventIter = tradeEvents.begin();
+        virtual void initTrades() {
+            throw ERR_UNIMP;
+        };
+
+        virtual void initCandles() {
+            auto tradeEventIter = trades.begin();
             
             ms_t currentStart = startTime;
             ms_t currentEnd = currentStart + period;
-            while (tradeEventIter != tradeEvents.end()) {
+            while (tradeEventIter != trades.end()) {
                 cout << ms_to_datetime(currentStart) << " - " << ms_to_datetime(currentEnd) << endl;
                 
                 double open = tradeEventIter->price;
@@ -156,7 +136,7 @@ namespace madlib::trading {
                 double high = open;
                 double volume = 0.0;
                 
-                while (tradeEventIter != tradeEvents.end() && tradeEventIter->timestamp >= currentStart && tradeEventIter->timestamp < currentEnd) {
+                while (tradeEventIter != trades.end() && tradeEventIter->timestamp >= currentStart && tradeEventIter->timestamp < currentEnd) {
                     close = tradeEventIter->price;
                     low = low < close ? low : close;
                     high = high > close ? high : close;
@@ -175,14 +155,63 @@ namespace madlib::trading {
             }
         }
 
-        // Function to generate events within a specified time range
-        void generateTradeEvents() {
+    public:
+
+        TradeHistory(
+            const string& symbol, 
+            const ms_t startTime, 
+            const ms_t endTime, 
+            const ms_t period
+        ): 
+            symbol(symbol), 
+            startTime(startTime), 
+            endTime(endTime), 
+            period(period)
+        {
+            // initTrades();
+            // initCandles();
+        }
+
+        virtual vector<Trade> getTrades() const {
+            return trades;
+        }
+
+        virtual vector<Candle> getCandles() const {
+            return candles;
+        }
+        
+        virtual void saveCandles(const string filename, vector<Candle> candles) const {
+            Vector::save<Candle>(filename, candles);
+        }
+        
+        virtual vector<Candle> loadCandles(const string filename) const {
+            return Vector::load<Candle>(filename);
+        }
+        
+        virtual vector<Candle>& loadCandles(const string filename, vector<Candle>& data) const {
+            return Vector::load<Candle>(filename, data);
+        }
+    };
+
+
+    class MonteCarloHistory: public TradeHistory {
+    protected:
+        double volumeMean;
+        double volumeStdDeviation;
+        double priceMean;
+        double priceStdDeviation;
+        double timeMean;
+        double timeStdDeviation;
+        mt19937 gen;
+
+        // Function to init events within a specified time range
+        void initTrades() override {
             ms_t previousTime = startTime;
             double previousPrice = priceMean;
             double previousVolume = volumeMean;
 
             while (previousTime < endTime) {
-                TradeEvent tradeEvent;
+                Trade trade;
 
                 // Generate elapsed time ensuring it's always greater than 1 ms
                 ms_t elapsed_time = 0;
@@ -199,64 +228,57 @@ namespace madlib::trading {
                 double priceMovement = priceDistribution(gen);
 
                 // Calculate the new price based on the previous price and movement
-                tradeEvent.price = previousPrice + priceMovement;
+                trade.price = previousPrice + priceMovement;
 
                 // Generate volume movement
                 normal_distribution<double> volumeDistribution(0, volumeStdDeviation);
                 double volumeMovement = volumeDistribution(gen);
 
                 // Calculate the new volume based on the previous volume and movement
-                tradeEvent.volume = previousVolume + volumeMovement;
+                trade.volume = previousVolume + volumeMovement;
 
                 if (previousTime >= endTime) {
                     break;  // Stop generating events if we've reached or passed the end time
                 }
 
-                tradeEvent.timestamp = previousTime;
-                tradeEvents.push_back(tradeEvent);
+                trade.timestamp = previousTime;
+                trades.push_back(trade);
 
-                previousPrice = tradeEvent.price;  // Update the previous_price
-                previousVolume = tradeEvent.volume;  // Update the previous_volume
+                previousPrice = trade.price;  // Update the previous_price
+                previousVolume = trade.volume;  // Update the previous_volume
             }
         }
 
     public:
         MonteCarloHistory(
+            const string& symbol, ms_t startTime, ms_t endTime, ms_t period,  
             double volumeMean, double volumeStdDeviation, 
             double priceMean, double priceStdDeviation,
             double timeMean, double timeStdDeviation,
-            ms_t startTime, ms_t endTime, ms_t period,
-            unsigned int seed = std::random_device()() // Add a seed parameter with a default value
+            unsigned int seed = random_device()() // Add a seed parameter with a default value
         ):
+            TradeHistory(symbol, startTime, endTime, period),
             volumeMean(volumeMean), volumeStdDeviation(volumeStdDeviation),
             priceMean(priceMean), priceStdDeviation(priceStdDeviation),
             timeMean(timeMean), timeStdDeviation(timeStdDeviation),
-            startTime(startTime), endTime(endTime), period(period),
+            // startTime(startTime), endTime(endTime), period(period),
             gen(seed)
         {
             // Initialize the random number generator
             // random_device rd;
             // gen = mt19937(rd());
             
-            generateTradeEvents();
-            generateCandles();
-        }
-
-        vector<TradeEvent> getTradeEvents() const {
-            return tradeEvents;
-        }
-
-        vector<Candle> getCandles() const {
-            return candles;
+            initTrades();
+            initCandles();
         }
         
 
         // Function to print the generated events
         void PrintEvents() {
-            for (const TradeEvent& tradeEvent : tradeEvents) {
-                cout << "Event: Volume=" << tradeEvent.volume 
-                    << ", Price=" << tradeEvent.price 
-                    << ", Timestamp=" << tradeEvent.timestamp;
+            for (const Trade& trade : trades) {
+                cout << "Event: Volume=" << trade.volume 
+                    << ", Price=" << trade.price 
+                    << ", Timestamp=" << trade.timestamp;
             }
         }
     };

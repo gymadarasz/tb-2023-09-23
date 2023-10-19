@@ -14,6 +14,8 @@
 using namespace std;
 using namespace chrono;
 
+#define ERR_UNIMP runtime_error("Unimplemented");
+
 namespace madlib {
 
     typedef long ms_t;
