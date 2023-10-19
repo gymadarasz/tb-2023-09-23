@@ -336,11 +336,39 @@ namespace madlib::graph {
             int openX, int openY,
             int closeX, int closeY,
             int lowX, int lowY,
-            int highX, int highY
+            int highY,
+            const Color colorInc = green,
+            const Color colorDec = red,
+            int painterHeight = 0
         ) const {
-            int painterHeight = painter.getHeight();
+            Color color = (openY < closeY) ? colorInc : colorDec;
+            painterHeight = painterHeight ? painterHeight : painter.getHeight();
+            painter.color(color);
+            painter.vLine(lowX, painterHeight - lowY, painterHeight - highY);
+            if (openY == closeY) {
+                painter.hLine(openX, painterHeight - openY, closeX);
+                return;
+            }
             painter.fillRect(openX, painterHeight - openY, closeX, painterHeight - closeY);
-            painter.line(lowX, painterHeight - lowY, highX, painterHeight - highY);
+        }
+
+        void drawCandle(
+            ProjectedPoint open,
+            ProjectedPoint close,
+            ProjectedPoint low,
+            ProjectedPoint high,
+            const Color colorInc = green, 
+            const Color colorDec = red,
+            int painterHeight = 0
+        ) const {
+            drawCandle(
+                open.getX(), open.getY(),
+                close.getX(), close.getY(),
+                low.getX(), low.getY(),
+                high.getY(),
+                colorInc, colorDec,
+                painterHeight
+            );
         }
 
         void drawCandles(const size_t scale, const Color colorInc = green, const Color colorDec = red) const {
@@ -349,14 +377,15 @@ namespace madlib::graph {
             size_t size = projectedPoints.size();
             int painterHeight = painter.getHeight();
             for (size_t i = 0; i < size; i += 4) {
-                ProjectedPoint open = projectedPoints[i];
-                ProjectedPoint close = projectedPoints[i + 1];
-                ProjectedPoint low = projectedPoints[i + 2];
-                ProjectedPoint high = projectedPoints[i + 3];
-                Color color = open.getY() < close.getY() ? colorInc : colorDec;
-                painter.color(color);
-                painter.fillRect(open.getX(), painterHeight - open.getY(), close.getX(), painterHeight - close.getY());
-                painter.line(low.getX(), painterHeight - low.getY(), high.getX(), painterHeight - high.getY());
+                const ProjectedPoint& open = projectedPoints[i];
+                const ProjectedPoint& close = projectedPoints[i + 1];
+                const ProjectedPoint& low = projectedPoints[i + 2];
+                const ProjectedPoint& high = projectedPoints[i + 3];
+                drawCandle(open, close, low, high, colorInc, colorDec, painterHeight);
+                // Color color = open.getY() < close.getY() ? colorInc : colorDec;
+                // painter.color(color);
+                // painter.fillRect(open.getX(), painterHeight - open.getY(), close.getX(), painterHeight - close.getY());
+                // painter.line(low.getX(), painterHeight - low.getY(), high.getX(), painterHeight - high.getY());
             }
         }
 

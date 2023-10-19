@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 

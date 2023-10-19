@@ -1,6 +1,6 @@
-#include <cassert>
-
 #pragma once
+
+#include <cassert>
 
 #include "../../../src/includes/madlib/System.hpp"
 

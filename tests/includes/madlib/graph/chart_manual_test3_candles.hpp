@@ -1,3 +1,6 @@
+#pragma once
+
+#include "../../../../src/includes/madlib/Tools.hpp"
 #include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 
@@ -44,20 +47,20 @@ int chart_manual_test3_candles()
     double price = 1000;
     double time = 0;
     for (int i = 0; i < 30; i++) {
-        vector<double> rands = randd_norm_dist(0, 1, 10);
-        vector<double> cabdlePrices;
+        vector<double> rands = rand_norm_dist<double>(0.0, 1.0, 10);
+        vector<double> candlePrices;
         double start = time;
         for (size_t j = 0; j < rands.size(); j++) {
             price += rands[j];
             time++;
             pricesRealPoints.push_back(RealPoint((double)time, price));
-            cabdlePrices.push_back(price);
+            candlePrices.push_back(price);
         }
         double end = time;
-        double open = cabdlePrices[0];
-        double close = cabdlePrices[cabdlePrices.size() - 1];
-        double low = min(cabdlePrices);
-        double high = max(cabdlePrices);
+        double open = candlePrices[0];
+        double close = candlePrices[candlePrices.size() - 1];
+        double low = min(candlePrices);
+        double high = max(candlePrices);
         
         double middle = start + (end - start) / 2;
         candlesRealPoints.push_back(RealPoint((double)start, open));

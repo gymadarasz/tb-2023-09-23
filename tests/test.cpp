@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "includes/madlib/ToolsTest.hpp"
 #include "includes/madlib/VectorTest.hpp"
 #include "includes/madlib/SystemTest.hpp"
 #include "includes/madlib/FilesTest.hpp"
@@ -27,6 +28,9 @@ int main() {
 
     cout << "Testing in progress.." << endl;
 
+    Tester::run(ToolsTest::test_trim);
+    Tester::run(ToolsTest::test_normalize_datetime);
+    Tester::run(ToolsTest::test_datetime_conversion);
     Tester::run(VectorTest::testVector_concat);
     Tester::run(VectorTest::testVector_save_and_load);
     // Tester::run(VectorTest::testVector_load_and_load_with_reference);
