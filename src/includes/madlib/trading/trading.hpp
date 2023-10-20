@@ -13,7 +13,7 @@ using namespace madlib::graph;
 
 namespace madlib::trading {
 
-    ms_t period_to_ms(const string period) {
+    ms_t period_to_ms(const string &period) {
         map<const string, ms_t> periods = {
             {"1s", MS_PER_SEC},
             {"1m", MS_PER_MIN},
@@ -167,9 +167,11 @@ namespace madlib::trading {
             startTime(startTime), 
             endTime(endTime), 
             period(period)
-        {
-            // initTrades();
-            // initCandles();
+        {}
+
+        void init() {
+            initTrades();
+            initCandles();
         }
 
         virtual vector<Trade> getTrades() const {
@@ -180,15 +182,15 @@ namespace madlib::trading {
             return candles;
         }
         
-        virtual void saveCandles(const string filename, vector<Candle> candles) const {
+        virtual void saveCandles(const string &filename, const vector<Candle>& candles) const {
             Vector::save<Candle>(filename, candles);
         }
         
-        virtual vector<Candle> loadCandles(const string filename) const {
+        virtual vector<Candle> loadCandles(const string &filename) const {
             return Vector::load<Candle>(filename);
         }
         
-        virtual vector<Candle>& loadCandles(const string filename, vector<Candle>& data) const {
+        virtual vector<Candle>& loadCandles(const string &filename, vector<Candle>& data) const {
             return Vector::load<Candle>(filename, data);
         }
     };
@@ -259,14 +261,7 @@ namespace madlib::trading {
             priceMean(priceMean), priceStdDeviation(priceStdDeviation),
             timeLambda(timeLambda),
             gen(seed)
-        {
-            // Initialize the random number generator
-            // random_device rd;
-            // gen = mt19937(rd());
-            
-            initTrades();
-            initCandles();
-        }
+        {}
         
 
         // Function to print the generated events
@@ -295,7 +290,7 @@ namespace madlib::trading {
         {}
 
         void project(Chart& chart, void* context) const override {
-            TradeHistory* history = (TradeHistory*)context;
+            TradeHistory* history = static_cast<TradeHistory*>(context);
             if (showCandles) {
                 vector<Candle> candles = history->getCandles();
                 vector<RealPoint> candlesRealPoints;

@@ -60,6 +60,7 @@ int chart_manual_test4_history()
         priceMean, priceStdDeviation,
         timeLamda, seed
     );
+    history.init();
 
     TradeHistoryChartPlugin candlesPlugin;
     candlesPlugin.project(chart, &history);

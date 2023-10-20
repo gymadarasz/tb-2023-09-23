@@ -28,7 +28,7 @@ namespace madlib {
          * @note plain-old-data only
          */
         template<typename T>
-        static void save(const string filename, const vector<T>& data) {
+        static void save(const string &filename, const vector<T>& data) {
             ofstream file(filename, ios::binary);
             if (!file.is_open()) throw runtime_error("Error opening file for writing: " + filename);
             for (const T& item : data) file.write(reinterpret_cast<const char*>(&item), sizeof(T));
@@ -39,7 +39,7 @@ namespace madlib {
          * @note plain-old-data only
          */
         template<typename T>
-        static vector<T> load(const string filename) {
+        static vector<T> load(const string &filename) {
             ifstream file(filename, ios::binary);
             if (!file.is_open()) throw runtime_error("Error opening file for reading: " + filename);
             T item;
@@ -53,7 +53,7 @@ namespace madlib {
          * @note plain-old-data only
          */
         template<typename T>
-        static vector<T>& load(const string filename, vector<T>& data) {
+        static vector<T>& load(const string &filename, vector<T>& data) {
             ifstream file(filename, ios::binary);
             if (!file.is_open()) throw runtime_error("Error opening file for reading: " + filename);
             T item;
@@ -63,7 +63,7 @@ namespace madlib {
         }
 
         template<typename T>
-        static bool compare(vector<T> data1, vector<T> data2) {
+        static bool compare(const vector<T>& data1, const vector<T>& data2) {
             return data1 == data2;
         }
 

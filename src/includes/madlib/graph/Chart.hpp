@@ -48,6 +48,36 @@ namespace madlib::graph {
         DOT, LINE, BOX, FILLED, CANDLE, TEXT
     };
 
+    struct Zoom {
+        ProjectedPoint center = ProjectedPoint(0, 0);
+        RealPoint ratio = RealPoint(1.0, 1.0);
+
+        int applyX(int pointX) const {
+            int pointXSubCenterX = pointX - center.getX();
+            double pointXSubCenterXMulRatioX = pointXSubCenterX * ratio.getX();
+            return center.getX() + (int)pointXSubCenterXMulRatioX;
+        }
+
+        int applyY(int pointY) const {
+            int pointYSubCenterY = pointY - center.getY();
+            double pointYSubCenterYMulRatioY = pointYSubCenterY * ratio.getY();
+            return center.getY() + (int)pointYSubCenterYMulRatioY;
+        }
+
+        ProjectedPoint apply(int pointX, int pointY) const {
+            ProjectedPoint result(
+                applyX(pointX),
+                applyY(pointY)
+            );
+
+            return result;
+        }
+        
+        ProjectedPoint apply(const ProjectedPoint& point) const {
+            return apply(point.getX(), point.getY());
+        }
+    };
+
     class Scale {
     protected:
 
@@ -55,6 +85,7 @@ namespace madlib::graph {
         int width, height;
         Color color;
         Shape shape;
+        Zoom zoom;
 
         vector<ProjectedPoint> projectedPoints;
         vector<string> texts;
@@ -112,16 +143,6 @@ namespace madlib::graph {
             return texts;
         }
 
-        void setXMinMax(double min, double max) {
-            xmin = min;
-            xmax = max;
-        }
-
-        void setYMinMax(double min, double max) {
-            ymin = min;
-            ymax = max;
-        }
-
         void adaptX(double x) {
             if (xmin > x) xmin = x;
             if (xmax < x) xmax = x;
@@ -150,11 +171,19 @@ namespace madlib::graph {
             projectedPoints.clear();
             adaptXY(realPoints);
             ProjectedPoint projectedPoint;
-            for (const RealPoint& realPoint: realPoints) projectedPoints.push_back(project(realPoint.getX(), realPoint.getY(), projectedPoint, false));
+            // for (const RealPoint& realPoint: realPoints) 
+            //     projectedPoints.push_back(
+            //         project(realPoint.getX(), realPoint.getY(), projectedPoint, false)
+            //     );
+            transform(realPoints.begin(), realPoints.end(), back_inserter(projectedPoints),
+                [&](const RealPoint& realPoint) {
+                    return project(realPoint.getX(), realPoint.getY(), projectedPoint, false);
+                }
+            );
             return projectedPoints;
         }
 
-        void project(const vector<RealPoint>& realPoints, const vector<string> texts) {
+        void project(const vector<RealPoint>& realPoints, const vector<string> &texts) {
             project(realPoints);
             this->texts = texts;
         }
@@ -189,7 +218,7 @@ namespace madlib::graph {
 
     public:
 
-        Chart(Painter& painter): painter(painter)
+        explicit Chart(Painter& painter): painter(painter)
         {}
 
         const vector<Scale>& getScales() const {
@@ -336,7 +365,7 @@ namespace madlib::graph {
             }
         }
 
-        void writeText(int x, int y, const string text) const {
+        void writeText(int x, int y, const string &text) const {
             int painterHeight = painter.getHeight();
             painter.write(x, painterHeight - y, text);
         }

@@ -2,6 +2,9 @@ Commands:
 build and debug the builder:
 ./build-dbg.sh (or vscode)
 
+cppcheck:
+cppcheck --enable=all -v src --suppress=useStlAlgorithm --check-config -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11/bits/
+
 build and debug the main project and/or tests:
 ./build-run.sh
 ./cleanup.sh | ./build-run.sh
@@ -35,4 +38,4 @@ X cleanup script (recursive delete everything in build folder)
 X vscode debugs the builder and the main project only, add new task to debug the tests too (launch.json and tasks.json)
 Misc:
 - Terminal class color codes: https://www.codeproject.com/Articles/5329247/How-to-Change-Text-Color-in-a-Linux-Terminal
-
+- add command to build and/or tests:  cppcheck

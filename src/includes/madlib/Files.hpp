@@ -132,7 +132,7 @@ namespace madlib {
             return fileInfo.st_mtime;
         }
 
-        static void file_put_contents(const string filename, const string data, bool append = false) {
+        static void file_put_contents(const string& filename, const string& data, bool append = false) {
             try {
                 ofstream file;
                 if (append) {
@@ -152,7 +152,7 @@ namespace madlib {
             }
         }
 
-        static string file_get_contents(const string filename) {
+        static string file_get_contents(const string& filename) {
             try {
                 ifstream file(filename);
                 if (!file.is_open()) {

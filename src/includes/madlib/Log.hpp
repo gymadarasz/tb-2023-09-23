@@ -12,7 +12,7 @@ namespace madlib {
         string filename;
 
     public:
-        Log(string f = "app.log") : filename(f) {}
+        Log(const string& f = "app.log") : filename(f) {}
 
         // Variadic template for writeln method
         template <typename... Args>

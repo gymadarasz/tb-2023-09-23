@@ -136,7 +136,7 @@ namespace madlib::graph {
         static const Align textAlign = CENTER;
         static const Color borderColor = gray;
         static const Color textColor = black;
-        static const Color backgroundColor = gray;
+        //static const Color backgroundColor = gray;
         static const Color scrollBackgroundColor = darkGray;
         static const int scrollMargin = 10;
         static const int textPadding = 10;
@@ -446,7 +446,7 @@ namespace madlib::graph {
             XSetFont(display, gc, fontInfo->fid);
         }
         
-        void writeText(int x, int y, const string text) const {
+        void writeText(int x, int y, const string& text) const {
             // Cut text to fit into the viewport first
             string txt = text;            
             while (!txt.empty()) {
@@ -480,7 +480,7 @@ namespace madlib::graph {
             XDrawString(display, window, gc, x, y, txt.c_str(), (int)txt.length());
         }
 
-        void getTextSize(const string text, int &width, int &height) const {            
+        void getTextSize(const string &text, int &width, int &height) const {            
             if (fontInfo) {
                 XCharStruct overall;
                 int direction, ascent, descent; // TODO: add these retrievable
@@ -577,9 +577,9 @@ namespace madlib::graph {
         virtual void hLine(int, int, int) {};
         virtual void vLine(int, int, int) {};
         virtual void font(const char*) const {};
-        virtual void write(int, int, const string) {};
-        virtual int getWidth() const { return 0; };
-        virtual int getHeight() const { return 0; };
+        virtual void write(int, int, const string&) {};
+        virtual int getWidth() const = 0; // { return 0; };
+        virtual int getHeight() const = 0; // { return 0; };
     };
 
 
@@ -661,7 +661,7 @@ namespace madlib::graph {
     public:
 
         Area(GFX& gfx, int left, int top, int width, int height, 
-            const string text = "", const Align textAlign = defaultAreaTextAlign,
+            const string &text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder,
             const Color backgroundColor = defaultAreaBackgroundColor,
             const int scrollMargin = defaultScrollMargin,
@@ -677,11 +677,11 @@ namespace madlib::graph {
         }
 
         const Rectangle& getViewport(Rectangle& viewport) const {
-            int top = getTop();
-            int left = getLeft();
-            int right = getRight(left);
-            int bottom = getBottom(top);
-            viewport.set(left, top, right, bottom);
+            int t = getTop();
+            int l = getLeft();
+            int r = getRight(l);
+            int b = getBottom(t);
+            viewport.set(l, t, r, b);
             return viewport;
         }
 
@@ -736,7 +736,7 @@ namespace madlib::graph {
             gfx.setFont(font);
         }
 
-        void write(int x, int y, const string text) override {
+        void write(int x, int y, const string &text) override {
             setScrollXYMax(x, y);
             prepare(x, y);
             gfx.writeText(x, y, text);
@@ -792,16 +792,16 @@ namespace madlib::graph {
         }
 
         int getTop() const {
-            Area* parent = getParent();
-            return top + (parent ? parent->getTop() - parent->getScrollY() : 0);
+            Area* p = getParent();
+            return top + (p ? p->getTop() - p->getScrollY() : 0);
         }
 
         int getLeft() const {
-            Area* parent = getParent();
-            return left + (parent ? parent->getLeft() - parent->getScrollX() : 0);
+            Area* p = getParent();
+            return left + (p ? p->getLeft() - p->getScrollX() : 0);
         }        
 
-        int getWidth() const {
+        int getWidth() const override {
             return width;
         }
 
@@ -809,7 +809,7 @@ namespace madlib::graph {
             this->width = width;
         }
 
-        int getHeight() const {
+        int getHeight() const override {
             return height;
         }
 
@@ -882,29 +882,29 @@ namespace madlib::graph {
         }
 
         bool contains(int x, int y) const {
-            int top = getTop();
-            int left = getLeft();
-            int right = getRight(left);
-            int bottom = getBottom(top);
+            int t = getTop();
+            int l = getLeft();
+            int r = getRight(l);
+            int b = getBottom(t);
             return
-                x >= left && x <= right &&
-                y >= top && y <= bottom;
+                x >= l && x <= r &&
+                y >= t && y <= b;
         }
 
         bool contains(int x1, int y1, int x2, int y2) const {
-            int top = getTop();
-            int left = getLeft();
-            int right = getRight(left);
-            int bottom = getBottom(top);
-            return !(left >= x2 || x1 >= right || top >= y2 || y1 >= bottom);
+            int t = getTop();
+            int l = getLeft();
+            int r = getRight(l);
+            int b = getBottom(t);
+            return !(l >= x2 || x1 >= r || t >= y2 || y1 >= b);
         }
 
         bool contains(Area* area) const {
-            int left = area->getLeft();
-            int top = area->getTop();
-            int right = area->getRight(left);
-            int bottom = area->getBottom(top);
-            return contains(left, top, right, bottom);
+            int l = area->getLeft();
+            int t = area->getTop();
+            int r = area->getRight(l);
+            int b = area->getBottom(t);
+            return contains(l, t, r, b);
         }
 
         void propagateTouch(unsigned int button, int x, int y) {
@@ -930,11 +930,11 @@ namespace madlib::graph {
         }
 
         void drawBorder(int left, int top, int right, int bottom) const {
-            Border border = getBorder();
-            Color borderColor;
-            Color borderColorLight;
-            Color borderColorDark;
-            switch (border) {
+            Border b = getBorder();
+            Color bColor;
+            Color bColorLight;
+            Color bColorDark;
+            switch (b) {
 
                 case NONE:
                     break;
@@ -946,26 +946,26 @@ namespace madlib::graph {
 
                 case BUTTON_RELEASED:
                     // button borders get the background color
-                    borderColor = getBackgroundColor();
-                    borderColorLight = ColorMixer::light(borderColor);
-                    borderColorDark = ColorMixer::dark(borderColor);
-                    gfx.setColor(borderColorLight);
+                    bColor = getBackgroundColor();
+                    bColorLight = ColorMixer::light(bColor);
+                    bColorDark = ColorMixer::dark(bColor);
+                    gfx.setColor(bColorLight);
                     gfx.drawHorizontalLine(left, top, right);
                     gfx.drawVerticalLine(left, top, bottom);
-                    gfx.setColor(borderColorDark);
+                    gfx.setColor(bColorDark);
                     gfx.drawHorizontalLine(left, bottom, right);
                     gfx.drawVerticalLine(right, top, bottom);
                     break;
 
                 case BUTTON_PUSHED:
                     // button borders get the background color
-                    borderColor = getBackgroundColor();
-                    borderColorLight = ColorMixer::light(borderColor);
-                    borderColorDark = ColorMixer::dark(borderColor);
-                    gfx.setColor(borderColorLight);
+                    bColor = getBackgroundColor();
+                    bColorLight = ColorMixer::light(bColor);
+                    bColorDark = ColorMixer::dark(bColor);
+                    gfx.setColor(bColorLight);
                     gfx.drawHorizontalLine(left, bottom, right);
                     gfx.drawVerticalLine(right, top, bottom);
-                    gfx.setColor(borderColorDark);
+                    gfx.setColor(bColorDark);
                     gfx.drawHorizontalLine(left, top, right);
                     gfx.drawVerticalLine(left, top, bottom);
                     break;
@@ -977,62 +977,62 @@ namespace madlib::graph {
         }
 
         void drawBorder() {
-            int top = getTop();
-            int left = getLeft();
-            int right = getRight(left);
-            int bottom = getBottom(top);
+            int t = getTop();
+            int l = getLeft();
+            int r = getRight(l);
+            int b = getBottom(t);
 
-            Rectangle viewport(left, top, right, bottom);
+            Rectangle viewport(l, t, r, b);
             reduceViewport(viewport);
             gfx.setViewport(viewport);
 
-            drawBorder(left, top, right, bottom);
+            drawBorder(l, t, r, b);
         }
 
         void draw() {
-            int top = getTop();
-            int left = getLeft();
-            int width = getWidth();
-            int height = getHeight();
-            int right = getRight(left, width);
-            int bottom = getBottom(top, height);
+            int t = getTop();
+            int l = getLeft();
+            int w = getWidth();
+            int h = getHeight();
+            int r = getRight(l, w);
+            int b = getBottom(t, h);
 
-            Rectangle viewport(left, top, right, bottom);
+            Rectangle viewport(l, t, r, b);
             reduceViewport(viewport);
             gfx.setViewport(viewport);
             
             gfx.setColor(getBackgroundColor());
-            gfx.fillRectangle(left, top, right, bottom);
+            gfx.fillRectangle(l, t, r, b);
 
-            drawBorder(left, top, right, bottom);
+            drawBorder(l, t, r, b);
 
-            const string text = getText();
-            if(!text.empty()) {
-                int textWidth, textHeight;
-                gfx.getTextSize(text, textWidth, textHeight);
-                int textLeft;
-                Align textAlign = getTextAlign();
-                switch (textAlign) {
+            const string txt = getText();
+            if(!txt.empty()) {
+                int txtWidth, txtHeight;
+                gfx.getTextSize(txt, txtWidth, txtHeight);
+                int txtLeft;
+                Align txtAlign = getTextAlign();
+                switch (txtAlign) {
 
                     case CENTER:
-                        textLeft = left + ((width - textWidth) / 2);
+                        txtLeft = l + ((w - txtWidth) / 2);
                         break;
 
                     case LEFT:
-                        textLeft = left + textPadding;
+                        txtLeft = l + textPadding;
                         break;
 
                     case RIGHT:
-                        textLeft = left + width - textPadding - textWidth;
+                        txtLeft = l + w - textPadding - txtWidth;
                         break;
                     
                     default:
                         throw runtime_error("Invalid text align");
                         break;
                 }
-                int textTop = top + ((height - textHeight) / 2) + 16; // ??16
+                int txtTop = t + ((h - txtHeight) / 2) + 16; // ??16
                 gfx.setColor(getTextColor());
-                gfx.writeText(textLeft, textTop, text);
+                gfx.writeText(txtLeft, txtTop, txt);
             }
 
             for (Area* area: areas)
@@ -1047,24 +1047,24 @@ namespace madlib::graph {
     protected:
 
         static void resize(void* context, int width, int height) {
-            GUI* that = (GUI*)context;
+            GUI* that = static_cast<GUI*>(context);
             that->setWidth(width);
             that->setHeight(height);
             that->draw();
         }
 
         static void touch(void* context, unsigned int button, int x, int y) {
-            Area* that = (Area*)context;
+            Area* that = static_cast<Area*>(context);
             that->propagateTouch(button, x, y);
         }
 
         static void release(void* context, unsigned int button, int x, int y) {
-            Area* that = (Area*)context;
+            Area* that = static_cast<Area*>(context);
             that->propagateRelease(button, x, y);
         }
 
         static void move(void* context, int x, int y) {
-            Area* that = (Area*)context;
+            Area* that = static_cast<Area*>(context);
             that->propagateMove(x, y);
         }
 
@@ -1102,14 +1102,14 @@ namespace madlib::graph {
     protected:
 
         bool drag = false;
-        int dragStartedX, dragStartedY, dragScrollStartedX, dragScrollStartedY;
+        int dragStartedX = 0, dragStartedY = 0, dragScrollStartedX = 0, dragScrollStartedY = 0;
 
         static void touch(void* context, unsigned int, int x, int y) {
-            Frame* that = (Frame*)context;
+            Frame* that = static_cast<Frame*>(context);
 
             // drag & scroll only if no child in the event focus
             for (Area* area: that->areas)
-                if (area->contains(x, y)) return;
+                if (area->contains(x, y)) return; // cppcheck-suppress useStlAlgorithm
 
             that->drag = true;
             that->dragStartedX = x;
@@ -1119,12 +1119,12 @@ namespace madlib::graph {
         }
         
         static void release(void* context, unsigned int, int, int) {
-            Frame* that = (Frame*)context;
+            Frame* that = static_cast<Frame*>(context);
             that->drag = false;
         }
         
         static void move(void* context, int x, int y) {
-            Frame* that = (Frame*)context;
+            Frame* that = static_cast<Frame*>(context);
             if (!that->fixed && that->drag) {
                 that->setScrollXY(
                     that->dragScrollStartedX + (that->dragStartedX - x), 
@@ -1156,7 +1156,7 @@ namespace madlib::graph {
         bool pushed = false;
         
         static void touch(void* context, unsigned int, int, int) {
-            Button* that = (Button*)context;
+            Button* that = static_cast<Button*>(context);
             
             if (that->sticky) {
                 that->pushed ? that->release() : that->push();                
@@ -1167,7 +1167,7 @@ namespace madlib::graph {
         }
         
         static void release(void* context, unsigned int, int, int) {
-            Button* that = (Button*)context;
+            Button* that = static_cast<Button*>(context);
 
             if (that->sticky) return;
                 
@@ -1178,7 +1178,7 @@ namespace madlib::graph {
         bool sticky = false;
 
         Button(GFX& gfx, int left, int top, int width, int height, 
-            const string text, const Align textAlign = Area::defaultAreaTextAlign
+            const string &text, const Align textAlign = Area::defaultAreaTextAlign
         ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
         {
             onTouchHandlers.push_back(touch);
@@ -1206,7 +1206,7 @@ namespace madlib::graph {
 
     public:
         Label(GFX& gfx, int left, int top, int width, int height, 
-            const string text, const Align textAlign = defaultLabelTextAlign
+            const string &text, const Align textAlign = defaultLabelTextAlign
         ): Area(gfx, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
         {}
     };
