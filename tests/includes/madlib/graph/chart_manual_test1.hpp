@@ -66,7 +66,9 @@ int chart_manual_test1()
     chart_manual_test1_generateRealPoints(realPoints);
 
     chart.getScaleAt(chart.addScale()).project(realPoints);
-    chart.getScaleAt(chart.addScale()).project(realPoints);
+    Scale& secondScale = chart.getScaleAt(chart.addScale());
+    secondScale.setZoom(Zoom(2.0, 1.5));
+    secondScale.project(realPoints);
     
 
     gui.loop();

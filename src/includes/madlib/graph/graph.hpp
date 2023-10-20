@@ -614,11 +614,13 @@ namespace madlib::graph {
 
         vector<Area*> areas;
         Area* parent = NULL;
-        int scrollX = 0, scrollY = 0, scrollXMax = 0, scrollYMax = 0;
+        int scrollX = 0, scrollY = 0,
+            scrollXMin = 0, scrollYMin = 0,
+            scrollXMax = 0, scrollYMax = 0;
 
         void forceScrollInRange() {
-            if (scrollX < 0) scrollX = 0;
-            if (scrollY < 0) scrollY = 0;
+            if (scrollX < scrollXMin) scrollX = scrollXMin;
+            if (scrollY < scrollYMin) scrollY = scrollYMin;
             if (scrollX > scrollXMax) scrollX = scrollXMax;
             if (scrollY > scrollYMax) scrollY = scrollYMax;
         }
@@ -673,7 +675,7 @@ namespace madlib::graph {
             backgroundColor(backgroundColor), scrollMargin(scrollMargin),
             textPadding(textPadding)
         {
-            setScrollXYMax(width, height);
+            setScrollXYMinMax(0, 0, width, height);
         }
 
         const Rectangle& getViewport(Rectangle& viewport) const {
@@ -690,44 +692,39 @@ namespace madlib::graph {
         }
 
         void point(int x, int y) override {
-            setScrollXYMax(x, y);
+            setScrollXYMinMax(x, y);
             prepare(x, y);
             gfx.drawPoint(x, y);
         }
 
         void rect(int x1, int y1, int x2, int y2) override {
-            setScrollXYMax(x1, y1);
-            setScrollXYMax(x2, y2);
+            setScrollXYMinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawRectangle(x1, y1, x2, y2);
         }
 
         void fillRect(int x1, int y1, int x2, int y2) override {
-            setScrollXYMax(x1, y1);
-            setScrollXYMax(x2, y2);
+            setScrollXYMinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.fillRectangle(x1, y1, x2, y2);
         }
 
         void line(int x1, int y1, int x2, int y2) override {
-            setScrollXYMax(x1, y1);
-            setScrollXYMax(x2, y2);
+            setScrollXYMinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawLine(x1, y1, x2, y2);
         }
 
         void hLine(int x1, int y1, int x2) override {
             int y2 = y1;
-            setScrollXYMax(x1, y1);
-            setScrollXYMax(x2, y2);
+            setScrollXYMinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawHorizontalLine(x1, y1, x2);
         }
 
         void vLine(int x1, int y1, int y2) override {
             int x2 = x1;
-            setScrollXYMax(x1, y1);
-            setScrollXYMax(x2, y2);
+            setScrollXYMinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawVerticalLine(x1, y1, y2);
         }
@@ -737,7 +734,7 @@ namespace madlib::graph {
         }
 
         void write(int x, int y, const string &text) override {
-            setScrollXYMax(x, y);
+            setScrollXYMinMax(x, y);
             prepare(x, y);
             gfx.writeText(x, y, text);
         }
@@ -757,18 +754,38 @@ namespace madlib::graph {
         void child(Area& area) {
             area.setParent(this);
             areas.push_back(&area);
-            setScrollXYMax(
+            setScrollXYMinMax(
                 area.left + area.width + scrollMargin,
                 area.top + area.height + scrollMargin
             );
         }
 
-        void setScrollXYMax(int x, int y) {
+        void setScrollXYMin(int x, int y, bool forceInRange = true) {
+            int xMin = x;
+            int yMin = y;
+            if (xMin < scrollXMin) scrollXMin = xMin;
+            if (yMin < scrollYMin) scrollYMin = yMin;
+            if (forceInRange) forceScrollInRange();
+        }
+
+        void setScrollXYMax(int x, int y, bool forceInRange = true) {
             int xMax = x - width;
             int yMax = y - height;
             if (xMax > scrollXMax) scrollXMax = xMax;
             if (yMax > scrollYMax) scrollYMax = yMax;
-            forceScrollInRange();
+            if (forceInRange) forceScrollInRange();
+        }
+
+        void setScrollXYMinMax(int x, int y, bool forceInRange = true) {
+            setScrollXYMin(x, y, false);
+            setScrollXYMax(x, y, false);
+            if (forceInRange) forceScrollInRange();
+        }
+
+        void setScrollXYMinMax(int x1, int y1, int x2, int y2, bool forceInRange = true) {
+            setScrollXYMin(x1, y1, false);
+            setScrollXYMax(x2, y2, false);
+            if (forceInRange) forceScrollInRange();
         }
 
         void setScrollXY(int x, int y) {

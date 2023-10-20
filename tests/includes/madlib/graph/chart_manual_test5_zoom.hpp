@@ -1,7 +1,9 @@
-#include "includes/madlib/Tools.hpp"
-#include "includes/madlib/graph/graph.hpp"
-#include "includes/madlib/graph/Chart.hpp"
-#include "includes/madlib/trading/trading.hpp"
+#pragma once
+
+#include "../../../../src/includes/madlib/Tools.hpp"
+#include "../../../../src/includes/madlib/graph/graph.hpp"
+#include "../../../../src/includes/madlib/graph/Chart.hpp"
+#include "../../../../src/includes/madlib/trading/trading.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -21,7 +23,7 @@ void chart_manual_test5_close(void*, unsigned int, int, int) {
     chart_manual_test5_gfxPtr->close = true;
 }
 
-int main()
+int chart_manual_test5_zoom()
 {
     GFX gfx;
     chart_manual_test5_gfxPtr = &gfx;

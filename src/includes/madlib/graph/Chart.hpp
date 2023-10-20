@@ -48,44 +48,107 @@ namespace madlib::graph {
         DOT, LINE, BOX, FILLED, CANDLE, TEXT
     };
 
-    struct Zoom {
-        ProjectedPoint center = ProjectedPoint(0, 0);
-        RealPoint ratio = RealPoint(1.0, 1.0);
+    class Zoom {
+    public:
+        const int defaultCenterX = 0, defaultCenterY = 0;
+        const double defaultRatioX = 1.0, defaultRatioY = 1.0;
+    protected:
+        ProjectedPoint center = ProjectedPoint(defaultCenterX, defaultCenterY);
+        RealPoint ratio = RealPoint(defaultRatioX, defaultRatioY);
 
-        int applyX(int pointX) const {
-            int pointXSubCenterX = pointX - center.getX();
+    public:
+
+        Zoom(): center(defaultCenterX, defaultCenterY), ratio(defaultRatioX, defaultRatioY) {}
+        Zoom(int centerX, int centerY): center(centerX, centerY), ratio(defaultRatioX, defaultRatioY) {}
+        explicit Zoom(const ProjectedPoint& center): center(center), ratio(defaultRatioX, defaultRatioY) {}
+        Zoom(double ratioX, double ratioY): center(defaultCenterX, defaultCenterY), ratio(ratioX, ratioY) {}
+        explicit Zoom(const RealPoint& ratio): center(defaultCenterX, defaultCenterY), ratio(ratio) {}
+        Zoom(int centerX, int centerY, double ratioX, double ratioY): center(centerX, centerY), ratio(ratioX, ratioY) {}
+        Zoom(const ProjectedPoint& center, const RealPoint& ratio): center(center), ratio(ratio) {}
+        Zoom(double ratioX, double ratioY, int centerX, int centerY): center(centerX, centerY), ratio(ratioX, ratioY) {}
+        Zoom(const RealPoint& ratio, const ProjectedPoint& center): center(center), ratio(ratio) {}
+        
+        Zoom& operator=(const Zoom& other) {
+            if (this != &other) { // Check for self-assignment
+                this->center = other.center;
+                this->ratio = other.ratio;
+            }
+            return *this;
+        }
+
+        ProjectedPoint getCenter() const {
+            return center;
+        }
+
+        void setCenter(const ProjectedPoint& center) {
+            this->center = center;
+        }
+
+        void setCenter(int x = 0, int y = 0) {
+            setCenter(ProjectedPoint(x, y));
+        }
+
+        RealPoint getRatio() const {
+            return ratio;
+        }
+
+        void setRatio(const RealPoint& ratio) {
+            this->ratio = ratio;
+        }
+
+        void setRatio(double x = 1.0, double y = 1.0) {
+            setRatio(RealPoint(x, y));
+        }
+
+        int applyX(int origoX, int pointX) const {
+            int origoXAddCenterX = origoX + center.getX();
+            int pointXSubCenterX = pointX - origoXAddCenterX;
             double pointXSubCenterXMulRatioX = pointXSubCenterX * ratio.getX();
-            return center.getX() + (int)pointXSubCenterXMulRatioX;
+            return origoXAddCenterX + (int)pointXSubCenterXMulRatioX;
         }
 
-        int applyY(int pointY) const {
-            int pointYSubCenterY = pointY - center.getY();
+        int applyY(int origoY, int pointY) const {
+            int origoYAddCenterY = origoY + center.getY();
+            int pointYSubCenterY = pointY - origoYAddCenterY;
             double pointYSubCenterYMulRatioY = pointYSubCenterY * ratio.getY();
-            return center.getY() + (int)pointYSubCenterYMulRatioY;
+            return origoYAddCenterY + (int)pointYSubCenterYMulRatioY;
         }
 
-        ProjectedPoint apply(int pointX, int pointY) const {
+        ProjectedPoint apply(int origoX, int origoY, int pointX, int pointY) const {
             ProjectedPoint result(
-                applyX(pointX),
-                applyY(pointY)
+                applyX(origoX, pointX),
+                applyY(origoY, pointY)
             );
 
             return result;
         }
         
-        ProjectedPoint apply(const ProjectedPoint& point) const {
-            return apply(point.getX(), point.getY());
+        ProjectedPoint apply(const ProjectedPoint& origo, const ProjectedPoint& point) const {
+            return apply(origo.getX(), origo.getY(), point.getX(), point.getY());
         }
     };
 
-    class Scale {
+    class Zoomable {
+    protected:
+        Zoom zoom;
+
+    public:
+        void setZoom(const Zoom& zoom) {
+            this->zoom = zoom;
+        }
+
+        Zoom& getZoom() {
+            return zoom;
+        }
+    };
+
+    class Scale: public Zoomable {
     protected:
 
         double xmin, ymin, xmax, ymax;
         int width, height;
         Color color;
         Shape shape;
-        Zoom zoom;
 
         vector<ProjectedPoint> projectedPoints;
         vector<string> texts;
@@ -102,8 +165,12 @@ namespace madlib::graph {
         
         ProjectedPoint& project(double x, double y, ProjectedPoint& result, bool adapt = true) {
             if (adapt) adaptXY(x, y);
-            result.setX(projectX(x, adapt));
-            result.setY(projectY(y, adapt));
+            // result.setX(projectX(x, adapt));
+            // result.setY(projectY(y, adapt));
+            result = zoom.apply(
+                projectX(xmin, false), projectY(ymin, false), 
+                projectX(x, adapt), projectY(y, adapt)
+            );
             return result;
         }
         
@@ -131,7 +198,7 @@ namespace madlib::graph {
             return shape;
         }
 
-        void setShape(Shape shape) {
+        void setShape(const Shape& shape) {
             this->shape = shape;
         }
 
@@ -189,7 +256,7 @@ namespace madlib::graph {
         }
     };
 
-    class Chart {
+    class Chart: public Zoomable {
     public:
 
         static const Shape defaultChartShape = LINE;
@@ -230,8 +297,9 @@ namespace madlib::graph {
             return scales[at];
         }
 
-        size_t addScale(Shape shape = LINE, Color color = defaultChartShapeColor) {
+        size_t addScale(Shape shape = LINE, Color color = defaultChartShapeColor, const Zoom* zoom = NULL) {
             Scale scale(painter.getWidth(), painter.getHeight(), color, shape);
+            scale.setZoom(zoom ? *zoom : this->zoom);
             scales.push_back(scale);
             return scales.size() - 1;
         }

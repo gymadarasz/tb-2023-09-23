@@ -307,7 +307,8 @@ namespace madlib::trading {
                     candlesRealPoints.push_back(RealPoint(middle, low));
                     candlesRealPoints.push_back(RealPoint(middle, high));
                 }
-                chart.getScaleAt(chart.addScale(CANDLE)).project(candlesRealPoints);
+                Scale& scale = chart.getScaleAt(chart.addScale(CANDLE));
+                scale.project(candlesRealPoints);
             }
 
             if (showPrices || showVolumes) {
