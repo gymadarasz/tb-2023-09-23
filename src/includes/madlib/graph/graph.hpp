@@ -358,66 +358,25 @@ namespace madlib::graph {
                 return;
             }
 
+            if (
+                (x1 > viewport.x2 && x2 > viewport.x2) ||
+                (x1 < viewport.x1 && x2 < viewport.x1) ||
+                (y1 > viewport.y2 && y2 > viewport.y2) ||
+                (y1 < viewport.y1 && y2 < viewport.y1)
+            ) {
+                return;
+            }
+
             // Fix the line first, it's always goes left to right
             if (x1 > x2) {
                 swap(x1, x2);
                 swap(y1, y2);
+                rect = Rectangle(x1, y1, x2, y2);
             }
 
             if (!viewport.containsCompletely(rect)) {
-                // Clip the line to fit within the viewport
-                    
-                if (x1 < viewport.x1) {
-                    if (x2 < viewport.x1) return; // Stop if out of scope...
-
-                    // Clip the left overflow at viewport.x1 and assign the new values to x1 and y1
-                    y1 = y2 - ((y2 - y1) * (x2 - viewport.x1)) / (x2 - x1);
-                    x1 = viewport.x1;
-                }
-
-                if (y1 < viewport.y1) {
-                    if (y2 < viewport.y1) return; // Stop if out of scope...
-
-                    // Clip the top overflow at viewport.y1 and assign the new values to x1 and y1
-                    x1 = x1 + ((x2 - x1) * (viewport.y1 - y1)) / (y2 - y1);
-                    y1 = viewport.y1;
-                }
-
-                if (x2 > viewport.x2) {
-                    if (x1 > viewport.x2) return; // Stop if out of scope...
-
-                    // Clip the right overflow at viewport.x2 and assign the new values to x2 and y2
-                    y2 = y2 - ((y2 - y1) * (x2 - viewport.x2)) / (x2 - x1);
-                    x2 = viewport.x2;
-                }
-
-                if (y2 > viewport.y2) {
-                    if (y1 > viewport.y2) return; // Stop if out of scope...
-
-                    // Clip the bottom overflow at viewport.y2 and assign the new values to x2 and y2
-                    x2 = x1 + ((y2 - y1) * (viewport.y2 - y1)) / (x2 - x1);
-                    y2 = viewport.y2;
-                }
-
-                if (y1 > y2) { // rise
-
-                    if (y2 < viewport.y1) {
-                        if (y1 < viewport.y1) return; // Stop if out of scope...
-
-                        // Clip the top overflow at viewport.y1 and assign the new values to x2 and y2
-                        x2 = x1 + ((x2 - x1) * (y1 - viewport.y1)) / (y1 - y2);
-                        y2 = viewport.y1;
-                    }
-
-                    if (y1 > viewport.y2) {
-                        if (y2 > viewport.y2) return; // Stop if out of scope...
-
-                        // Clip the bottom overflow at viewport.y2 and assign the new values to x1 and y1
-                        x1 = x2 - ((x2 - x1) * (viewport.y2 - y2)) / (y1 - y2);
-                        y1 = viewport.y2;
-                    }
-
-                }
+                // TODO: cut the line at the edge of viewport
+                return;
             }
 
             // Draw the clipped line
