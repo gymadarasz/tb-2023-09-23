@@ -75,35 +75,27 @@ namespace madlib {
         return seconds * 1000 + milliseconds;
     }
 
-    string ms_to_datetime(ms_t ms = 0, const char* fmt = "%Y-%m-%d %H:%M:%S", bool millis = true, bool local = false) {
+    string ms_to_datetime(long ms = 0, const char* fmt = "%Y-%m-%d %H:%M:%S", bool millis = true, bool local = false) {
+        long sec = ms / 1000;
+        long mil = ms % 1000;
 
-		long sec = ms / 1000;
-		long mil = ms % 1000;
+        struct tm converted_time;
+        if (local) {
+            localtime_r(&sec, &converted_time);
+        }
+        else {
+            gmtime_r(&sec, &converted_time);
+        }
 
-		struct tm converted_time;
-		if (local)
-		{
-		    localtime_r(&sec, &converted_time);
-		}
-		else
-		{
-		    gmtime_r(&sec, &converted_time);
-		}
+        ostringstream oss;
+        oss << put_time(&converted_time, fmt);
 
-		char time_sbuff[26];
-		strftime(time_sbuff, 26, fmt, &converted_time);
+        if (millis) {
+            oss << "." << setfill('0') << setw(3) << mil;
+        }
 
-		if (millis) {
-		    char mil_sbuff[10];
-		    sprintf(mil_sbuff, "%03ld", mil);
-
-		    char out_sbuff[42];
-		    sprintf(out_sbuff, "%s.%s", time_sbuff, mil_sbuff);
-		    return string(out_sbuff);
-		}
-
-		return string(time_sbuff);
-	}
+        return oss.str();
+    }
 
     ms_t now() {
         // Get the current time_point

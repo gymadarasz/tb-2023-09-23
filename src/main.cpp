@@ -53,7 +53,7 @@ int main()
     const ms_t startTime = datetime_to_ms("2021-01-01"); // Current time as the start time
     const ms_t endTime = datetime_to_ms("2021-01-07"); // 300 seconds in the future
     const ms_t period = period_to_ms("1h");
-    const unsigned int seed = 6;
+    const unsigned int seed = 7;
 
     // Create a MonteCarloHistory object with the specified parameters
     MonteCarloHistory history(

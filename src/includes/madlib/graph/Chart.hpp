@@ -45,7 +45,11 @@ namespace madlib::graph {
     };
 
     enum Shape {
-        DOT, LINE, BOX, FILLED, CANDLE, TEXT
+        DOT = 0, LINE, BOX, FILLED, CANDLE, TEXT
+    };
+
+    vector<const string> shapeNames = {
+        "DOT", "LINE", "BOX", "FILLED", "CANDLE", "TEXT"
     };
 
     class Zoom {
@@ -352,7 +356,7 @@ namespace madlib::graph {
                     func = drawPairAsFilled;
                     break;
                 default:
-                    throw runtime_error("Invalid pair shape: " + shape);
+                    throw runtime_error("Invalid pair shape: " + shapeNames[shape]);
             }
             for (const ProjectedPoint& projectedPoint: projectedPoints) {
                 int x2 = projectedPoint.getX();

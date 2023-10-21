@@ -11,12 +11,16 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <mutex>
 
 using namespace std;
 
 namespace madlib {
 
     class Files {
+    protected:
+
+        static mutex fileMutex;
 
     public:
         static vector<string> findByExtension(const filesystem::path& folder = ".", const string& pattern = "") {
@@ -134,16 +138,27 @@ namespace madlib {
 
         static void file_put_contents(const string& filename, const string& data, bool append = false) {
             try {
-                ofstream file;
-                if (append) {
-                    file.open(filename, ios::out | ios::app);
-                } else {
-                    file.open(filename, ios::out);
-                }
+                // Check if the file is a symlink
+                if (filesystem::is_symlink(filename))
+                    throw runtime_error("Error: Symlink detected. Refusing to open: " + filename);
 
-                if (!file.is_open()) {
+                // Check if the file is a special file (e.g., character or block device)
+                if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
+                    throw runtime_error("Error: Special file detected. Refusing to open: " + filename);
+
+                // Use a unique_lock to prevent race conditions
+                unique_lock<mutex> fileLock(fileMutex); // Define a mutex at a higher scope
+
+                // Check if the file exists and is a regular file
+                if (!filesystem::exists(filename) || !filesystem::is_regular_file(filename))
+                    throw runtime_error("Error: Invalid file: " + filename);
+
+                ofstream file;
+                // FlawFinder: ignore
+                file.open(filename, append ? ios::out | ios::app : ios::out);
+
+                if (!file.is_open())
                     throw runtime_error("Error: Unable to open file for writing: " + filename);
-                }
 
                 file << data;
                 file.close();
