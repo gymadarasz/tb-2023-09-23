@@ -44,12 +44,21 @@ namespace madlib::graph {
         using PointTemplate<int>::PointTemplate;
     };
 
-    enum Shape {
-        DOT = 0, LINE, BOX, FILLED, CANDLE, TEXT
-    };
+    enum Shape { DOT, LINE, BOX, FILLED, CANDLE, TEXT };
 
-    vector<const string> shapeNames = {
-        "DOT", "LINE", "BOX", "FILLED", "CANDLE", "TEXT"
+    class ShapeName {
+    public:
+        static const string getName(Shape shape) {
+            switch (shape) {
+                case DOT: return "DOT";
+                case LINE: return "LINE";
+                case BOX: return "BOX";
+                case FILLED: return "FILLED";
+                case CANDLE: return "CANDLE";
+                case TEXT: return "TEXT";
+                default: throw runtime_error("Invalid shape");
+            }
+        }
     };
 
     class Zoom {
@@ -356,7 +365,7 @@ namespace madlib::graph {
                     func = drawPairAsFilled;
                     break;
                 default:
-                    throw runtime_error("Invalid pair shape: " + shapeNames[shape]);
+                    throw runtime_error("Invalid pair shape: " + ShapeName::getName(shape));
             }
             for (const ProjectedPoint& projectedPoint: projectedPoints) {
                 int x2 = projectedPoint.getX();
@@ -401,6 +410,7 @@ namespace madlib::graph {
         }
 
         void drawCandle(
+            // FlawFinder: ignore
             ProjectedPoint open,
             ProjectedPoint close,
             ProjectedPoint low,
@@ -410,7 +420,7 @@ namespace madlib::graph {
             int painterHeight = 0
         ) const {
             drawCandle(
-                open.getX(), open.getY(),
+                open.getX(), open.getY(), // FlawFinder: ignore
                 close.getX(), close.getY(),
                 low.getX(), low.getY(),
                 high.getY(),
@@ -429,7 +439,7 @@ namespace madlib::graph {
                 const ProjectedPoint& close = projectedPoints[i + 1];
                 const ProjectedPoint& low = projectedPoints[i + 2];
                 const ProjectedPoint& high = projectedPoints[i + 3];
-                drawCandle(open, close, low, high, colorInc, colorDec, painterHeight);
+                drawCandle(open, close, low, high, colorInc, colorDec, painterHeight); // FlawFinder: ignore
                 // Color color = open.getY() < close.getY() ? colorInc : colorDec;
                 // painter.color(color);
                 // painter.fillRect(open.getX(), painterHeight - open.getY(), close.getX(), painterHeight - close.getY());

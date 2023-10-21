@@ -11,17 +11,12 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <mutex>
 
 using namespace std;
 
 namespace madlib {
 
     class Files {
-    protected:
-
-        static mutex fileMutex;
-
     public:
         static vector<string> findByExtension(const filesystem::path& folder = ".", const string& pattern = "") {
             vector<string> files;
@@ -137,50 +132,35 @@ namespace madlib {
         }
 
         static void file_put_contents(const string& filename, const string& data, bool append = false) {
-            try {
-                // Check if the file is a symlink
-                if (filesystem::is_symlink(filename))
-                    throw runtime_error("Error: Symlink detected. Refusing to open: " + filename);
+            // Check if the file is a symlink
+            if (filesystem::is_symlink(filename))
+                throw runtime_error("Error: Symlink detected. Refusing to open: " + filename);
 
-                // Check if the file is a special file (e.g., character or block device)
-                if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
-                    throw runtime_error("Error: Special file detected. Refusing to open: " + filename);
+            // Check if the file is a special file (e.g., character or block device)
+            if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
+                throw runtime_error("Error: Special file detected. Refusing to open: " + filename);
+                
+            ofstream file;
+            // FlawFinder: ignore
+            file.open(filename, append ? ios::out | ios::app : ios::out);
 
-                // Use a unique_lock to prevent race conditions
-                unique_lock<mutex> fileLock(fileMutex); // Define a mutex at a higher scope
+            if (!file.is_open())
+                throw runtime_error("Error: Unable to open file for writing: " + filename);
 
-                // Check if the file exists and is a regular file
-                if (!filesystem::exists(filename) || !filesystem::is_regular_file(filename))
-                    throw runtime_error("Error: Invalid file: " + filename);
-
-                ofstream file;
-                // FlawFinder: ignore
-                file.open(filename, append ? ios::out | ios::app : ios::out);
-
-                if (!file.is_open())
-                    throw runtime_error("Error: Unable to open file for writing: " + filename);
-
-                file << data;
-                file.close();
-            } catch (const exception& e) {
-                throw runtime_error("Error in file_put_contents: " + string(e.what()));
-            }
+            file << data;
+            file.close();
         }
 
         static string file_get_contents(const string& filename) {
-            try {
-                ifstream file(filename);
-                if (!file.is_open()) {
-                    throw runtime_error("Error: Unable to open file for reading: " + filename);
-                }
-
-                string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));
-                file.close();
-
-                return content;
-            } catch (const exception& e) {
-                throw runtime_error("Error in file_get_contents: " + string(e.what()));
+            ifstream file(filename);
+            if (!file.is_open()) {
+                throw runtime_error("Error: Unable to open file for reading: " + filename);
             }
+
+            string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));
+            file.close();
+
+            return content;
         }
     };
 
