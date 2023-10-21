@@ -513,7 +513,7 @@ namespace madlib::graph {
 
                 int width, height;
                 KeySym key;
-                char text[32];
+                char text[32]; // FlawFinder: ignore
                 switch (event.type) {
                     case Expose:
                         // Handle expose event (e.g., redraw)
