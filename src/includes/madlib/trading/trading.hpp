@@ -291,6 +291,8 @@ namespace madlib::trading {
 
         void project(Chart& chart, void* context) const override {
             TradeHistory* history = static_cast<TradeHistory*>(context);
+
+            Scale* candlesScale = NULL;
             if (showCandles) {
                 vector<Candle> candles = history->getCandles();
                 vector<RealPoint> candlesRealPoints;
@@ -307,8 +309,8 @@ namespace madlib::trading {
                     candlesRealPoints.push_back(RealPoint(middle, low));
                     candlesRealPoints.push_back(RealPoint(middle, high));
                 }
-                Scale& scale = chart.getScaleAt(chart.addScale(CANDLE));
-                scale.project(candlesRealPoints);
+                candlesScale = &chart.getScaleAt(chart.addScale(CANDLE));
+                candlesScale->project(candlesRealPoints);
             }
 
             if (showPrices || showVolumes) {
@@ -322,7 +324,13 @@ namespace madlib::trading {
                         RealPoint(static_cast<double>(trade.timestamp), trade.volume));
                 }
                 
-                if (showPrices) chart.getScaleAt(chart.addScale(LINE, orange)).project(pricesRealPoints);
+                if (showPrices) {
+                    Scale& priceScale = chart.getScaleAt(chart.addScale(LINE, orange));
+                    priceScale.project(pricesRealPoints);
+                    if (candlesScale) {
+                        priceScale.alignXTo(*candlesScale);
+                    }
+                }
                 if (showVolumes) chart.getScaleAt(chart.addScale(LINE, darkGray)).project(volumesRealPoints);
             }
         }

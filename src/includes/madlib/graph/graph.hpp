@@ -137,8 +137,8 @@ namespace madlib::graph {
         static const Color borderColor = gray;
         static const Color textColor = black;
         //static const Color backgroundColor = gray;
-        static const Color scrollBackgroundColor = darkGray;
-        static const int scrollMargin = 10;
+        static const Color frameBackgroundColor = darkGray;
+        static const int frameMargin = 10;
         static const int textPadding = 10;
         static const Align labelTextAlign = LEFT;
     };
@@ -261,9 +261,17 @@ namespace madlib::graph {
 
         Rectangle viewport;
 
+        void* context = NULL;
+
     public:
 
         bool close = false;
+
+        GFX(void* context = NULL): context(context) {}
+
+        void* getContext() const {
+            return context;
+        }
 
         void setColor(Color color) const {
             XSetForeground(display, gc, color);
@@ -309,7 +317,7 @@ namespace madlib::graph {
             XCloseDisplay(display);
         }
 
-        void getWindowSize(int &width, int &height) const {            
+        void getWindowSize(int &width, int &height) const {
             XWindowAttributes attr;
             XGetWindowAttributes(display, window, &attr);
             width = attr.width;
@@ -320,6 +328,14 @@ namespace madlib::graph {
             int width, height;
             getWindowSize(width, height);
             XFillRectangle(display, window, gc, 0, 0, (unsigned)width, (unsigned)height);
+        }
+
+        void setWindowTitle(const char* title) const {
+            XTextProperty prop;
+            XStringListToTextProperty(const_cast<char**>(&title), 1, &prop);
+            XSetWMName(display, window, &prop);
+            XFree(prop.value);
+            // XFlush(display);  // Flush the changes to the server
         }
 
         void drawPoint(int x, int y) const {
@@ -367,12 +383,13 @@ namespace madlib::graph {
                 return;
             }
 
-            // Fix the line first, it's always goes left to right
-            if (x1 > x2) {
-                swap(x1, x2);
-                swap(y1, y2);
-                rect = Rectangle(x1, y1, x2, y2);
-            }
+            // TODO: this part will need only when calculating the edge
+            // // Fix the line first, it's always goes left to right
+            // if (x1 > x2) {
+            //     swap(x1, x2);
+            //     swap(y1, y2);
+            //     rect = Rectangle(x1, y1, x2, y2);
+            // }
 
             if (!viewport.containsCompletely(rect)) {
                 // TODO: cut the line at the edge of viewport
@@ -550,7 +567,7 @@ namespace madlib::graph {
         static const Color defaultAreaTextColor = Theme::textColor;
         static const Border defaultAreaBorder = NONE; // TODO: to theme
         static const Color defaultAreaBackgroundColor = GFX::defaultWindowColor;
-        static const int defaultScrollMargin = Theme::scrollMargin;
+        static const int defaultFrameMargin = Theme::frameMargin;
         static const int defaultTextMargin = Theme::textPadding;
 
         typedef void (*onDrawHandler)(void*);
@@ -568,7 +585,7 @@ namespace madlib::graph {
         Color textColor = defaultAreaTextColor;
         Border border;
         Color backgroundColor;
-        int scrollMargin;
+        int frameMargin;
         int textPadding;
 
         vector<Area*> areas;
@@ -625,13 +642,13 @@ namespace madlib::graph {
             const string &text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder,
             const Color backgroundColor = defaultAreaBackgroundColor,
-            const int scrollMargin = defaultScrollMargin,
+            const int frameMargin = defaultFrameMargin,
             const int textPadding = defaultTextMargin
         ):
             gfx(gfx),
             left(left), top(top), width(width), height(height), 
             text(text), textAlign(textAlign), border(border), 
-            backgroundColor(backgroundColor), scrollMargin(scrollMargin),
+            backgroundColor(backgroundColor), frameMargin(frameMargin),
             textPadding(textPadding)
         {
             setScrollXYMinMax(0, 0, width, height);
@@ -708,14 +725,18 @@ namespace madlib::graph {
 
         Area* getParent() const {
             return parent;
-        } 
+        }
+
+        Area* getRoot() {
+            return parent ? parent->getRoot() : this;
+        }
 
         void child(Area& area) {
             area.setParent(this);
             areas.push_back(&area);
             setScrollXYMinMax(
-                area.left + area.width + scrollMargin,
-                area.top + area.height + scrollMargin
+                area.left + area.width + frameMargin,
+                area.top + area.height + frameMargin
             );
         }
 
@@ -1014,7 +1035,8 @@ namespace madlib::graph {
             for (Area* area: areas)
                 if (contains(area)) area->draw();
 
-            for (const onDrawHandler& onDraw: onDrawHandlers) onDraw(this);
+            for (const onDrawHandler& onDraw: onDrawHandlers) 
+                onDraw(this);
 
         }
     };
@@ -1067,13 +1089,17 @@ namespace madlib::graph {
         void loop(unsigned long ms = GFX::defaultLoopMs) const {
             gfx.eventLoop(ms);
         }
+
+        void setTitle(const char* title) {
+            gfx.setWindowTitle(title);
+        }
     };
 
     class Frame: public Area {
     public:
 
-        static const Border defaultScrollBorder = BUTTON_PUSHED; // TODO: to theme
-        static const Color defaultScrollBackgroundColor = Theme::scrollBackgroundColor;
+        static const Border defaultFrameBorder = BUTTON_PUSHED; // TODO: to theme
+        static const Color defaultFrameBackgroundColor = Theme::frameBackgroundColor;
 
     protected:
 
@@ -1115,8 +1141,8 @@ namespace madlib::graph {
         bool fixed = false;
 
         Frame(GFX& gfx, int left, int top, int width, int height,
-            const Border border = defaultScrollBorder,
-            const Color backgroundColor = defaultScrollBackgroundColor
+            const Border border = defaultFrameBorder,
+            const Color backgroundColor = defaultFrameBackgroundColor
         ): Area(gfx, left, top, width, height, "", CENTER, border, backgroundColor)
         {
             onTouchHandlers.push_back(touch);
@@ -1187,4 +1213,30 @@ namespace madlib::graph {
         {}
     };
     
+    class Application {
+    protected:
+        
+        static void close(void* context, unsigned int, int, int) {
+            ((Area*)context)->getRoot()->getGFX().close = true;
+        }
+
+        GFX gfx = GFX(this);
+        GUI gui = GUI(gfx, 1600, 900, "Application");
+
+    public:
+
+        virtual ~Application() {}
+
+        Application* run() {
+            // Application::init();
+            init();
+            gui.loop();
+            return this;
+        }
+
+        virtual void init() {
+            throw ERR_UNIMP;
+        }
+    };
+
 }

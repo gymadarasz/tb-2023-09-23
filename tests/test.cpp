@@ -13,6 +13,7 @@
 #include "includes/madlib/graph/chart_manual_test3_candles.hpp"
 #include "includes/madlib/graph/chart_manual_test4_history.hpp"
 #include "includes/madlib/graph/chart_manual_test5_zoom.hpp"
+#include "includes/madlib/graph/ChartManualTest6.hpp"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ public:
 
 int main() {
 
-    cout << "Testing in progress.." << endl;
+    cout << "Testing in progress: ";
 
     Tester::run(ToolsTest::test_trim);
     Tester::run(ToolsTest::test_normalize_datetime);
@@ -49,17 +50,21 @@ int main() {
     Tester::run(FilesTest::testFiles_file_put_contents);
     Tester::run(LogTest::testLog_writeln);
 
-    cout << endl;
+    cout << " [OK]" << endl;
 
-    cout << "Manual tests..." << endl;
-    graph_manual_test1();
-    chart_manual_test1();
-    chart_manual_test2();
-    chart_manual_test3_candles();
-    chart_manual_test4_history();
+    cout << "Manual tests: ";
+
+    delete (new ChartManualTest6)->run();
+
     chart_manual_test5_zoom();
+    chart_manual_test4_history();
+    chart_manual_test3_candles();
+    chart_manual_test2();
+    chart_manual_test1();
+    graph_manual_test1();
 
-    cout << "\033[92mAll tests are passed\033[39m" << endl;
+    cout << " [OK]" << endl 
+        << "\033[92mAll tests are passed\033[39m" << endl;
 
 
     return 0;

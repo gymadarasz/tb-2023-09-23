@@ -267,6 +267,21 @@ namespace madlib::graph {
             project(realPoints);
             this->texts = texts;
         }
+
+        void alignXTo(const Scale& scale) {
+            xmin = scale.xmin;
+            xmax = scale.xmax;
+        }
+
+        void alignYTo(const Scale& scale) {
+            ymin = scale.ymin;
+            ymax = scale.ymax;
+        }
+
+        void alignXYTo(const Scale& scale) {
+            alignXTo(scale);
+            alignYTo(scale);
+        }
     };
 
     class Chart: public Zoomable {
