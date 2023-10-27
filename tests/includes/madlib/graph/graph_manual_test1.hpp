@@ -71,7 +71,7 @@ int graph_manual_test1()
     // frame.fixed = true;    
     button2.onTouchHandlers.push_back(graph_manual_test1_doit);
     Button button3(gfx, 210, 10, 80, 30, "Sticky");
-    button3.sticky = true;
+    button3.setSticky(true);
     Button button4(gfx, 310, 10, 80, 30, "Hello4");
     Button button5(gfx, 10, 50, 250, 50, "Big Willy");
     Button button6(gfx, 210, 210, 80, 30, "Close");

@@ -14,6 +14,7 @@
 #include "includes/madlib/graph/chart_manual_test4_history.hpp"
 #include "includes/madlib/graph/chart_manual_test5_zoom.hpp"
 #include "includes/madlib/graph/ChartManualTest6.hpp"
+#include "includes/madlib/graph/AccordionManualTest1.hpp"
 
 using namespace std;
 
@@ -54,6 +55,7 @@ int main() {
 
     cout << "Manual tests: ";
 
+    delete (new AccordionManualTest1)->run();
     delete (new ChartManualTest6)->run();
 
     chart_manual_test5_zoom();
