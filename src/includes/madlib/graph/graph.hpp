@@ -577,7 +577,7 @@ namespace madlib::graph {
     protected:
         GFX& gfx;
 
-        const int left, top;
+        int left, top;
         int width, height;
         const string text;
         const Align textAlign;
@@ -654,6 +654,8 @@ namespace madlib::graph {
             setScrollXYMinMax(0, 0, width, height);
         }
 
+        virtual ~Area() {}
+
         const Rectangle& getViewport(Rectangle& viewport) const {
             int t = getTop();
             int l = getLeft();
@@ -727,6 +729,10 @@ namespace madlib::graph {
             return parent;
         }
 
+        Area* getParentOrSelf() {
+            return parent ? parent : this;
+        }
+
         Area* getRoot() {
             return parent ? parent->getRoot() : this;
         }
@@ -788,15 +794,25 @@ namespace madlib::graph {
             return scrollY;
         }
 
-        int getTop() const {
+        int getTop(bool withParent = true) const {
+            if (!withParent) return top;
             Area* p = getParent();
             return top + (p ? p->getTop() - p->getScrollY() : 0);
         }
 
-        int getLeft() const {
+        void setTop(int top) {
+            this->top = top;
+        }
+
+        int getLeft(bool withParent = true) const {
+            if (!withParent) return left;
             Area* p = getParent();
             return left + (p ? p->getLeft() - p->getScrollX() : 0);
-        }        
+        }
+
+        void setLeft() {
+            this->left = left;
+        }    
 
         int getWidth() const override {
             return width;
@@ -814,8 +830,8 @@ namespace madlib::graph {
             this->height = height;
         }
 
-        int getRight() const {
-            return getLeft() + getWidth();
+        int getRight(bool withParent = true) const {
+            return getLeft(withParent) + getWidth();
         }
 
         int getRight(int left) const {
@@ -826,8 +842,8 @@ namespace madlib::graph {
             return left + width;
         }
 
-        int getBottom() const {
-            return getTop() + getHeight();
+        int getBottom(bool withParent = true) const {
+            return getTop(withParent) + getHeight();
         }
 
         int getBottom(int top) const {
@@ -1154,8 +1170,6 @@ namespace madlib::graph {
 
     class Button: public Area {
     protected:
-
-        bool pushed = false;
         
         static void touch(void* context, unsigned int, int, int) {
             Button* that = static_cast<Button*>(context);
@@ -1176,8 +1190,10 @@ namespace madlib::graph {
             if (that->pushed) that->release();
         }
 
-    public:
+        bool pushed = false;
         bool sticky = false;
+
+    public:
 
         Button(GFX& gfx, int left, int top, int width, int height, 
             const string &text, const Align textAlign = Area::defaultAreaTextAlign
@@ -1185,6 +1201,23 @@ namespace madlib::graph {
         {
             onTouchHandlers.push_back(touch);
             onReleaseHandlers.push_back(release);
+        }
+
+        bool isPushed() const {
+            return pushed;
+        }
+
+        void setPushed(bool pushed) {
+            if (pushed) push();
+            else release();
+        }
+
+        bool isSticky() const {
+            return sticky;
+        }
+
+        void setSticky(bool sticky) {
+            this->sticky = sticky;
         }
 
         void push() {
@@ -1212,6 +1245,8 @@ namespace madlib::graph {
         ): Area(gfx, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
         {}
     };
+
+
     
     class Application {
     protected:
