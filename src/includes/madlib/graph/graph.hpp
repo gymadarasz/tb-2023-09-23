@@ -737,13 +737,14 @@ namespace madlib::graph {
             return parent ? parent->getRoot() : this;
         }
 
-        void child(Area& area) {
+        Area& child(Area& area) {
             area.setParent(this);
             areas.push_back(&area);
             setScrollXYMinMax(
                 area.left + area.width + frameMargin,
                 area.top + area.height + frameMargin
             );
+            return area;
         }
 
         void setScrollXYMin(int x, int y, bool forceInRange = true) {
@@ -1347,7 +1348,8 @@ namespace madlib::graph {
 
             void open() { 
                 if (opened) return;
-                if (!toggler->isSticky()) toggler->push();
+                toggler->push();
+                if (!toggler->isSticky()) toggler->release();
                 opened = true;
             }
 
@@ -1380,11 +1382,11 @@ namespace madlib::graph {
         bool single = false; // TODO
     public:
         Accordion(GFX& gfx, int left, int top, int width, bool sticky = false, // TODO
-            const Align textAlign = Area::defaultAreaTextAlign,
-            const Border border = Area::defaultAreaBorder,
-            const Color backgroundColor = Area::defaultAreaBackgroundColor,
-            const int frameMargin = Area::defaultFrameMargin,
-            const int textPadding = Area::defaultTextMargin
+            const Align textAlign = Area::defaultAreaTextAlign, // TODO
+            const Border border = Area::defaultAreaBorder, // TODO
+            const Color backgroundColor = Area::defaultAreaBackgroundColor, // TODO
+            const int frameMargin = Area::defaultFrameMargin, // TODO
+            const int textPadding = Area::defaultTextMargin // TODO
         ): 
             Area(gfx, left, top, width, 0, "", 
                 textAlign, border, backgroundColor, frameMargin, textPadding), sticky(sticky) {}
@@ -1432,8 +1434,15 @@ namespace madlib::graph {
             }
         }
 
-        void addContainer(const string& title, int frameHeight) {
-            new Container(*this, title, textAlign, frameHeight);
+        void openAll() {
+            size_t containersSize = containers.size();
+            for (size_t i = 0; i < containersSize; i++) {
+                openAt(i);
+            }
+        }
+
+        Container& addContainer(const string& title, int frameHeight) {
+            return *(new Container(*this, title, textAlign, frameHeight));
         }
 
         vector<Container*>& getContainers() {

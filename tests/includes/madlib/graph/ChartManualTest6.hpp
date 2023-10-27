@@ -2,6 +2,13 @@
 
 #include "../../ManualTestApplication.hpp"
 
+#include "../../../../src/includes/madlib/graph/graph.hpp"
+#include "../../../../src/includes/madlib/graph/Chart.hpp"
+#include "../../../../src/includes/madlib/trading/trading.hpp"
+
+using namespace madlib::graph;
+using namespace madlib::trading;
+
 class ChartManualTest6: public ManualTestApplication {
 protected:
 

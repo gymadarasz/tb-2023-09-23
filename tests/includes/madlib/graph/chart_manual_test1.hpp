@@ -65,8 +65,8 @@ int chart_manual_test1()
     vector<RealPoint> realPoints;
     chart_manual_test1_generateRealPoints(realPoints);
 
-    chart.getScaleAt(chart.addScale()).project(realPoints);
-    Scale& secondScale = chart.getScaleAt(chart.addScale());
+    chart.addScale().project(realPoints);
+    Scale& secondScale = chart.addScale();
     secondScale.setZoom(Zoom(2.0, 1.5));
     secondScale.project(realPoints);
     

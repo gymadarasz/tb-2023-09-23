@@ -295,7 +295,7 @@ namespace madlib::graph {
         Painter& painter;
         Color borderColor = white;
         
-        vector<Scale> scales;
+        vector<Scale*> scales;
 
         typedef void (*DrawPairFunction)(Painter*, int, int, int, int);
 
@@ -316,20 +316,20 @@ namespace madlib::graph {
         explicit Chart(Painter& painter): painter(painter)
         {}
 
-        const vector<Scale>& getScales() const {
+        const vector<Scale*>& getScales() const {
             return scales;
         }
 
         Scale& getScaleAt(size_t at) {
             if (scales.size() <= at) throw runtime_error("Invalid scale index: " + to_string(at));
-            return scales[at];
+            return *scales.at(at);
         }
 
-        size_t addScale(Shape shape = LINE, Color color = defaultChartShapeColor, const Zoom* zoom = NULL) {
-            Scale scale(painter.getWidth(), painter.getHeight(), color, shape);
-            scale.setZoom(zoom ? *zoom : this->zoom);
+        Scale& addScale(Shape shape = LINE, Color color = defaultChartShapeColor, const Zoom* zoom = NULL) {
+            Scale* scale = new Scale(painter.getWidth(), painter.getHeight(), color, shape);
+            scale->setZoom(zoom ? *zoom : this->zoom);
             scales.push_back(scale);
-            return scales.size() - 1;
+            return *scale;
         }
         
         void drawPoint(int x, int y) const {
@@ -341,7 +341,7 @@ namespace madlib::graph {
         }
 
         void drawPoints(const size_t scale, const Color color) const {
-            vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
             int painterHeight = painter.getHeight();
@@ -362,11 +362,12 @@ namespace madlib::graph {
         }
 
         void drawPairs(const size_t scale, const Color color, const Shape shape) const {
-            vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
-            int x1 = projectedPoints[0].getX();
-            int y1 = projectedPoints[0].getY();
+            ProjectedPoint projectedPoint = projectedPoints.at(0);
+            int x1 = projectedPoint.getX();
+            int y1 = projectedPoint.getY();
             int painterHeight = painter.getHeight();
             DrawPairFunction func;
             switch (shape) {
@@ -445,15 +446,15 @@ namespace madlib::graph {
         }
 
         void drawCandles(const size_t scale, const Color colorInc = green, const Color colorDec = red) const {
-            vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             size_t size = projectedPoints.size();
             int painterHeight = painter.getHeight();
             for (size_t i = 0; i < size; i += 4) {
-                const ProjectedPoint& open = projectedPoints[i];
-                const ProjectedPoint& close = projectedPoints[i + 1];
-                const ProjectedPoint& low = projectedPoints[i + 2];
-                const ProjectedPoint& high = projectedPoints[i + 3];
+                const ProjectedPoint& open = projectedPoints.at(i);
+                const ProjectedPoint& close = projectedPoints.at(i + 1);
+                const ProjectedPoint& low = projectedPoints.at(i + 2);
+                const ProjectedPoint& high = projectedPoints.at(i + 3);
                 drawCandle(open, close, low, high, colorInc, colorDec, painterHeight); // FlawFinder: ignore
                 // Color color = open.getY() < close.getY() ? colorInc : colorDec;
                 // painter.color(color);
@@ -468,15 +469,16 @@ namespace madlib::graph {
         }
 
         void writeTexts(size_t scale, Color color) const {
-            vector<ProjectedPoint> projectedPoints = scales[scale].getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
-            vector<string> texts = scales[scale].getTexts();
+            vector<string> texts = scales.at(scale)->getTexts();
             if (texts.empty()) return;
             int painterHeight = painter.getHeight();
             painter.color(color);
             size_t size = projectedPoints.size();
             for (size_t i = 0; i < size; i++) {
-                painter.write(projectedPoints[i].getX(), painterHeight - projectedPoints[i].getY(), texts[i]);
+                ProjectedPoint projectedPoint = projectedPoints.at(i);
+                painter.write(projectedPoint.getX(), painterHeight - projectedPoint.getY(), texts.at(i));
             }
         }
 
@@ -485,9 +487,9 @@ namespace madlib::graph {
 
         void draw() const {
             size_t at = 0;
-            for (const Scale& scale: scales) {
-                const Shape shape = scale.getShape();
-                const Color color = scale.getColor();
+            for (const Scale* scale: scales) {
+                const Shape shape = scale->getShape();
+                const Color color = scale->getColor();
                 switch (shape)
                 {
                     case DOT:

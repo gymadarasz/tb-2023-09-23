@@ -309,7 +309,7 @@ namespace madlib::trading {
                     candlesRealPoints.push_back(RealPoint(middle, low));
                     candlesRealPoints.push_back(RealPoint(middle, high));
                 }
-                candlesScale = &chart.getScaleAt(chart.addScale(CANDLE));
+                candlesScale = &chart.addScale(CANDLE);
                 candlesScale->project(candlesRealPoints);
             }
 
@@ -325,13 +325,13 @@ namespace madlib::trading {
                 }
                 
                 if (showPrices) {
-                    Scale& priceScale = chart.getScaleAt(chart.addScale(LINE, orange));
+                    Scale& priceScale = chart.addScale(LINE, orange);
                     priceScale.project(pricesRealPoints);
                     if (candlesScale) {
                         priceScale.alignXTo(*candlesScale);
                     }
                 }
-                if (showVolumes) chart.getScaleAt(chart.addScale(LINE, darkGray)).project(volumesRealPoints);
+                if (showVolumes) chart.addScale(LINE, darkGray).project(volumesRealPoints);
             }
         }
     };
