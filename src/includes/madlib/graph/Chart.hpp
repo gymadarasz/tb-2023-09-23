@@ -546,4 +546,62 @@ namespace madlib::graph {
         };
     };
 
+
+
+    class ChartArea {
+    public:
+        static void draw(void* context) {
+            Area* that = (Area*)context;
+            Chart* chart = (Chart*)that->getEventContext();
+            if (chart) chart->draw();
+        }
+    };
+
+
+    class MultiChart: public ChartArea {
+    protected:
+
+        const int innerBorderSize = 2; // TODO
+
+        vector<Chart*> charts;
+
+    public:
+
+        ~MultiChart() {
+            Vector::destroy<Chart>(charts);
+        }
+
+        Chart& addChartToArea(Area& area) {
+            Chart* chart = new Chart(area);
+            area.setEventContext(chart);
+            area.onDrawHandlers.push_back(draw);
+            charts.push_back(chart);
+            return *chart;
+        }
+
+        Chart& addChartToAccordion(Accordion& accordion, const string& title = "Chart", int frameHeight = 150) {
+            const Accordion::Container& container = accordion.addContainer(title, frameHeight);
+            Frame& cntrFrame = container.getFrame();
+            Frame* frame = new Frame(
+                accordion.getGFX(), 
+                innerBorderSize, innerBorderSize, 
+                cntrFrame.getWidth() - innerBorderSize*2,  // accordion.getWidth() - innerBorderSize*4, 
+                frameHeight - innerBorderSize*2,  // frameHeight - innerBorderSize*2,
+                BUTTON_PUSHED, black
+            );
+            cntrFrame.child(*frame);
+            return addChartToArea(*frame);
+        }
+    };
+
+    class MultiChartAccordion: public MultiChart, public Accordion {
+    protected:
+    public:
+        using Accordion::Accordion;
+
+        Chart& addChart(const string& title = "Chart", int frameHeight = 150) {
+            return addChartToAccordion(*this, title, frameHeight);
+        }
+    };
+
 }
