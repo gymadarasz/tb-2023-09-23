@@ -18,7 +18,7 @@ protected:
         app->accordion.setSingle(stickyBtn->isPushed());
     }
 
-    Accordion accordion = Accordion(gfx, 10, 50, 400, false, LEFT, BUTTON_PUSHED);
+    Accordion accordion = Accordion(gfx, 10, 50, 400, false, LEFT);
     Button stickyBtn = Button(gfx, 420, 50, 100, 40, "Sticky");
     Button singleBtn = Button(gfx, 420, 100, 100, 40, "Single");
 

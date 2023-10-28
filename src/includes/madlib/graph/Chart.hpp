@@ -1,8 +1,10 @@
 #pragma once
 
 #include "graph.hpp"
+#include "../Vector.hpp"
 
 using namespace std;
+using namespace madlib;
 
 namespace madlib::graph {
 
@@ -247,9 +249,9 @@ namespace madlib::graph {
             for (const RealPoint realPoint: realPoints) adaptXY(realPoint);
         }
 
-        vector<ProjectedPoint>& project(const vector<RealPoint>& realPoints) {
+        vector<ProjectedPoint>& project(const vector<RealPoint>& realPoints, bool adapt = true) {
             projectedPoints.clear();
-            adaptXY(realPoints);
+            if (adapt) adaptXY(realPoints);
             ProjectedPoint projectedPoint;
             // for (const RealPoint& realPoint: realPoints) 
             //     projectedPoints.push_back(
@@ -268,19 +270,27 @@ namespace madlib::graph {
             this->texts = texts;
         }
 
-        void alignXTo(const Scale& scale) {
-            xmin = scale.xmin;
-            xmax = scale.xmax;
+        static void alignX(Scale& scale1, Scale& scale2) {
+            double xmin = scale1.xmin < scale2.xmin ? scale1.xmin : scale2.xmin;
+            double xmax = scale1.xmax > scale2.xmax ? scale1.xmax : scale2.xmax;
+            scale1.xmin = xmin;
+            scale1.xmax = xmax;
+            scale2.xmin = xmin;
+            scale2.xmax = xmax;
         }
 
-        void alignYTo(const Scale& scale) {
-            ymin = scale.ymin;
-            ymax = scale.ymax;
+        static void alignY(Scale& scale1, Scale& scale2) {
+            double ymin = scale1.ymin < scale2.ymin ? scale1.ymin : scale2.ymin;
+            double ymax = scale1.ymax > scale2.ymax ? scale1.ymax : scale2.ymax;
+            scale1.ymin = ymin;
+            scale1.ymax = ymax;
+            scale2.ymin = ymin;
+            scale2.ymax = ymax;
         }
 
-        void alignXYTo(const Scale& scale) {
-            alignXTo(scale);
-            alignYTo(scale);
+        static void alignXY(Scale& scale1, Scale& scale2) {
+            alignX(scale1, scale2);
+            alignY(scale1, scale2);
         }
     };
 
@@ -313,8 +323,11 @@ namespace madlib::graph {
 
     public:
 
-        explicit Chart(Painter& painter): painter(painter)
-        {}
+        explicit Chart(Painter& painter): painter(painter) {}
+
+        ~Chart() {
+            Vector::destroy<Scale>(scales);
+        }
 
         const vector<Scale*>& getScales() const {
             return scales;
@@ -365,9 +378,9 @@ namespace madlib::graph {
             vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
-            ProjectedPoint projectedPoint = projectedPoints.at(0);
-            int x1 = projectedPoint.getX();
-            int y1 = projectedPoint.getY();
+            ProjectedPoint prjPoint = projectedPoints.at(0);
+            int x1 = prjPoint.getX();
+            int y1 = prjPoint.getY();
             int painterHeight = painter.getHeight();
             DrawPairFunction func;
             switch (shape) {

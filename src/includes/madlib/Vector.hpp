@@ -74,6 +74,17 @@ namespace madlib {
             for (size_t i = 0; i < v1.size(); ++i) if (!compareFunc(v1[i], v2[i])) return false;
             return true;
         }
-    };
+
+        template<typename T>
+        static void destroy(vector<T*> v) {
+            for (T* elem: v) 
+                if (elem) {
+                    delete elem;
+                    elem = NULL;
+                }
+            v.clear();
+        }
+
+     };
     
 }

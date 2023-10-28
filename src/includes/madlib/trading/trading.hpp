@@ -327,9 +327,7 @@ namespace madlib::trading {
                 if (showPrices) {
                     Scale& priceScale = chart.addScale(LINE, orange);
                     priceScale.project(pricesRealPoints);
-                    if (candlesScale) {
-                        priceScale.alignXTo(*candlesScale);
-                    }
+                    if (candlesScale) Scale::alignXY(priceScale, *candlesScale);
                 }
                 if (showVolumes) chart.addScale(LINE, darkGray).project(volumesRealPoints);
             }

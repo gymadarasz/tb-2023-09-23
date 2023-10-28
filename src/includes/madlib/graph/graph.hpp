@@ -8,6 +8,7 @@
 #include <vector>
 #include "../Log.hpp"
 #include "../Tools.hpp"
+#include "../Vector.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -166,6 +167,13 @@ namespace madlib::graph {
         vector<onMoveHandler> onMoveHandlers;
         vector<onLoopHandler> onLoopHandlers;
 
+        void setEventContext(void* eventContext) {
+            this->eventContext = eventContext;
+        }
+
+        void* getEventContext() const {
+            return eventContext;
+        }
     };
 
     struct Rectangle {
@@ -654,7 +662,9 @@ namespace madlib::graph {
             setScrollXYMinMax(0, 0, width, height);
         }
 
-        virtual ~Area() {}
+        virtual ~Area() {
+            // TODO: manage area pointers: Vector::destroy<Area>(areas);
+        }
 
         const Rectangle& getViewport(Rectangle& viewport) const {
             int t = getTop();
@@ -811,7 +821,7 @@ namespace madlib::graph {
             return left + (p ? p->getLeft() - p->getScrollX() : 0);
         }
 
-        void setLeft() {
+        void setLeft(int left) {
             this->left = left;
         }    
 
@@ -1267,11 +1277,10 @@ namespace madlib::graph {
                     return;
                 }
                 
-                if (accordion.getContainers().at(that->containerIndex)->isOpened())
-                    accordion.closeAt(that->containerIndex);
-                else 
-                    accordion.openAt(that->containerIndex);
-                    
+                Container* container = accordion.getContainers().at(that->containerIndex);
+                if (container->isOpened()) {
+                    if (!accordion.isOne()) accordion.closeAt(that->containerIndex);
+                } else accordion.openAt(that->containerIndex);
             }
 
             Container& container;
@@ -1301,7 +1310,7 @@ namespace madlib::graph {
         class Container {
         protected:
             const int togglerHeight = 30; // TODO
-            const int innerPadding = 1; // TODO
+            const int innerBorderSize = 1;
 
             Toggler* toggler = NULL;
             Frame* frame = NULL;
@@ -1314,27 +1323,33 @@ namespace madlib::graph {
                 Accordion& accordion,
                 const string& title, const Align textAlign, 
                 int frameHeight = 100 // TODO
-            ): accordion(accordion), frameHeight(frameHeight) 
+            ): 
+                accordion(accordion), frameHeight(frameHeight) 
             {
                 GFX& gfx = accordion.getGFX();
                 const int width = accordion.getWidth();
-                const int innerPadding2 = innerPadding * 2;
-                const int widthInnerPadding2 = width - innerPadding2;
-                vector<Container*>& containers = accordion.getContainers();
-                const int togglerTop = accordion.height + innerPadding;
+                vector<Container*>& cntrs = accordion.getContainers();
+                const int togglerTop = accordion.height + innerBorderSize;
 
-                toggler = new Toggler(*this, gfx, containers.size(),
-                    innerPadding, togglerTop, widthInnerPadding2, togglerHeight - innerPadding2, 
+                toggler = new Toggler(*this, gfx, cntrs.size(),
+                    innerBorderSize, togglerTop, width - innerBorderSize*3, togglerHeight - innerBorderSize*2, 
                     title, textAlign);
 
                 frame = new Frame(gfx, 
-                    innerPadding, togglerTop + togglerHeight - innerPadding2,
-                    widthInnerPadding2, 0);
+                    innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
+                    width, 0, NONE);
             
                 accordion.child(*toggler);
                 accordion.child(*frame);
-                containers.push_back(this);
-                accordion.height = togglerHeight * (int)containers.size();
+                cntrs.push_back(this);
+                accordion.height = togglerHeight * (int)cntrs.size();
+            }
+
+            ~Container() {
+                if (toggler) delete toggler;
+                toggler = NULL;
+                if (frame) delete frame;
+                frame = NULL;
             }
 
             bool isOpened() const {
@@ -1380,16 +1395,22 @@ namespace madlib::graph {
         vector<Container*> containers;
         bool sticky = false; // TODO
         bool single = false; // TODO
+        bool one = false; // TODO
     public:
-        Accordion(GFX& gfx, int left, int top, int width, bool sticky = false, // TODO
+        Accordion(GFX& gfx, int left, int top, int width, 
+            bool sticky = false, // TODO
             const Align textAlign = Area::defaultAreaTextAlign, // TODO
-            const Border border = Area::defaultAreaBorder, // TODO
+            const Border border = NONE, //Area::defaultAreaBorder, // TODO
             const Color backgroundColor = Area::defaultAreaBackgroundColor, // TODO
             const int frameMargin = Area::defaultFrameMargin, // TODO
             const int textPadding = Area::defaultTextMargin // TODO
         ): 
             Area(gfx, left, top, width, 0, "", 
                 textAlign, border, backgroundColor, frameMargin, textPadding), sticky(sticky) {}
+
+        ~Accordion() {
+            Vector::destroy<Container>(containers);
+        }
 
         bool isSticky() const {
             return sticky;
@@ -1425,6 +1446,15 @@ namespace madlib::graph {
                 }
             }
             getParentOrSelf()->draw();
+        }
+
+        bool isOne() const {
+            return one;
+        }
+
+        void setOne(bool one) {
+            if (one) setSingle(true);
+            this->one = one;
         }
 
         void closeAllExcept(size_t exceptIndex) {
