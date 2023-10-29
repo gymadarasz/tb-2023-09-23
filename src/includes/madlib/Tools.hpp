@@ -55,6 +55,17 @@ namespace madlib {
         return tpl;
     }
 
+    ms_t now() {
+        // Get the current time_point
+        system_clock::time_point currentTime = system_clock::now();
+
+        // Convert it to milliseconds since the epoch
+        milliseconds ms = duration_cast<milliseconds>(currentTime.time_since_epoch());
+
+        // Extract the value as a long
+        return static_cast<ms_t>(ms.count()); 
+    }
+
     ms_t datetime_to_ms(const string& datetime) {
         if (datetime.empty()) return 0;
 
@@ -75,7 +86,7 @@ namespace madlib {
         return seconds * 1000 + milliseconds;
     }
 
-    string ms_to_datetime(long ms = 0, const char* fmt = "%Y-%m-%d %H:%M:%S", bool millis = true, bool local = false) {
+    string ms_to_datetime(ms_t ms = now(), const char* fmt = "%Y-%m-%d %H:%M:%S", bool millis = true, bool local = false) {
         long sec = ms / 1000;
         long mil = ms % 1000;
 
@@ -95,17 +106,6 @@ namespace madlib {
         }
 
         return oss.str();
-    }
-
-    ms_t now() {
-        // Get the current time_point
-        system_clock::time_point currentTime = system_clock::now();
-
-        // Convert it to milliseconds since the epoch
-        milliseconds ms = duration_cast<milliseconds>(currentTime.time_since_epoch());
-
-        // Extract the value as a long
-        return static_cast<ms_t>(ms.count()); 
     }
 
     inline void sleep(unsigned long ms) {

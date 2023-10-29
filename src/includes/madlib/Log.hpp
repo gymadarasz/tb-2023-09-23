@@ -18,7 +18,7 @@ namespace madlib {
         template <typename... Args>
         void writeln(Args... args) {
             // Concatenate all arguments into a single string
-            string message = concat(args...);
+            string message = "[" + ms_to_datetime() + "] " + concat(args...);
             Files::file_put_contents(filename, message + "\n", true);
         }
 
