@@ -53,13 +53,13 @@ public:
         multiChartAccordion.openAt(0);
         gui.child(multiChartAccordion);
 
-        Scale& scale0 = testChart.addScale(LINE, lightBlue);
-        Scale& scale1 = testChart.addScale(LINE, lightGreen);
+        Chart::Scale& scale0 = testChart.addScale(LINE, &lightBlue);
+        Chart::Scale& scale1 = testChart.addScale(LINE, &lightGreen);
         vector<RealPoint> realPoints0 = generateRealPoints(100, -1, 1);
         vector<RealPoint> realPoints1 = generateRealPoints(100, 0, 1);
         scale0.adaptXY(realPoints0);
         scale1.adaptXY(realPoints1);
-        Scale::alignXY(scale0, scale1);
+        Chart::Scale::alignXY(scale0, scale1);
         scale0.project(realPoints0, false);
         scale1.project(realPoints1, false);
         

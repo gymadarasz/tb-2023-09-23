@@ -12,6 +12,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "Tools.hpp"
+
 using namespace std;
 
 namespace madlib {
@@ -118,14 +120,14 @@ namespace madlib {
                 // Create the directory and its parent directories (if they don't exist)
                 filesystem::create_directories(pathToCreate);
             } catch (const exception& e) {
-                throw runtime_error("Error creating directory: " + string(e.what()));
+                throw ERROR("Error creating directory: " + string(e.what()));
             }
         }
 
         static time_t getLastModificationTime(const string& filePath) {
             struct stat fileInfo;
             if (stat(filePath.c_str(), &fileInfo) != 0) {
-                throw runtime_error("Error getting file information.");
+                throw ERROR("Error getting file information.");
             }
             
             return fileInfo.st_mtime;
@@ -134,18 +136,18 @@ namespace madlib {
         static void file_put_contents(const string& filename, const string& data, bool append = false) {
             // Check if the file is a symlink
             if (filesystem::is_symlink(filename))
-                throw runtime_error("Error: Symlink detected. Refusing to open: " + filename);
+                throw ERROR("Error: Symlink detected. Refusing to open: " + filename);
 
             // Check if the file is a special file (e.g., character or block device)
             if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
-                throw runtime_error("Error: Special file detected. Refusing to open: " + filename);
+                throw ERROR("Error: Special file detected. Refusing to open: " + filename);
                 
             ofstream file;
             // FlawFinder: ignore
             file.open(filename, append ? ios::out | ios::app : ios::out);
 
             if (!file.is_open())
-                throw runtime_error("Error: Unable to open file for writing: " + filename);
+                throw ERROR("Error: Unable to open file for writing: " + filename);
 
             file << data;
             file.close();
@@ -154,7 +156,7 @@ namespace madlib {
         static string file_get_contents(const string& filename) {
             ifstream file(filename);
             if (!file.is_open()) {
-                throw runtime_error("Error: Unable to open file for reading: " + filename);
+                throw ERROR("Error: Unable to open file for reading: " + filename);
             }
 
             string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));

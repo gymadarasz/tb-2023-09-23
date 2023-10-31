@@ -27,7 +27,7 @@ int chart_manual_test2()
     chart.addScale();
     chart_manual_test2_chartPtr = &chart;
     gui.onDrawHandlers.push_back(chart_manual_test2_draw);
-    chart.addScale(TEXT, black);
+    chart.addScale(LABEL, &black);
 
 
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");

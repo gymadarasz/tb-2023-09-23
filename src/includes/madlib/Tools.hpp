@@ -14,7 +14,9 @@
 using namespace std;
 using namespace chrono;
 
-#define ERR_UNIMP runtime_error("Unimplemented");
+#define ERROR(msg) runtime_error(string(msg) + ": " + string(__FILE__) + ":" + to_string(__LINE__)); 
+#define ERR_UNIMP ERROR("Unimplemented");
+#define ERR_MISSING ERROR("Missing");
 
 namespace madlib {
 
@@ -154,7 +156,7 @@ namespace madlib {
 
     template<typename T>
     T min(vector<T> values) {
-        if (values.empty()) throw runtime_error("Empty set has no minimum");
+        if (values.empty()) throw ERROR("Empty set has no minimum");
         T minVal = values[0];
         for (size_t i = 1; i < values.size(); ++i) if (values[i] < minVal) minVal = values[i];
         return minVal;
@@ -162,10 +164,17 @@ namespace madlib {
 
     template<typename T>
     T max(vector<T> values) {
-        if (values.empty()) throw runtime_error("Empty set has no maximun");
+        if (values.empty()) throw ERROR("Empty set has no maximun");
         T maxVal = values[0];
         for (size_t i = 1; i < values.size(); ++i) if (values[i] > maxVal) maxVal = values[i];
         return maxVal;
+    }
+
+    template <typename... Args>
+    string concat(Args... args) {
+        ostringstream stream;
+        (stream << ... << args);
+        return stream.str();
     }
 
 }

@@ -155,6 +155,11 @@ namespace madlib::trading {
             }
         }
 
+        void init() {
+            initTrades();
+            initCandles();
+        }
+
     public:
 
         TradeHistory(
@@ -168,11 +173,6 @@ namespace madlib::trading {
             endTime(endTime), 
             period(period)
         {}
-
-        void init() {
-            initTrades();
-            initCandles();
-        }
 
         virtual vector<Trade> getTrades() const {
             return trades;
@@ -261,7 +261,9 @@ namespace madlib::trading {
             priceMean(priceMean), priceStdDeviation(priceStdDeviation),
             timeLambda(timeLambda),
             gen(seed)
-        {}
+        {
+            init();
+        }
         
 
         // Function to print the generated events
@@ -276,25 +278,39 @@ namespace madlib::trading {
 
     class TradeHistoryChartPlugin: public ChartPlugin {
     protected:
-        const bool showCandles, showPrices, showVolumes;
-
+        const TradeHistory& history;
+        const Zoom& zoom;
+        const Chart::CandleStyle& candleStyle;
+        const bool showCandles = true, showPrices = true, showVolumes = true; // TODO
+        const Color& priceColor = orange; // TODO
+        const Color& volumeColor = darkGray; // TODO
     public:
+
         TradeHistoryChartPlugin(
-            const bool showCandles = true, 
-            const bool showPrices = true, 
-            const bool showVolumes = true
-        ):
-            showCandles(showCandles), 
-            showPrices(showPrices), 
-            showVolumes(showVolumes)
+            const TradeHistory& history,
+            const Zoom& zoom,
+            const Chart::CandleStyle& candleStyle,
+            const bool showCandles = true, // TODO
+            const bool showPrices = true, // TODO
+            const bool showVolumes = true, // TODO
+            const Color& priceColor = orange, // TODO
+            const Color& volumeColor = darkGray // TODO
+        ): 
+            history(history),
+            zoom(zoom),
+            candleStyle(candleStyle),
+            showCandles(showCandles),
+            showPrices(showPrices),
+            showVolumes(showVolumes),
+            priceColor(priceColor),
+            volumeColor(volumeColor)
         {}
 
-        void project(Chart& chart, void* context) const override {
-            TradeHistory* history = static_cast<TradeHistory*>(context);
+        void project(Chart& chart, const void* = NULL) const override {
 
-            Scale* candlesScale = NULL;
+            Chart::Scale* candlesScale = NULL;
             if (showCandles) {
-                vector<Candle> candles = history->getCandles();
+                vector<Candle> candles = history.getCandles();
                 vector<RealPoint> candlesRealPoints;
                 for (const Candle& candle: candles) {
                     double start = static_cast<double>(candle.getStart());
@@ -309,12 +325,12 @@ namespace madlib::trading {
                     candlesRealPoints.push_back(RealPoint(middle, low));
                     candlesRealPoints.push_back(RealPoint(middle, high));
                 }
-                candlesScale = &chart.addScale(CANDLE);
+                candlesScale = &chart.addScale(CANDLE, &candleStyle, &zoom);
                 candlesScale->project(candlesRealPoints);
             }
 
             if (showPrices || showVolumes) {
-                vector<Trade> trades = history->getTrades();
+                vector<Trade> trades = history.getTrades();
                 vector<RealPoint> pricesRealPoints;
                 vector<RealPoint> volumesRealPoints;
                 for (const Trade& trade: trades) {
@@ -325,13 +341,382 @@ namespace madlib::trading {
                 }
                 
                 if (showPrices) {
-                    Scale& priceScale = chart.addScale(LINE, orange);
+                    Chart::Scale& priceScale = chart.addScale(LINE, &priceColor, &zoom);
                     priceScale.project(pricesRealPoints);
-                    if (candlesScale) Scale::alignXY(priceScale, *candlesScale);
+                    if (candlesScale) Chart::Scale::alignXY(priceScale, *candlesScale);
                 }
-                if (showVolumes) chart.addScale(LINE, darkGray).project(volumesRealPoints);
+                if (showVolumes) 
+                    chart.addScale(LINE, &volumeColor, &zoom).project(volumesRealPoints);
             }
         }
     };
 
+
+    class Fees {
+    protected:
+
+        const double marketBuyPc = 0.0;
+        const double marketSellPc = 0.0;
+        const double limitBuyPc = 0.0;
+        const double limitSellPc = 0.0;
+
+    public:
+
+        Fees(
+            const double marketBuyPc,
+            const double marketSellPc,
+            const double limitBuyPc,
+            const double limitSellPc
+        ):
+            marketBuyPc(marketBuyPc),
+            marketSellPc(marketSellPc),
+            limitBuyPc(limitBuyPc),
+            limitSellPc(limitSellPc)
+        {}
+
+        double getMarketBuyPc() const {
+            return marketBuyPc;
+        }
+
+        double getMarketSellPc() const {
+            return marketSellPc;
+        }
+
+        double getLimitBuyPc() const {
+            return limitBuyPc;
+        }
+
+        double getLimitSellPc() const {
+            return limitSellPc;
+        }
+
+    };
+
+    class Pair {
+    public:
+
+        const string& baseCurrency;
+        const string& quotedCurrency;
+        const Fees& fees;
+
+    protected:
+        double price;
+
+    public:
+        Pair(
+            const string& baseCurrency, const string& quotedCurrency, 
+            const Fees& fees, double price): 
+            baseCurrency(baseCurrency), quotedCurrency(quotedCurrency), 
+            fees(fees), price(price)
+        {}
+
+        const string& getBaseCurrency() const {
+            return baseCurrency;
+        }
+
+        const string& getQuotedCurrency() const {
+            return quotedCurrency;
+        }
+
+        const Fees& getFees() const {
+            return fees;
+        }
+
+        double getPrice() const {
+            return price;
+        }
+
+        void setPrice(double price) {
+            this->price = price;
+        }
+    };
+
+
+    class Balance {
+    protected:
+        double amount = 0;
+        bool canGoNegative = false;
+
+        bool checkIfNegative(bool throws = true) const {
+            bool error = !canGoNegative && amount < 0.0;
+            if(error && throws) 
+                throw ERROR(
+                    "Balance can not go negative: " + to_string(amount)
+                );
+            return error;
+        }
+
+    public:
+        Balance(double amount = 0, bool canGoNegative = false): 
+            amount(amount), canGoNegative(canGoNegative)
+            {}
+        
+        void setAmount(double amount) {
+            this->amount = amount;
+        }
+
+        double getAmount() const {
+            return amount;
+        }
+
+        bool increment(double increment, bool throws = true) {
+            amount += increment;
+            if (checkIfNegative(throws)) {
+                amount -= increment;
+                return false;
+            }
+            return true;
+        }
+
+        bool decrement(double decrement, bool throws = true) {
+            amount -= decrement;
+            if (checkIfNegative(throws)) {
+                amount += decrement;
+                return false;
+            }
+            return true;
+        }
+    };
+
+    class Exchange {
+    protected:
+        
+        map<string, Pair> pairs;
+        map<string, Balance> balances;
+
+    public:
+
+        Exchange() {}
+
+        map<string, Pair>& getPairs() {
+            return pairs;
+        }
+
+        const map<string, Balance>& getBalances() const {
+            return balances;
+        }
+
+        double getBalanceBase(const string& symbol) {
+            return getBalances().at(getPairs().at(symbol).getBaseCurrency()).getAmount();
+        }
+
+        double getBalanceBase(const Pair& pair) {
+            return getBalances().at(pair.getBaseCurrency()).getAmount();
+        }
+
+        double getBalanceQuoted(const string& symbol) {
+            return getBalances().at(getPairs().at(symbol).getQuotedCurrency()).getAmount();
+        }
+
+        double getBalanceQuoted(const Pair& pair) {
+            return getBalances().at(pair.getQuotedCurrency()).getAmount();
+        }
+
+        double getBalanceQuotedFull(const string& symbol) {
+            const Pair& pair = getPairs().at(symbol);
+            return getBalanceQuoted(symbol) + getBalanceBase(symbol) * pair.getPrice();
+        }
+
+        double getBalanceQuotedFull(const Pair& pair) {
+            return getBalanceQuoted(pair) + getBalanceBase(pair) * pair.getPrice();
+        }
+
+        double getBalanceBaseFull(const string& symbol) {
+            const Pair& pair = getPairs().at(symbol);
+            return getBalanceQuoted(symbol) / pair.getPrice() + getBalanceBase(symbol);
+        }
+
+        double getBalanceBaseFull(const Pair& pair) {
+            return getBalanceQuoted(pair) / pair.getPrice() + getBalanceBase(pair);
+        }
+
+        virtual ms_t getCurrentTime() const {
+            throw ERR_UNIMP;
+        }
+
+        virtual bool marketBuy(const string& /*symbol*/, double /*amount*/, bool = true) {
+            throw ERR_UNIMP;
+        }
+
+        virtual bool marketSell(const string& /*symbol*/, double /*amount*/, bool = true) {
+            throw ERR_UNIMP;
+        }
+
+        virtual void limitBuy(const string& /*symbol*/, double /*amount*/, double /*limitPrice*/) {
+            throw ERR_UNIMP;
+        }
+
+        virtual void limitSell(const string& /*symbol*/, double /*amount*/, double /*limitPrice*/) {
+            throw ERR_UNIMP;
+        }
+    };
+
+    class TestExchange: public Exchange {
+    protected:
+
+        ms_t currentTime;
+        double currentPrice;
+
+        struct MarketOrderInfos {
+            const double price;
+            const Fees& fees;
+            Balance& baseBalance;
+            Balance& quotedBalance;
+        };
+
+        MarketOrderInfos getMarketOrderInfos(const string& symbol) {
+            const Pair& pair = pairs.at(symbol);
+            const Fees& fees = pair.getFees();
+            const double price = pair.getPrice();
+            return { 
+                price, 
+                fees, 
+                balances.at(pair.getBaseCurrency()), 
+                balances.at(pair.getQuotedCurrency()) 
+            };
+        }
+
+    public:
+        TestExchange(
+            const map<string, Pair>& pairs,
+            const map<string, Balance>& balances
+        ): Exchange() {
+            this->pairs = pairs;
+            this->balances = balances;
+        }
+
+        void setCurrentTime(ms_t currentTime) {
+            this->currentTime = currentTime;
+        }
+
+        ms_t getCurrentTime() const override {
+            return currentTime;
+        }
+
+        virtual bool marketBuy(const string& symbol, double amount, bool throws = true) override {
+            MarketOrderInfos marketOrderInfos = getMarketOrderInfos(symbol);
+            double cost = amount * marketOrderInfos.price;
+            double fee = amount * marketOrderInfos.fees.getMarketBuyPc();
+            return marketOrderInfos.quotedBalance.decrement(cost, throws)
+                && marketOrderInfos.baseBalance.increment(amount - fee, throws);
+        }
+
+        virtual bool marketSell(const string& symbol, double amount, bool throws = true) override {
+            MarketOrderInfos marketOrderInfos = getMarketOrderInfos(symbol);
+            double cost = amount * marketOrderInfos.price;
+            double fee = cost * marketOrderInfos.fees.getMarketSellPc();
+            return marketOrderInfos.baseBalance.decrement(amount, throws)
+                && marketOrderInfos.quotedBalance.increment(cost - fee, throws);
+        }
+
+        // TODO:
+        // virtual void limitBuy(const string& symbol, double amount, double limitPrice) {
+        //     throw ERR_UNIMP;
+        // }
+
+        // TODO:
+        // virtual void limitSell(const string& symbol, double amount, double limitPrice) {
+        //     throw ERR_UNIMP;
+        // }
+    };
+
+    class Strategy {
+    protected:
+        Exchange& exchange;
+        vector<RealPoint> buyTextRealChoords;
+        vector<string> buyTexts;
+        vector<RealPoint> sellTextRealChoords;
+        vector<string> sellTexts;
+        vector<RealPoint> errorTextRealChoords;
+        vector<string> errorTexts;
+    public:
+        Strategy(Exchange& exchange): exchange(exchange) {}
+
+        const vector<RealPoint>& getBuyTextRealChoords() const {
+            return buyTextRealChoords;
+        }
+
+        const vector<string>& getBuyTexts() const {
+            return buyTexts;
+        }
+
+        const vector<RealPoint>& getSellTextRealChoords() const {
+            return sellTextRealChoords;
+        }
+
+        const vector<string>& getSellTexts() const {
+            return sellTexts;
+        }
+
+        const vector<RealPoint>& getErrorTextRealChoords() const {
+            return errorTextRealChoords;
+        }
+
+        const vector<string>& getErrorTexts() const {
+            return errorTexts;
+        }
+
+        void addText(vector<RealPoint>& textRealChoords, vector<string>& texts, ms_t currentTime, double currentPrice, const string& text) {
+            textRealChoords.push_back(RealPoint((double)currentTime, currentPrice));
+            texts.push_back(text);
+        }
+
+        void addBuyText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY") {
+            if (!currentTime) currentTime = exchange.getCurrentTime();
+            if (!currentPrice) currentPrice = exchange.getPairs().at(symbol).getPrice();
+            addText(buyTextRealChoords, buyTexts, currentTime, currentPrice, text);
+        }
+
+        void addSellText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL") {
+            if (!currentTime) currentTime = exchange.getCurrentTime();
+            if (!currentPrice) currentPrice = exchange.getPairs().at(symbol).getPrice();
+            addText(sellTextRealChoords, sellTexts, currentTime, currentPrice, text);
+        }
+
+        void addErrorText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR") {
+            if (!currentTime) currentTime = exchange.getCurrentTime();
+            if (!currentPrice) currentPrice = exchange.getPairs().at(symbol).getPrice();
+            addText(errorTextRealChoords, errorTexts, currentTime, currentPrice, text);
+        }
+
+        bool marketBuy(const string& symbol, double amount) {
+            ms_t currentTime = exchange.getCurrentTime();
+            double currentPrice = exchange.getPairs().at(symbol).getPrice();
+            if (exchange.marketBuy(symbol, amount, false)) {
+                addBuyText(symbol, currentTime, currentPrice);
+                return true;
+            }
+            logger.date().writeln(
+                " Exchange time: " + ms_to_datetime(currentTime) 
+                + ", Strategy BUY Error, [" + symbol + "] " + to_string(amount)
+            );
+            addErrorText(symbol, currentTime, currentPrice);
+            return false;
+        }
+
+        bool marketSell(const string& symbol, double amount) {
+            ms_t currentTime = exchange.getCurrentTime();
+            double currentPrice = exchange.getPairs().at(symbol).getPrice();
+            if (exchange.marketSell(symbol, amount, false)) {
+                addSellText(symbol, currentTime, currentPrice);
+                return true;
+            }
+            logger.date().writeln(
+                " Exchange time: " + ms_to_datetime(currentTime) 
+                + ", Strategy SELL Error, [" + symbol + "] " + to_string(amount)
+            );
+            addErrorText(symbol, currentTime, currentPrice);
+            return false;
+        }
+    };
+
+
+    class CandleStrategy: public Strategy {
+    public:
+        using Strategy::Strategy;
+
+        virtual void onCandleClose(const Candle&) {
+            throw ERR_UNIMP;
+        }
+    };
 }

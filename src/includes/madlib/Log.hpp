@@ -14,43 +14,30 @@ namespace madlib {
     public:
         Log(const string& f = "app.log") : filename(f) {}
 
+        const Log& date() const {
+            write("[" + ms_to_datetime() + "] ");
+            return *this;
+        }
+
         // Variadic template for writeln method
         template <typename... Args>
-        void writeln(Args... args) {
+        const Log& writeln(Args... args) const {
             // Concatenate all arguments into a single string
-            string message = "[" + ms_to_datetime() + "] " + concat(args...);
-            Files::file_put_contents(filename, message + "\n", true);
+            string message = concat(args...);
+            write(message + "\n");
+            return *this;
         }
 
-    private:
-        // TODO: Helper function to concatenate variadic arguments to separate file
-
-        template <typename T>
-        string concat(const T &arg) {
-            return to_string(arg);
-        }
-
-        // Overload to handle const char* arguments
-        string concat(const char* arg) {
-            return string(arg);
-        }
-
-        // Overload to handle char* arguments
-        string concat(char* arg) {
-            return string(arg);
-        }
-
+        // Variadic template for writeln method
         template <typename... Args>
-        string concat(const char* arg, Args... args) {
-            return string(arg) + concat(args...);
-        }
-
-        template <typename T, typename... Args>
-        string concat(const T &arg, Args... args) {
-            return to_string(arg) + concat(args...);
+        const Log& write(Args... args) const {
+            // Concatenate all arguments into a single string
+            string message = concat(args...);
+            Files::file_put_contents(filename, message, true);
+            return *this;
         }
     } logger;
 
-    #define LOG(...) logger.writeln(__VA_ARGS__)
+    #define LOG(...) logger.date().writeln(__VA_ARGS__)
 
 }

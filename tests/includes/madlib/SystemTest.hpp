@@ -26,7 +26,7 @@ public:
         // Test running a valid command that should not throw
         try {
             System::exec("ls");
-        } catch (const runtime_error& e) {
+        } catch (const exception& e) {
             // This should not throw an exception
             assert(false);
         }

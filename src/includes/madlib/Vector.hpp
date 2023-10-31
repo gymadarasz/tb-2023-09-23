@@ -30,7 +30,7 @@ namespace madlib {
         template<typename T>
         static void save(const string &filename, const vector<T>& data) {
             ofstream file(filename, ios::binary);
-            if (!file.is_open()) throw runtime_error("Error opening file for writing: " + filename);
+            if (!file.is_open()) throw ERROR("Error opening file for writing: " + filename);
             for (const T& item : data) file.write(reinterpret_cast<const char*>(&item), sizeof(T));
             file.close();
         }
@@ -41,7 +41,7 @@ namespace madlib {
         template<typename T>
         static vector<T> load(const string &filename) {
             ifstream file(filename, ios::binary);
-            if (!file.is_open()) throw runtime_error("Error opening file for reading: " + filename);
+            if (!file.is_open()) throw ERROR("Error opening file for reading: " + filename);
             T item;
             vector<T> data;
             while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
@@ -55,7 +55,7 @@ namespace madlib {
         template<typename T>
         static vector<T>& load(const string &filename, vector<T>& data) {
             ifstream file(filename, ios::binary);
-            if (!file.is_open()) throw runtime_error("Error opening file for reading: " + filename);
+            if (!file.is_open()) throw ERROR("Error opening file for reading: " + filename);
             T item;
             while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
             file.close();

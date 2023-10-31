@@ -53,7 +53,9 @@ public:
         );
         history.init();
 
-        TradeHistoryChartPlugin candlesPlugin;
+        Zoom zoom;
+        Chart::CandleStyle candleStyle;
+        TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);
         candlesPlugin.project(chart, &history);
     }
 };

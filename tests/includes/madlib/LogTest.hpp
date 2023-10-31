@@ -29,13 +29,13 @@ public:
         // Test writing numbers
         testLog.writeln("Number:", 42, "; Pi:", 3.14159);
         content = Files::file_get_contents("test.log");
-        assert(content == "Test message 1\nTest message 2Test message 3\nNumber:42; Pi:3.141590\n");
+        assert(content == "Test message 1\nTest message 2Test message 3\nNumber:42; Pi:3.14159\n");
 
         // Test writing a char* (const char*) argument
         const char* charPtr = "This is a const char* message";
         testLog.writeln("CharPtr:", charPtr);
         content = Files::file_get_contents("test.log");
-        assert(content == "Test message 1\nTest message 2Test message 3\nNumber:42; Pi:3.141590\nCharPtr:This is a const char* message\n");
+        assert(content == "Test message 1\nTest message 2Test message 3\nNumber:42; Pi:3.14159\nCharPtr:This is a const char* message\n");
 
         unlink("test.log");
     }

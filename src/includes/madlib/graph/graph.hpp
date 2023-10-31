@@ -72,7 +72,7 @@ namespace madlib::graph {
                 case yellow:
                     return white;
                 default:
-                    throw runtime_error("Invalid color");                    
+                    throw ERROR("Invalid color");                    
             }
         }
 
@@ -111,7 +111,7 @@ namespace madlib::graph {
                 case yellow:
                     return orange;
                 default:
-                    throw runtime_error("Invalid color");                    
+                    throw ERROR("Invalid color");                    
             }
         }
     };
@@ -292,7 +292,7 @@ namespace madlib::graph {
         void openWindow(int width, int height, const char* title = defaultWindowTitle, Color color = defaultWindowColor, const char* font = defaultWindowFont) {
             // Initialize the X display
             if (!display) display = XOpenDisplay(NULL);
-            if (!display) throw runtime_error("Unable to open display.");
+            if (!display) throw ERROR("Unable to open display.");
 
             // int screen = DefaultScreen(display);
 
@@ -425,7 +425,7 @@ namespace madlib::graph {
             if (!fontInfo)
             {
                 LOG("Unable to load font: %s\n", font);
-                throw runtime_error("Unable to load font.\n");
+                throw ERROR("Unable to load font.\n");
             }
             XSetFont(display, gc, fontInfo->fid);
         }
@@ -436,11 +436,11 @@ namespace madlib::graph {
             while (!txt.empty()) {
                 int width, height;
                 getTextSize(txt, width, height);
-                const int textYFixer4 = 4; // ??4
+                // const int textYFixer4 = 0; //4; // ??4
                 int x1 = x;
-                int y1 = y + textYFixer4;
+                int y1 = y; // + textYFixer4;
                 int x2 = x + width;
-                int y2 = y - height + textYFixer4;
+                int y2 = y - height; // + textYFixer4;
                 if (x1 > x2) swap(x1, x2);
                 if (y1 > y2) swap(y1, y2);
                 
@@ -495,6 +495,12 @@ namespace madlib::graph {
                 XEvent event;
                 XNextEvent(display, &event);
 
+                // Flush the event queue to discard any pending events
+                while (XPending(display) > 0) { 
+                    XNextEvent(display, &event);
+                    if (event.type != MotionNotify) break;
+                }
+
                 int width, height;
                 KeySym key;
                 char text[32]; // FlawFinder: ignore
@@ -539,7 +545,7 @@ namespace madlib::graph {
                         break;
 
                     default:
-                        throw runtime_error("Unhandled event type: " + to_string(event.type));
+                        throw ERROR("Unhandled event type: " + to_string(event.type));
                         break;
                 }
             }
@@ -553,17 +559,21 @@ namespace madlib::graph {
 
     class Painter {
     public:
-        virtual void color(Color) const {};
-        virtual void point(int, int) {};
-        virtual void rect(int, int, int, int) {};
-        virtual void fillRect(int, int, int, int) {};
-        virtual void line(int, int, int, int) {};
-        virtual void hLine(int, int, int) {};
-        virtual void vLine(int, int, int) {};
-        virtual void font(const char*) const {};
-        virtual void write(int, int, const string&) {};
-        virtual int getWidth() const = 0; // { return 0; };
-        virtual int getHeight() const = 0; // { return 0; };
+
+        struct TextSize { int width = 0, height = 0; };
+
+        virtual void color(Color) const { throw ERR_UNIMP; }
+        virtual void point(int, int) { throw ERR_UNIMP; }
+        virtual void rect(int, int, int, int) { throw ERR_UNIMP; }
+        virtual void fillRect(int, int, int, int) { throw ERR_UNIMP; }
+        virtual void line(int, int, int, int) { throw ERR_UNIMP; }
+        virtual void hLine(int, int, int) { throw ERR_UNIMP; }
+        virtual void vLine(int, int, int) { throw ERR_UNIMP; }
+        virtual void font(const char*) const { throw ERR_UNIMP; }
+        virtual void write(int, int, const string&) { throw ERR_UNIMP; }
+        virtual TextSize getTextSize(const string&) const { throw ERR_UNIMP; }
+        virtual int getWidth() const { throw ERR_UNIMP; } // = 0; // { return 0; };
+        virtual int getHeight() const { throw ERR_UNIMP; } // = 0; // { return 0; };
     };
 
 
@@ -725,6 +735,12 @@ namespace madlib::graph {
             setScrollXYMinMax(x, y);
             prepare(x, y);
             gfx.writeText(x, y, text);
+        }
+
+        virtual TextSize getTextSize(const string& text) const override {
+            TextSize textSize;
+            gfx.getTextSize(text, textSize.width, textSize.height);
+            return textSize;
         }
 
         GFX& getGFX() const {
@@ -995,7 +1011,7 @@ namespace madlib::graph {
                     break;
 
                 default:
-                    throw runtime_error("Invalid border");
+                    throw ERROR("Invalid border");
                     break;
             }
         }
@@ -1051,7 +1067,7 @@ namespace madlib::graph {
                         break;
                     
                     default:
-                        throw runtime_error("Invalid text align");
+                        throw ERROR("Invalid text align");
                         break;
                 }
                 int txtTop = t + ((h - txtHeight) / 2) + 16; // ??16
@@ -1332,7 +1348,7 @@ namespace madlib::graph {
                 const int togglerTop = accordion.height + innerBorderSize;
 
                 toggler = new Toggler(*this, gfx, cntrs.size(),
-                    innerBorderSize, togglerTop, width - innerBorderSize*3, togglerHeight - innerBorderSize*2, 
+                    innerBorderSize, togglerTop, width - innerBorderSize*2, togglerHeight - innerBorderSize*2, 
                     title, textAlign);
 
                 frame = new Frame(gfx, 
@@ -1544,14 +1560,28 @@ namespace madlib::graph {
         virtual ~Application() {}
 
         Application* run() {
-            // Application::init();
-            init();
-            gui.loop();
+            try {
+                // Application::init();
+                init();
+                gui.loop();
+            } catch (exception& e) {
+                logger.date().writeln("Exception: " + string(e.what()));
+                throw ERROR("Application error, see more at log...");
+            }
             return this;
         }
 
         virtual void init() {
             throw ERR_UNIMP;
+        }
+    };
+
+    class FrameApplication: public Application {
+    protected:
+        Frame mainFrame = Frame(gfx, 0, 0, gui.getWidth(), gui.getHeight(), NONE, Theme::windowColor);
+    public:
+        virtual void init() override {
+            gui.child(mainFrame);
         }
     };
 

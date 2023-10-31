@@ -71,7 +71,7 @@ int chart_manual_test3_candles()
     chart.addScale();
     chart.getScaleAt(0).setShape(CANDLE);
     chart.getScaleAt(0).project(candlesRealPoints);
-    chart.addScale(LINE, orange);
+    chart.addScale(LINE, &orange);
     chart.getScaleAt(1).project(pricesRealPoints);
 
     gui.loop();

@@ -66,8 +66,9 @@ int chart_manual_test5_zoom()
     );
     history.init();
 
-    TradeHistoryChartPlugin candlesPlugin;
-    candlesPlugin.project(chart, &history);
+    Chart::CandleStyle candleStyle;
+    TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);
+    candlesPlugin.project(chart);
 
     gui.loop();
     
