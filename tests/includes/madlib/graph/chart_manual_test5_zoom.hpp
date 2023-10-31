@@ -64,7 +64,6 @@ int chart_manual_test5_zoom()
         priceMean, priceStdDeviation,
         timeLambda, seed
     );
-    history.init();
 
     Chart::CandleStyle candleStyle;
     TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);

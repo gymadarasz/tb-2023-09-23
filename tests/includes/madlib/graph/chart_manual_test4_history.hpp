@@ -62,7 +62,6 @@ int chart_manual_test4_history()
         priceMean, priceStdDeviation,
         timeLamda, seed
     );
-    history.init();
 
     Zoom zoom;
     Chart::CandleStyle candleStyle;

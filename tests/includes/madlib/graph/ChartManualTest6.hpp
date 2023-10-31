@@ -28,8 +28,9 @@ public:
 
     void init() override {
         ManualTestApplication::init();
+        gui.setTitle("ChartManualTest6");
 
-        gui.child(frame);
+        mainFrame.child(frame);
         frame.onDrawHandlers.push_back(draw);
 
         // Define parameters and desired time range
@@ -51,7 +52,6 @@ public:
             priceMean, priceStdDeviation,
             timeLambda, seed
         );
-        history.init();
 
         Zoom zoom;
         Chart::CandleStyle candleStyle;

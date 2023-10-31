@@ -25,18 +25,19 @@ protected:
 public:
     void init() override {
         ManualTestApplication::init();
+        gui.setTitle("AccordionManualTest1");
         
         accordion.addContainer("First", 100);
         accordion.addContainer("Second", 100);
         accordion.addContainer("Third", 100);
-        gui.child(accordion);
+        mainFrame.child(accordion);
 
         stickyBtn.setSticky(true);
         stickyBtn.onTouchHandlers.push_back(stickyBtnClick);
-        gui.child(stickyBtn);
+        mainFrame.child(stickyBtn);
 
         singleBtn.setSticky(true);
         singleBtn.onTouchHandlers.push_back(singleBtnClick);
-        gui.child(singleBtn);
+        mainFrame.child(singleBtn);
     }
 };

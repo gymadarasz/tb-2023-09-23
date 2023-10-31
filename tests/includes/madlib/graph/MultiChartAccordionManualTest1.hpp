@@ -32,26 +32,27 @@ protected:
 public:
     void init() override {
         ManualTestApplication::init();
+        gui.setTitle("MultiChartAccordionManualTest1");
 
         multiChart.addChartToArea(frame1).addScale().project(generateRealPoints(100));
         multiChart.addChartToArea(frame2).addScale().project(generateRealPoints(100));
         multiChart.addChartToArea(frame3).addScale().project(generateRealPoints(100));
-        gui.child(frame1);
-        gui.child(frame2);
-        gui.child(frame3);
+        mainFrame.child(frame1);
+        mainFrame.child(frame2);
+        mainFrame.child(frame3);
         
         multiChart.addChartToAccordion(accordion, "First Chart", 240).addScale().project(generateRealPoints(100));
         multiChart.addChartToAccordion(accordion, "Second Chart", 240).addScale().project(generateRealPoints(100));
         multiChart.addChartToAccordion(accordion, "Third Chart", 240).addScale().project(generateRealPoints(100));        
         accordion.openAll();
-        gui.child(accordion);
+        mainFrame.child(accordion);
 
         multiChartAccordion.addChart("Accordion First Chart", 240).addScale().project(generateRealPoints(100));
         multiChartAccordion.addChart("Accordion Second Chart", 240).addScale().project(generateRealPoints(100));
         multiChartAccordion.addChart("Accordion Third Chart", 240).addScale().project(generateRealPoints(100));
         multiChartAccordion.setOne(true);
         multiChartAccordion.openAt(0);
-        gui.child(multiChartAccordion);
+        mainFrame.child(multiChartAccordion);
 
         Chart::Scale& scale0 = testChart.addScale(LINE, &lightBlue);
         Chart::Scale& scale1 = testChart.addScale(LINE, &lightGreen);
@@ -65,6 +66,6 @@ public:
         
         testFrame.setEventContext(&testChart);
         testFrame.onDrawHandlers.push_back(ChartArea::draw);
-        gui.child(testFrame);
+        mainFrame.child(testFrame);
     }
 };
