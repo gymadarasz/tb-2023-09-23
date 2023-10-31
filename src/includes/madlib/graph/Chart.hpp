@@ -685,15 +685,6 @@ namespace madlib::graph {
 
     };
 
-    class ChartPlugin {
-    public:
-        virtual void project(Chart& /*chart*/, const void* /*context*/) const {
-            throw ERR_UNIMP;
-        };
-    };
-
-
-
     class ChartArea {
     public:
         static void draw(void* context) {
@@ -752,6 +743,29 @@ namespace madlib::graph {
         Chart& addChart(const string& title = "Chart", int frameHeight = 150) {
             return addChartToAccordion(*this, title, frameHeight);
         }
+    };
+
+    // -- VIRTUAL PLUGINS --
+
+    class ChartPlugin {
+    public:
+        virtual void project(Chart& /*chart*/, const void* /*context*/) const {
+            throw ERR_UNIMP;
+        };
+    };
+
+    class MultiChartPlugin {
+    public:
+        virtual void project(MultiChart& /*multiChart*/, const void* /*context*/) const {
+            throw ERR_UNIMP;
+        };
+    };
+
+    class MultiChartAccordionPlugin {
+    public:
+        virtual void project(MultiChartAccordion& /*multiChartAccordion*/, const void* /*context*/) const {
+            throw ERR_UNIMP;
+        };
     };
 
 }

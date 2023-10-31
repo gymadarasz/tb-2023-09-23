@@ -276,81 +276,6 @@ namespace madlib::trading {
         }
     };
 
-    class TradeHistoryChartPlugin: public ChartPlugin {
-    protected:
-        const TradeHistory& history;
-        const Zoom& zoom;
-        const Chart::CandleStyle& candleStyle;
-        const bool showCandles = true, showPrices = true, showVolumes = true; // TODO
-        const Color& priceColor = orange; // TODO
-        const Color& volumeColor = darkGray; // TODO
-    public:
-
-        TradeHistoryChartPlugin(
-            const TradeHistory& history,
-            const Zoom& zoom,
-            const Chart::CandleStyle& candleStyle,
-            const bool showCandles = true, // TODO
-            const bool showPrices = true, // TODO
-            const bool showVolumes = true, // TODO
-            const Color& priceColor = orange, // TODO
-            const Color& volumeColor = darkGray // TODO
-        ): 
-            history(history),
-            zoom(zoom),
-            candleStyle(candleStyle),
-            showCandles(showCandles),
-            showPrices(showPrices),
-            showVolumes(showVolumes),
-            priceColor(priceColor),
-            volumeColor(volumeColor)
-        {}
-
-        void project(Chart& chart, const void* = NULL) const override {
-
-            Chart::Scale* candlesScale = NULL;
-            if (showCandles) {
-                vector<Candle> candles = history.getCandles();
-                vector<RealPoint> candlesRealPoints;
-                for (const Candle& candle: candles) {
-                    double start = static_cast<double>(candle.getStart());
-                    double end = static_cast<double>(candle.getEnd());
-                    double open = candle.getOpen();
-                    double close = candle.getClose();
-                    double low = candle.getLow();
-                    double high = candle.getHigh();
-                    double middle = start + (end - start) / 2;
-                    candlesRealPoints.push_back(RealPoint(start, open));
-                    candlesRealPoints.push_back(RealPoint(end, close));
-                    candlesRealPoints.push_back(RealPoint(middle, low));
-                    candlesRealPoints.push_back(RealPoint(middle, high));
-                }
-                candlesScale = &chart.addScale(CANDLE, &candleStyle, &zoom);
-                candlesScale->project(candlesRealPoints);
-            }
-
-            if (showPrices || showVolumes) {
-                vector<Trade> trades = history.getTrades();
-                vector<RealPoint> pricesRealPoints;
-                vector<RealPoint> volumesRealPoints;
-                for (const Trade& trade: trades) {
-                    pricesRealPoints.push_back(
-                        RealPoint(static_cast<double>(trade.timestamp), trade.price));
-                    volumesRealPoints.push_back(
-                        RealPoint(static_cast<double>(trade.timestamp), trade.volume));
-                }
-                
-                if (showPrices) {
-                    Chart::Scale& priceScale = chart.addScale(LINE, &priceColor, &zoom);
-                    priceScale.project(pricesRealPoints);
-                    if (candlesScale) Chart::Scale::alignXY(priceScale, *candlesScale);
-                }
-                if (showVolumes) 
-                    chart.addScale(LINE, &volumeColor, &zoom).project(volumesRealPoints);
-            }
-        }
-    };
-
 
     class Fees {
     protected:
@@ -623,14 +548,30 @@ namespace madlib::trading {
     class Strategy {
     protected:
         Exchange& exchange;
-        vector<RealPoint> buyTextRealChoords;
-        vector<string> buyTexts;
-        vector<RealPoint> sellTextRealChoords;
-        vector<string> sellTexts;
-        vector<RealPoint> errorTextRealChoords;
-        vector<string> errorTexts;
+        vector<RealPoint> buyTextRealChoords = {};
+        vector<string> buyTexts = {};
+        vector<RealPoint> sellTextRealChoords = {};
+        vector<string> sellTexts = {};
+        vector<RealPoint> errorTextRealChoords = {};
+        vector<string> errorTexts = {};
     public:
-        Strategy(Exchange& exchange): exchange(exchange) {}
+        Strategy(
+            Exchange& exchange,
+            vector<RealPoint> buyTextRealChoords = {},
+            vector<string> buyTexts = {},
+            vector<RealPoint> sellTextRealChoords = {},
+            vector<string> sellTexts = {},
+            vector<RealPoint> errorTextRealChoords = {},
+            vector<string> errorTexts = {}
+        ): 
+            exchange(exchange),
+            buyTextRealChoords(buyTextRealChoords),
+            buyTexts(buyTexts),
+            sellTextRealChoords(sellTextRealChoords),
+            sellTexts(sellTexts),
+            errorTextRealChoords(errorTextRealChoords),
+            errorTexts(errorTexts)
+        {}
 
         const vector<RealPoint>& getBuyTextRealChoords() const {
             return buyTextRealChoords;
@@ -719,4 +660,200 @@ namespace madlib::trading {
             throw ERR_UNIMP;
         }
     };
+
+    // -- CHART PLUGINS --
+
+    class TradeHistoryChartPlugin: public ChartPlugin {
+    protected:
+        const TradeHistory& history;
+        const Zoom& zoom;
+        const Chart::CandleStyle& candleStyle;
+        const bool showCandles = true, showPrices = true, showVolumes = true; // TODO
+        const Color& priceColor = orange; // TODO
+        const Color& volumeColor = darkGray; // TODO
+    public:
+
+        TradeHistoryChartPlugin(
+            const TradeHistory& history,
+            const Zoom& zoom,
+            const Chart::CandleStyle& candleStyle,
+            const bool showCandles = true, // TODO
+            const bool showPrices = true, // TODO
+            const bool showVolumes = true, // TODO
+            const Color& priceColor = orange, // TODO
+            const Color& volumeColor = darkGray // TODO
+        ): 
+            history(history),
+            zoom(zoom),
+            candleStyle(candleStyle),
+            showCandles(showCandles),
+            showPrices(showPrices),
+            showVolumes(showVolumes),
+            priceColor(priceColor),
+            volumeColor(volumeColor)
+        {}
+
+        void project(Chart& chart, const void* = NULL) const override {
+
+            Chart::Scale* candlesScale = NULL;
+            if (showCandles) {
+                vector<Candle> candles = history.getCandles();
+                vector<RealPoint> candlesRealPoints;
+                for (const Candle& candle: candles) {
+                    double start = static_cast<double>(candle.getStart());
+                    double end = static_cast<double>(candle.getEnd());
+                    double open = candle.getOpen();
+                    double close = candle.getClose();
+                    double low = candle.getLow();
+                    double high = candle.getHigh();
+                    double middle = start + (end - start) / 2;
+                    candlesRealPoints.push_back(RealPoint(start, open));
+                    candlesRealPoints.push_back(RealPoint(end, close));
+                    candlesRealPoints.push_back(RealPoint(middle, low));
+                    candlesRealPoints.push_back(RealPoint(middle, high));
+                }
+                candlesScale = &chart.addScale(CANDLE, &candleStyle, &zoom);
+                candlesScale->project(candlesRealPoints);
+            }
+
+            if (showPrices || showVolumes) {
+                vector<Trade> trades = history.getTrades();
+                vector<RealPoint> pricesRealPoints;
+                vector<RealPoint> volumesRealPoints;
+                for (const Trade& trade: trades) {
+                    pricesRealPoints.push_back(
+                        RealPoint(static_cast<double>(trade.timestamp), trade.price));
+                    volumesRealPoints.push_back(
+                        RealPoint(static_cast<double>(trade.timestamp), trade.volume));
+                }
+                
+                if (showPrices) {
+                    Chart::Scale& priceScale = chart.addScale(LINE, &priceColor, &zoom);
+                    priceScale.project(pricesRealPoints);
+                    if (candlesScale) Chart::Scale::alignXY(priceScale, *candlesScale);
+                }
+                if (showVolumes) 
+                    chart.addScale(LINE, &volumeColor, &zoom).project(volumesRealPoints);
+            }
+        }
+    };
+
+    class CandleStrategyTesterPlugin: public MultiChartAccordionPlugin {
+    protected:
+        const TradeHistory& history;
+        const TradeHistoryChartPlugin& tradeHistoryChartPlugin;
+        TestExchange& testExchange;
+        CandleStrategy& candleStrategy;
+        const string& symbol = "MONTECARLO"; // TODO
+        const int multiChartAccordionFramesHeight = 340; // TODO
+        const bool showBalanceQuotedScale = true; // TODO
+        const Chart::LabelStyle& buyTextStyle = Chart::LabelStyle(red); // TODO
+        const Chart::LabelStyle& sellTextStyle = Chart::LabelStyle(green); // TODO
+        const Chart::LabelStyle& errorTextStyle = Chart::LabelStyle(gray); // TODO
+    public:
+
+        CandleStrategyTesterPlugin(
+            const TradeHistory& history,
+            const TradeHistoryChartPlugin& tradeHistoryChartPlugin,
+            TestExchange& testExchange,
+            CandleStrategy& candleStrategy,
+            const string& symbol = "MONTECARLO", // TODO
+            const int multiChartAccordionFramesHeight = 340, // TODO
+            const bool showBalanceQuotedScale = true, // TODO
+            const Chart::LabelStyle& buyTextStyle = Chart::LabelStyle(red), // TODO
+            const Chart::LabelStyle& sellTextStyle = Chart::LabelStyle(green), // TODO
+            const Chart::LabelStyle& errorTextStyle = Chart::LabelStyle(gray) // TODO
+        ):
+            history(history),
+            tradeHistoryChartPlugin(tradeHistoryChartPlugin),
+            testExchange(testExchange),
+            candleStrategy(candleStrategy),
+            symbol(symbol),
+            multiChartAccordionFramesHeight(multiChartAccordionFramesHeight),
+            showBalanceQuotedScale(showBalanceQuotedScale),
+            buyTextStyle(buyTextStyle),
+            sellTextStyle(sellTextStyle),
+            errorTextStyle(errorTextStyle)
+        {}
+
+        void project(MultiChartAccordion& multiChartAccordion, const void* /*context*/) const {
+            
+            Chart& historyChart = 
+                multiChartAccordion.addChart("History", multiChartAccordionFramesHeight);
+            Chart& balanceQuotedChart =
+                multiChartAccordion.addChart("Balance (quoted)", multiChartAccordionFramesHeight);
+            Chart& balanceBaseChart =
+                multiChartAccordion.addChart("Balance (base)", multiChartAccordionFramesHeight);
+            multiChartAccordion.openAll();
+
+            tradeHistoryChartPlugin.project(historyChart);
+
+            vector<Candle> candles = history.getCandles();
+            vector<RealPoint> balanceQuotedAtCloses;
+            vector<RealPoint> balanceQuotedFullAtCloses;
+            vector<RealPoint> balanceBaseAtCloses;
+            vector<RealPoint> balanceBaseFullAtCloses;
+            Pair& pair = testExchange.getPairs().at(symbol);
+            for (const Candle& candle: candles) {
+                testExchange.setCurrentTime(candle.getEnd());
+                pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
+            
+                double currentTime = (double)candle.getEnd();
+
+                balanceQuotedAtCloses.push_back(RealPoint(
+                    currentTime,
+                    testExchange.getBalanceQuoted(pair)
+                ));
+                
+                balanceQuotedFullAtCloses.push_back(RealPoint(
+                    currentTime,
+                    testExchange.getBalanceQuotedFull(pair)
+                ));
+            
+                balanceBaseAtCloses.push_back(RealPoint(
+                    currentTime,
+                    testExchange.getBalanceBase(pair)
+                ));
+                
+                balanceBaseFullAtCloses.push_back(RealPoint(
+                    currentTime,
+                    testExchange.getBalanceBaseFull(pair)
+                ));
+
+                candleStrategy.onCandleClose(candle);
+            }
+            
+            Chart::Scale& buyTextScale = historyChart.addScale(LABEL, &buyTextStyle);
+            Chart::Scale& sellTextScale = historyChart.addScale(LABEL, &sellTextStyle);
+            Chart::Scale& errorTextScale = historyChart.addScale(LABEL, &errorTextStyle);
+            Chart::Scale::alignXY(historyChart.getScaleAt(0), buyTextScale);
+            Chart::Scale::alignXY(historyChart.getScaleAt(0), sellTextScale);
+            Chart::Scale::alignXY(historyChart.getScaleAt(0), errorTextScale);
+            buyTextScale.project(
+                candleStrategy.getBuyTextRealChoords(), candleStrategy.getBuyTexts(), false);
+            sellTextScale.project(
+                candleStrategy.getSellTextRealChoords(), candleStrategy.getSellTexts(), false);
+            errorTextScale.project(
+                candleStrategy.getErrorTextRealChoords(), candleStrategy.getErrorTexts(), false);
+
+            Chart::Scale& balanceQuotedFullScale = balanceQuotedChart.addScale(LINE, &lightGreen);
+            balanceQuotedFullScale.adaptXY(balanceQuotedFullAtCloses);
+            if (showBalanceQuotedScale) {
+                Chart::Scale& balanceQuotedScale = balanceQuotedChart.addScale(LINE, &green);
+                balanceQuotedScale.adaptXY(balanceQuotedAtCloses);
+                Chart::Scale::alignXY(balanceQuotedScale, balanceQuotedFullScale);
+                balanceQuotedScale.project(balanceQuotedAtCloses, false);
+            }
+            balanceQuotedFullScale.project(balanceQuotedFullAtCloses, false);
+
+            Chart::Scale& balanceBaseScaleFull = balanceBaseChart.addScale(LINE, &yellow);
+            balanceBaseScaleFull.adaptXY(balanceBaseFullAtCloses);
+            Chart::Scale& balanceBaseScale = balanceBaseChart.addScale(LINE, &orange);
+            balanceBaseScale.adaptXY(balanceBaseAtCloses);
+            Chart::Scale::alignXY(balanceBaseScale, balanceBaseScaleFull);
+            balanceBaseScale.project(balanceBaseAtCloses, false);
+            balanceBaseScaleFull.project(balanceBaseFullAtCloses, false);
+        };
+    };
+
 }
