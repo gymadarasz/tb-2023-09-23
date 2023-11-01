@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include "src/includes/madlib/Files.hpp"
-#include "src/includes/madlib/System.hpp"
 #include "src/includes/madlib/Vector.hpp"
 
 using namespace std;
@@ -72,7 +71,7 @@ public:
 
 void exec(string cmd) {
     cout << "\033[36mExecute command:\033[39m $ " << cmd << endl;
-    string output = System::exec(cmd);
+    string output = madlib::exec(cmd);
     if (!output.empty()) {
         cout << output << endl;
     }
@@ -134,13 +133,13 @@ int main(int argc, const char *argv[]) {
             !Files::exists(oFile) ||
             Files::getLastModificationTime(oFile) < Files::getLastModificationTime(file)
         ) {
-            exec("g++ " + flags + " -c " + file + " -o " + oFile);
+            ::exec("g++ " + flags + " -c " + file + " -o " + oFile);
         }
         oFiles.push_back(oFile);
     }
 
-    exec("g++ " + flags + " -o " + buildPath + main + " " + Vector::concat(oFiles) + " " + flagsLibs);
-    if (executeMain) exec("./" + buildPath + main);
+    ::exec("g++ " + flags + " -o " + buildPath + main + " " + Vector::concat(oFiles) + " " + flagsLibs);
+    if (executeMain) ::exec("./" + buildPath + main);
 
     return 0;
 }

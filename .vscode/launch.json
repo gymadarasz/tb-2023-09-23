@@ -33,7 +33,7 @@
             "args": [],  // Optional: Specify program arguments here
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [{ "name": "GTK_PATH", "value": null }],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [

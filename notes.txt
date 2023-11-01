@@ -1,4 +1,5 @@
 Commands:
+(from vscode may need to run `unset GTK_PATH` command - https://github.com/ros2/ros2/issues/1406#issuecomment-1500898231)
 build and debug the builder:
 ./build-dbg.sh (or vscode)
 
