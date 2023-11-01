@@ -21,9 +21,18 @@ protected:
         return (p1.x == p2.x && p1.y == p2.y);
     }
 
+    static void cleanup() {
+        remove("numbers.dat");
+        remove("doubles.dat");
+        remove("points.dat");
+        remove("numbers_ref.dat");
+    }
+
 public:
 
     static void testVector_concat() {
+        cleanup();
+
         // Test case 1
         vector<string> words1 = {"Hello", "world"};
         string result1 = Vector::concat(words1, " ");
@@ -53,9 +62,13 @@ public:
         vector<string> numbers = {"1", "2", "3"};
         string result6 = Vector::concat(numbers, ",");
         assert(result6 == "1,2,3");
+
+        cleanup();
     }
 
     static void testVector_save_and_load() {
+        cleanup();
+
         // Test case 1: Saving and loading integers
         vector<int> numbers1 = {1, 2, 3, 4, 5};
         Vector::save("numbers.dat", numbers1);
@@ -73,9 +86,13 @@ public:
         Vector::save("points.dat", points);
         vector<Point> loadedPoints = Vector::load<Point>("points.dat");
         assert(Vector::compare<Point>(points, loadedPoints, comparePoints));
+
+        cleanup();
     }
 
     static void testVector_load_and_load_with_reference() {
+        cleanup();
+
         // Test case 1: Loading integers
         vector<int> savedNumbers = {1, 2, 3, 4, 5};
         Vector::save("numbers.dat", savedNumbers);
@@ -105,5 +122,7 @@ public:
         vector<int> loadedNumbersRef = {1, 2, 3}; // Pre-existing data
         Vector::load("numbers_ref.dat", loadedNumbersRef);
         assert(Vector::compare(savedNumbersRef, loadedNumbersRef));
+
+        cleanup();
     }
 };

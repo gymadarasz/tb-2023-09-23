@@ -9,7 +9,7 @@ using namespace madlib;
 
 int main()
 {
-    string filename = exec("zenity --file-selection --title 'Open File'");
-    cout << "FILE:" << filename << endl;
+    string filename = exec("zenity --file-selection --title 'Open File' >> outp");
+    cout << "FILE: [" << filename << "]" << endl;
     return 0;
 }

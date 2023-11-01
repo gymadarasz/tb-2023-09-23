@@ -2,7 +2,6 @@
 
 #include "includes/madlib/ToolsTest.hpp"
 #include "includes/madlib/VectorTest.hpp"
-#include "includes/madlib/SystemTest.hpp"
 #include "includes/madlib/FilesTest.hpp"
 #include "includes/madlib/LogTest.hpp"
 
@@ -37,10 +36,10 @@ int main() {
     Tester::run(ToolsTest::test_trim);
     Tester::run(ToolsTest::test_normalize_datetime);
     Tester::run(ToolsTest::test_datetime_conversion);
+    Tester::run(ToolsTest::testSystem_exec);
     Tester::run(VectorTest::testVector_concat);
     Tester::run(VectorTest::testVector_save_and_load);
     // Tester::run(VectorTest::testVector_load_and_load_with_reference);
-    Tester::run(SystemTest::testSystem_exec);
     Tester::run(FilesTest::testFiles_findByExtension);
     Tester::run(FilesTest::testFiles_findByExtensions);
     Tester::run(FilesTest::testFiles_replaceExtension);

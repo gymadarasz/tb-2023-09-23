@@ -177,7 +177,7 @@ namespace madlib {
         return stream.str();
     }
 
-    string exec(const string& command, bool captureOutput = true) {
+    string exec(const string& command, bool captureOutput = true, bool showOutput = false) {
         array<char, 128> buffer;
         string result;
 
@@ -188,10 +188,11 @@ namespace madlib {
         }
 
         // Read the output (if requested)
-        if (captureOutput) {
+        if (captureOutput || showOutput) {
             while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
                 result += buffer.data();
             }
+            if (showOutput) cout << result;
         }
 
         // Close the pipe
