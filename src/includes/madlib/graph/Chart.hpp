@@ -1,7 +1,7 @@
 #pragma once
 
 #include "graph.hpp"
-#include "../Vector.hpp"
+#include "../madlib.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -431,7 +431,7 @@ namespace madlib::graph {
         explicit Chart(Painter& painter): painter(painter) {}
 
         ~Chart() {
-            Vector::destroy<Scale>(scales);
+            vector_destroy<Scale>(scales);
         }
 
         const vector<Scale*>& getScales() const {
@@ -705,7 +705,7 @@ namespace madlib::graph {
     public:
 
         ~MultiChart() {
-            Vector::destroy<Chart>(charts);
+            vector_destroy<Chart>(charts);
         }
 
         Chart& getChartAt(size_t chartIndex) const {

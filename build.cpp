@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
-#include "src/includes/madlib/Files.hpp"
-#include "src/includes/madlib/Vector.hpp"
+
+#include "src/includes/madlib/madlib.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -102,6 +102,10 @@ int main(int argc, const char *argv[]) {
         }
     }
 
+    vector<string> mainArgsVector;
+    for (int i = 2; i < argc; i++) mainArgsVector.push_back(argv[i]);
+    const string mainArgs = vector_concat(mainArgsVector, " ");
+
     Arguments args(mode);
 
     const vector<string> sourcePaths = args.sourcePaths;
@@ -115,31 +119,31 @@ int main(int argc, const char *argv[]) {
 
     vector<string> files;
     for (const string& sourcePath : sourcePaths) {
-        vector<string> founds = Files::findByExtensions(sourcePath, { cppExtension });
+        vector<string> founds = file_find_by_extensions(sourcePath, { cppExtension });
         files.insert(files.end(), founds.begin(), founds.end());
     }
     files.push_back(mainPath + "/" + main + cppExtension);
 
     vector<string> oFiles;
     for (const string& file : files) {
-        string path = Files::normalizePath(buildPath + Files::extractPath(file));
+        string path = path_normalize(buildPath + path_extract(file));
         // cout << "PATH:" << path << endl;
-        if (!Files::exists(path)) {
+        if (!file_exists(path)) {
             // cout << "CREATE:" << path << endl;
-            Files::createPath(path);
+            file_create_path(path);
         }
-        string oFile = buildPath + Files::normalizePath(Files::replaceExtension(file, "o"));
+        string oFile = buildPath + path_normalize(file_replace_extension(file, "o"));
         if (
-            !Files::exists(oFile) ||
-            Files::getLastModificationTime(oFile) < Files::getLastModificationTime(file)
+            !file_exists(oFile) ||
+            file_get_mtime(oFile) < file_get_mtime(file)
         ) {
             ::exec("g++ " + flags + " -c " + file + " -o " + oFile);
         }
         oFiles.push_back(oFile);
     }
 
-    ::exec("g++ " + flags + " -o " + buildPath + main + " " + Vector::concat(oFiles) + " " + flagsLibs);
-    if (executeMain) ::exec("./" + buildPath + main);
+    ::exec("g++ " + flags + " -o " + buildPath + main + " " + vector_concat(oFiles) + " " + flagsLibs);
+    if (executeMain) ::exec("./" + buildPath + main + " " + mainArgs);
 
     return 0;
 }

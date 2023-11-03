@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../src/includes/madlib/Tools.hpp"
+#include "../../../../src/includes/madlib/madlib.hpp"
 #include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 #include "../../../../src/includes/madlib/trading/trading.hpp"
@@ -57,7 +57,8 @@ int chart_manual_test4_history()
 
     // Create a MonteCarloHistory object with the specified parameters
     MonteCarloHistory history(
-        symbol, startTime, endTime, period,
+        // symbol, 
+        startTime, endTime, period,
         volumeMean, volumeStdDeviation,
         priceMean, priceStdDeviation,
         timeLamda, seed

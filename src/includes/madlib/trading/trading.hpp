@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "../Vector.hpp"
+#include "../madlib.hpp"
 #include "../graph/Chart.hpp"
 
 using namespace std;
@@ -113,7 +113,7 @@ namespace madlib::trading {
     class TradeHistory {
     protected:
 
-        const string& symbol;
+        // const string& symbol;
         const ms_t startTime; // ms
         const ms_t endTime; // ms
         const ms_t period;
@@ -163,12 +163,12 @@ namespace madlib::trading {
     public:
 
         TradeHistory(
-            const string& symbol, 
+            // const string& symbol, 
             const ms_t startTime, 
             const ms_t endTime, 
             const ms_t period
         ): 
-            symbol(symbol), 
+            // symbol(symbol), 
             startTime(startTime), 
             endTime(endTime), 
             period(period)
@@ -183,15 +183,15 @@ namespace madlib::trading {
         }
         
         virtual void saveCandles(const string &filename, const vector<Candle>& candles) const {
-            Vector::save<Candle>(filename, candles);
+            vector_save<Candle>(filename, candles);
         }
         
         virtual vector<Candle> loadCandles(const string &filename) const {
-            return Vector::load<Candle>(filename);
+            return vector_load<Candle>(filename);
         }
         
         virtual vector<Candle>& loadCandles(const string &filename, vector<Candle>& data) const {
-            return Vector::load<Candle>(filename, data);
+            return vector_load<Candle>(filename, data);
         }
     };
 
@@ -250,13 +250,16 @@ namespace madlib::trading {
 
     public:
         MonteCarloHistory(
-            const string& symbol, ms_t startTime, ms_t endTime, ms_t period,  
+            // const string& symbol, 
+            ms_t startTime, ms_t endTime, ms_t period,  
             double volumeMean, double volumeStdDeviation, 
             double priceMean, double priceStdDeviation,
             double timeLambda,
             unsigned int seed = random_device()() // Add a seed parameter with a default value
         ):
-            TradeHistory(symbol, startTime, endTime, period),
+            TradeHistory(
+            // symbol, 
+            startTime, endTime, period),
             volumeMean(volumeMean), volumeStdDeviation(volumeStdDeviation),
             priceMean(priceMean), priceStdDeviation(priceStdDeviation),
             timeLambda(timeLambda),

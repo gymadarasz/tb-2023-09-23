@@ -47,7 +47,8 @@ public:
 
         // Create a MonteCarloHistory object with the specified parameters
         MonteCarloHistory history(
-            symbol, startTime, endTime, period,
+            // symbol, 
+            startTime, endTime, period,
             volumeMean, volumeStdDeviation,
             priceMean, priceStdDeviation,
             timeLambda, seed

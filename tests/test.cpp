@@ -37,6 +37,14 @@ int main() {
     Tester::run(ToolsTest::test_normalize_datetime);
     Tester::run(ToolsTest::test_datetime_conversion);
     Tester::run(ToolsTest::testSystem_exec);
+    Tester::run(ToolsTest::test_split);
+    Tester::run(ToolsTest::test_is_numeric);
+    Tester::run(ToolsTest::test_parse);
+    Tester::run(ToolsTest::test_str_replace);
+    Tester::run(ToolsTest::test_str_replace_map);
+    Tester::run(ToolsTest::test_map_has);
+    Tester::run(ToolsTest::test_map_keys);
+    Tester::run(ToolsTest::test_map_key_exists);
     Tester::run(VectorTest::testVector_concat);
     Tester::run(VectorTest::testVector_save_and_load);
     // Tester::run(VectorTest::testVector_load_and_load_with_reference);

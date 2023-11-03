@@ -6,9 +6,8 @@
 #include <X11/keysym.h>
 #include <stdexcept>
 #include <vector>
-#include "../Log.hpp"
-#include "../Tools.hpp"
-#include "../Vector.hpp"
+
+#include "../madlib.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -673,7 +672,7 @@ namespace madlib::graph {
         }
 
         virtual ~Area() {
-            // TODO: manage area pointers: Vector::destroy<Area>(areas);
+            // TODO: manage area pointers: vector_destroy<Area>(areas);
         }
 
         const Rectangle& getViewport(Rectangle& viewport) const {
@@ -1425,7 +1424,7 @@ namespace madlib::graph {
                 textAlign, border, backgroundColor, frameMargin, textPadding), sticky(sticky) {}
 
         ~Accordion() {
-            Vector::destroy<Container>(containers);
+            vector_destroy<Container>(containers);
         }
 
         bool isSticky() const {

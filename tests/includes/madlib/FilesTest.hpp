@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-#include "../../../src/includes/madlib/Files.hpp"
+#include "../../../src/includes/madlib/madlib.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -39,10 +39,10 @@ public:
         createTestFiles();
 
         // Test finding files by extension
-        vector<string> jpgFiles = Files::findByExtension("testfiles", "jpg");
+        vector<string> jpgFiles = file_find_by_extension("testfiles", "jpg");
         assert(jpgFiles.size() == 2); // Assuming you have two .jpg files in "testfiles"
 
-        vector<string> txtFiles = Files::findByExtension("testfiles", "txt");
+        vector<string> txtFiles = file_find_by_extension("testfiles", "txt");
         assert(txtFiles.size() == 1); // Assuming you have one .txt file in "testfiles"
 
         // Clean up: Remove the test files
@@ -55,7 +55,7 @@ public:
 
         // Test finding files by multiple extensions
         vector<string> extensions = { "jpg", "txt" };
-        vector<string> jpgAndTxtFiles = Files::findByExtensions("testfiles", extensions);
+        vector<string> jpgAndTxtFiles = file_find_by_extensions("testfiles", extensions);
         assert(jpgAndTxtFiles.size() == 3); // Assuming you have three .jpg and .txt files in "testfiles"
 
         // Clean up: Remove the test files
@@ -64,30 +64,30 @@ public:
 
     static void testFiles_replaceExtension() {
         // Test replacing extension
-        assert(Files::replaceExtension("file.txt", "jpg") == "file.jpg");
+        assert(file_replace_extension("file.txt", "jpg") == "file.jpg");
 
         // Test with no extension
-        assert(Files::replaceExtension("file", "jpg") == "file.jpg");
+        assert(file_replace_extension("file", "jpg") == "file.jpg");
 
         // Test with empty filename
-        assert(Files::replaceExtension("", "jpg") == ".jpg");
+        assert(file_replace_extension("", "jpg") == ".jpg");
 
         // Test replacing extension with an empty one
-        assert(Files::replaceExtension("file.txt", "") == "file.");
+        assert(file_replace_extension("file.txt", "") == "file.");
     }
 
     static void testFiles_normalizePath() {
         // Test normalizing path
-        assert(Files::normalizePath("path/to/../file.txt") == "path/file.txt");
-        assert(Files::normalizePath("../path/to/file.txt") == "../path/to/file.txt");
-        assert(Files::normalizePath("./path/to/file.txt") == "path/to/file.txt");
+        assert(path_normalize("path/to/../file.txt") == "path/file.txt");
+        assert(path_normalize("../path/to/file.txt") == "../path/to/file.txt");
+        assert(path_normalize("./path/to/file.txt") == "path/to/file.txt");
     }
 
     static void testFiles_extractPath() {
         // Test extracting path
-        assert(Files::extractPath("path/to/file.txt") == "path/to");
-        assert(Files::extractPath("file.txt") == "");
-        assert(Files::extractPath("") == "");
+        assert(path_extract("path/to/file.txt") == "path/to");
+        assert(path_extract("file.txt") == "");
+        assert(path_extract("") == "");
     }
 
     static void testFiles_exists() {
@@ -95,8 +95,8 @@ public:
         createTestFiles();
 
         // Test file existence
-        assert(Files::exists("testfiles/file1.jpg") == true);
-        assert(Files::exists("nonexistent.txt") == false);
+        assert(file_exists("testfiles/file1.jpg") == true);
+        assert(file_exists("nonexistent.txt") == false);
 
         // Clean up: Remove the test files
         cleanupTestFiles();
@@ -105,9 +105,9 @@ public:
     static void testFiles_createPath() {
         // Test creating a directory
         string testDir = "test_directory";
-        assert(Files::exists(testDir) == false);
-        Files::createPath(testDir);
-        assert(Files::exists(testDir) == true);
+        assert(file_exists(testDir) == false);
+        file_create_path(testDir);
+        assert(file_exists(testDir) == true);
 
         // Clean up: Remove the created directory
         filesystem::remove_all(testDir);
@@ -120,7 +120,7 @@ public:
         ofstream outfile(testFile);
         outfile.close();
 
-        time_t lastModTime = Files::getLastModificationTime(testFile);
+        time_t lastModTime = file_get_mtime(testFile);
         // Ensure the last modification time is not 0 (epoch)
         assert(lastModTime != 0);
 
@@ -134,12 +134,12 @@ public:
         const string expected_content = "This is a test content.";
 
         // Write test content to the file
-        Files::file_put_contents(filename, expected_content);
+        file_put_contents(filename, expected_content);
 
         // Read the content using file_get_contents
         string actual_content;
         try {
-            actual_content = Files::file_get_contents(filename);
+            actual_content = file_get_contents(filename);
         } catch (const exception& e) {
             cerr << "Error in testFiles_file_get_contents: " << e.what() << endl;
             return;
@@ -159,7 +159,7 @@ public:
 
         // Write test content to the file using file_put_contents
         try {
-            Files::file_put_contents(filename, test_content);
+            file_put_contents(filename, test_content);
         } catch (const exception& e) {
             cerr << "Error in testFiles_file_put_contents: " << e.what() << endl;
             return;

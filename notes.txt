@@ -6,10 +6,14 @@ build and debug the builder:
 cppcheck:
 cppcheck --enable=all -v src --suppress=useStlAlgorithm --check-config -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11/bits/
 
-build and debug the main project and/or tests:
+build and run the main project and/or tests:
 ./build-run.sh
 ./cleanup.sh | ./build-run.sh
 ./cleanup.sh | ./build-run.sh TESTS
+
+build and run commands:
+./cleanup.sh | ./build-run.sh RELEASE test-command arg1 arg2 arg3
+note: add parameters in launch.json "args": [...] for debugging in vscode
 
 test coverage:
 ./cleanup.sh | ./test-cov.sh
