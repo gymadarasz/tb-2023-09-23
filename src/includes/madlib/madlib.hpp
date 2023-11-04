@@ -23,6 +23,7 @@ using namespace chrono;
 #define ERROR(msg) runtime_error(string(msg) + ": " + string(__FILE__) + ":" + to_string(__LINE__)); 
 #define ERR_UNIMP ERROR("Unimplemented");
 #define ERR_MISSING ERROR("Missing");
+#define ERR_INVALID ERROR("Invalid");
 
 namespace madlib {
 

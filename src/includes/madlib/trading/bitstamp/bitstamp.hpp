@@ -12,25 +12,27 @@ using namespace madlib;
 namespace madlib::trading::bitstamp {
     
     enum BitstampCandlesCsvField { UNIX = 0, DATE, SYMBOL, OPEN, HIGH, LOW, CLOSE, VOLUME_BASE, VOLUME_QUOTED };
+    const string datPath = __DIR__ + "/data/";
+    const string datFileTpl = datPath + "{symbol}_{year}_{period}.dat";
 
     vector<Candle> bitstamp_read_candle_history_dat(const string& datFile) {
         return vector_load<Candle>(datFile);
     }
 
     vector<Candle> bitstamp_parse_candle_history_csv(
-        const string& csvFile, const string& outFile, 
+        const string& csvFile, const string& datFile, 
         bool readOutFileIfExists = true,
         bool throwIfOutFileExists = true
     ) {
         if (!file_exists(csvFile)) throw ERROR("File not found: " + csvFile);
-        if (file_exists(outFile)) {
-            if (readOutFileIfExists) return bitstamp_read_candle_history_dat(outFile);
-            if (throwIfOutFileExists) throw ERROR("File already exists: " + outFile);
+        if (file_exists(datFile)) {
+            if (readOutFileIfExists) return bitstamp_read_candle_history_dat(datFile);
+            if (throwIfOutFileExists) throw ERROR("File already exists: " + datFile);
         }
         logger.date().writeln(
             string("Parsing Bitstamp candle history data:\b")
                 + "csv input file   : " + csvFile + "\n"
-                + "output data file : " + outFile
+                + "output data file : " + datFile
         );
         vector<string> csvData = split("\n", file_get_contents(csvFile));
 
@@ -62,8 +64,8 @@ namespace madlib::trading::bitstamp {
             Candle candle(open, close, low, high, volume, start, end);
             candles.push_back(candle);
         }
-        logger.date().writeln("Writing: [" + outFile + "]");
-        vector_save(outFile, candles);
+        logger.date().writeln("Writing: [" + datFile + "]");
+        vector_save(datFile, candles);
         return candles;
     }
 
@@ -71,20 +73,51 @@ namespace madlib::trading::bitstamp {
         const string& symbol, int yearFrom, int yearTo, const string& period = "minute"
     ) {
         const string csvPath = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
-        const string outPath = __DIR__ + "/data/";
         const string csvFileTpl = csvPath + "/Bitstamp_{symbol}_{year}_{period}.csv";
-        const string outFileTpl = outPath + "{symbol}_{year}_{period}.dat";
+        const map<string, string> repl = {
+            {"{symbol}", symbol},
+            {"{period}", period},
+        };
+        string _datFileTpl = str_replace(datFileTpl, repl);
+        string _csvFileTpl = str_replace(datFileTpl, repl);
         for (int year = yearFrom; year <= yearTo; year++) {
-            const map<string, string> repl = {
-                {"{symbol}", symbol},
-                {"{year}", to_string(year)},
-                {"{period}", period}
-            };
-            const string csvFile = str_replace(csvFileTpl, repl);
-            const string outFile = str_replace(outFileTpl, repl);
-            bitstamp_parse_candle_history_csv(csvFile, outFile, false, false);
+            const string csvFile = str_replace(_csvFileTpl, "{year}", to_string(year));
+            const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
+            bitstamp_parse_candle_history_csv(csvFile, datFile, false, false);
         }
     }
+
+    class BitstampHistory: public TradeHistory {
+    protected:
+        
+        void initCandles() override {
+            if (period != MS_PER_MIN) throw ERROR("Period works only on minutes charts"); // TODO: aggregate to other periods
+            int yearFrom = parse<int>(ms_to_datetime(startTime).substr(0, 4));
+            int yearTo = parse<int>(ms_to_datetime(endTime).substr(0, 4));
+            string _datFileTpl = str_replace(datFileTpl, {
+                {"{symbol}", symbol},
+                {"{period}", "minute"},
+            });
+            for (int year = yearFrom; year <= yearTo; year++) {
+                const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
+                vector<Candle> yearCandles = bitstamp_read_candle_history_dat(datFile);
+                for (const Candle& candle: yearCandles) {
+                    if (startTime <= candle.getStart() || endTime >= candle.getEnd())
+                        candles.push_back(candle);
+                }
+            }
+        };
+
+    public:
+        BitstampHistory(
+            const string &symbol, const ms_t startTime, const ms_t endTime, const ms_t period
+        ):
+            TradeHistory(symbol, startTime, endTime, period) 
+        {
+            initCandles();
+        }
+
+    };
 }
 
 

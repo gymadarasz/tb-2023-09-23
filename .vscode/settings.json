@@ -61,7 +61,8 @@
         "semaphore": "cpp",
         "stop_token": "cpp",
         "thread": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "climits": "cpp"
     },
     "cmake.configureOnOpen": false
 }

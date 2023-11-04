@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <climits>
 
 #include "../madlib.hpp"
 #include "../graph/Chart.hpp"
@@ -113,7 +114,7 @@ namespace madlib::trading {
     class TradeHistory {
     protected:
 
-        // const string& symbol;
+        const string& symbol;
         const ms_t startTime; // ms
         const ms_t endTime; // ms
         const ms_t period;
@@ -163,12 +164,12 @@ namespace madlib::trading {
     public:
 
         TradeHistory(
-            // const string& symbol, 
+            const string& symbol, 
             const ms_t startTime, 
             const ms_t endTime, 
             const ms_t period
         ): 
-            // symbol(symbol), 
+            symbol(symbol), 
             startTime(startTime), 
             endTime(endTime), 
             period(period)
@@ -250,7 +251,7 @@ namespace madlib::trading {
 
     public:
         MonteCarloHistory(
-            // const string& symbol, 
+            const string& symbol, 
             ms_t startTime, ms_t endTime, ms_t period,  
             double volumeMean, double volumeStdDeviation, 
             double priceMean, double priceStdDeviation,
@@ -258,7 +259,7 @@ namespace madlib::trading {
             unsigned int seed = random_device()() // Add a seed parameter with a default value
         ):
             TradeHistory(
-            // symbol, 
+            symbol, 
             startTime, endTime, period),
             volumeMean(volumeMean), volumeStdDeviation(volumeStdDeviation),
             priceMean(priceMean), priceStdDeviation(priceStdDeviation),
@@ -323,8 +324,8 @@ namespace madlib::trading {
     class Pair {
     public:
 
-        const string& baseCurrency;
-        const string& quotedCurrency;
+        string baseCurrency;
+        string quotedCurrency;
         const Fees& fees;
 
     protected:
@@ -333,7 +334,7 @@ namespace madlib::trading {
     public:
         Pair(
             const string& baseCurrency, const string& quotedCurrency, 
-            const Fees& fees, double price): 
+            const Fees& fees, double price = 0): 
             baseCurrency(baseCurrency), quotedCurrency(quotedCurrency), 
             fees(fees), price(price)
         {}
@@ -549,8 +550,86 @@ namespace madlib::trading {
     };
 
     class Strategy {
+    public:
+
+        template<typename T>
+        class Limited {
+        protected:
+            T value, min, max;
+        public:
+            Limited(T value = 0, T min = 0, T max = 0): min(min), max(max) {
+                setValue(value);
+            }
+
+            T getValue() const {
+                return value;
+            }
+
+            void setValue(T value) {
+                if (min > value || max < value) 
+                    throw ERROR("Out of range limits: " + to_string(value) + 
+                        ", min: " + to_string(min) + ", max: " + to_string(max)); 
+                this->value = value;
+            }
+
+            T getMin() const {
+                return min;
+            }
+
+            void setMin(T min) {
+                this->min = min;
+            }
+
+            T getMax() const {
+                return max;
+            }
+
+            void setMax(T max) {
+                this->max = max;
+            }
+        };
+        
+        class Parameter {
+        public:
+            enum Type {STRING, DOUBLE, LONG};
+        protected:
+            const Type type;
+            const string _string = "";
+            Limited<double> _double = Limited<double>(0);
+            Limited<long> _long = Limited<long>(0);
+        public:
+            Parameter(const string& _string): 
+                type(STRING), _string(_string) {}
+
+            Parameter(double value, double min = -INFINITY, double max = INFINITY): 
+                type(DOUBLE), _double(Limited<double>(value, min, max)) {}
+
+            Parameter(long value, long min = LONG_MIN, long max = LONG_MAX):
+                type(LONG), _long(Limited<long>(value, min, max)) {}
+
+            Type getType() const {
+                return type;
+            }
+
+            const string& getString() const {
+                if (type != STRING) throw ERR_INVALID;
+                return _string;
+            }
+
+            const Limited<double>& getDouble() const {
+                if (type != DOUBLE) throw ERR_INVALID;
+                return _double;
+            }
+
+            const Limited<long>& getLong() const {
+                if (type != LONG) throw ERR_INVALID;
+                return _long;
+            }
+        };
+
     protected:
         Exchange& exchange;
+        map<string, Parameter> parameters;
         vector<RealPoint> buyTextRealChoords = {};
         vector<string> buyTexts = {};
         vector<RealPoint> sellTextRealChoords = {};
@@ -560,6 +639,7 @@ namespace madlib::trading {
     public:
         Strategy(
             Exchange& exchange,
+            map<string, Parameter> parameters,
             vector<RealPoint> buyTextRealChoords = {},
             vector<string> buyTexts = {},
             vector<RealPoint> sellTextRealChoords = {},
@@ -568,6 +648,7 @@ namespace madlib::trading {
             vector<string> errorTexts = {}
         ): 
             exchange(exchange),
+            parameters(parameters),
             buyTextRealChoords(buyTextRealChoords),
             buyTexts(buyTexts),
             sellTextRealChoords(sellTextRealChoords),
