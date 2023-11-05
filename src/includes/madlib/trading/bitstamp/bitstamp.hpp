@@ -102,7 +102,7 @@ namespace madlib::trading::bitstamp {
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
                 vector<Candle> yearCandles = bitstamp_read_candle_history_dat(datFile);
                 for (const Candle& candle: yearCandles) {
-                    if (startTime <= candle.getStart() || endTime >= candle.getEnd())
+                    if (startTime <= candle.getStart() && endTime >= candle.getEnd())
                         candles.push_back(candle);
                 }
             }

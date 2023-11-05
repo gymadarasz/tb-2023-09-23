@@ -35,35 +35,14 @@ protected:
 public:
     void init() override {
         FrameApplication::init();
-        gui.setTitle("Binance History");
+        gui.setTitle("Bitstamp History");
 
         mainFrame.child(frame);
         frame.onDrawHandlers.push_back(draw);
 
-        // // Define parameters and desired time range
-        // const string symbol = "MONTECARLO";
-        // const double volumeMean = 100;  // Initial volume
-        // const double volumeStdDeviation = 10;
-        // const double priceMean = 100;  // Initial price
-        // const double priceStdDeviation = 10;
-        // const double timeLambda = MS_PER_MIN;
-        // const ms_t startTime = datetime_to_ms("2021-01-01");
-        // const ms_t endTime = datetime_to_ms("2021-01-07");
-        // const ms_t period = period_to_ms("1h");
-        // const unsigned int seed = 6000;
-
-        // // Create a MonteCarloHistory object with the specified parameters
-        // MonteCarloHistory history(
-        //     symbol, 
-        //     startTime, endTime, period,
-        //     volumeMean, volumeStdDeviation,
-        //     priceMean, priceStdDeviation,
-        //     timeLambda, seed
-        // );
-
         const string symbol = "BTCUSD";
-        const ms_t startTime = datetime_to_ms("2012-12-30");
-        const ms_t endTime = datetime_to_ms("2023-11-01");
+        const ms_t startTime = datetime_to_ms("2023-10-28 00:50:00");
+        const ms_t endTime = datetime_to_ms("2023-10-28 01:00:00");
         const ms_t period = period_to_ms("1m");
         BitstampHistory history(symbol, startTime, endTime, period);
 
@@ -113,8 +92,6 @@ public:
         bitstamp_parse_candle_history_csv_all(symbol, yearFrom, yearTo, period);
         return 0;
     }
-
-    //static BitstampHistoryApplication* app;
 
     static int backtestBitstamp(CommandLineApplication*, CommandArguments) {
         // TODO: pass arguments
