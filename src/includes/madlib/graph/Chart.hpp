@@ -701,10 +701,12 @@ namespace madlib::graph {
         const int innerBorderSize = 2; // TODO
 
         vector<Chart*> charts;
+        vector<Frame*> frames;
 
     public:
 
         ~MultiChart() {
+            vector_destroy<Frame>(frames);
             vector_destroy<Chart>(charts);
         }
 
@@ -731,6 +733,7 @@ namespace madlib::graph {
                 BUTTON_PUSHED, black
             );
             cntrFrame.child(*frame);
+            frames.push_back(frame);
             return addChartToArea(*frame);
         }
     };

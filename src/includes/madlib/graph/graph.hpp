@@ -1347,7 +1347,9 @@ namespace madlib::graph {
                 const int togglerTop = accordion.height + innerBorderSize;
 
                 toggler = new Toggler(*this, gfx, cntrs.size(),
-                    innerBorderSize, togglerTop, width - innerBorderSize*2, togglerHeight - innerBorderSize*2, 
+                    innerBorderSize, togglerTop, 
+                    width - innerBorderSize*2, 
+                    togglerHeight - innerBorderSize*2, 
                     title, textAlign);
 
                 frame = new Frame(gfx, 
