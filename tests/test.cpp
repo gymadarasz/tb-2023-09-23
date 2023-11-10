@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "includes/madlib/MadlibTest.hpp"
 #include "includes/madlib/ToolsTest.hpp"
 #include "includes/madlib/VectorTest.hpp"
 #include "includes/madlib/FilesTest.hpp"
@@ -33,6 +34,9 @@ int main() {
 
     cout << "Testing in progress: ";
 
+    Tester::run(MadlibTest::test_FactoryWithParams_Int);
+    Tester::run(MadlibTest::test_FactoryWithParams_CustomClass);
+    Tester::run(MadlibTest::test_FactoryWithoutParams);
     Tester::run(ToolsTest::test_trim);
     Tester::run(ToolsTest::test_normalize_datetime);
     Tester::run(ToolsTest::test_datetime_conversion);

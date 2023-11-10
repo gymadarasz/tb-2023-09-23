@@ -635,4 +635,38 @@ namespace madlib {
             return result;
         }
     };
+
+template <typename T>
+class Factory {
+protected:
+    std::vector<T*> instances;
+public:
+    T& create() {
+        T* instance = new T;
+        instances.push_back(instance);
+        return *instance;
+    }
+    
+    template <typename... Args>
+    T& create(Args... args) {
+        T* instance = new T(args...);
+        instances.push_back(instance);
+        return *instance;
+    }
+
+    void destroy(T& instance) {
+        auto it = std::find(instances.begin(), instances.end(), &instance);
+        if (it != instances.end()) {
+            delete *it;
+            instances.erase(it);
+        }
+    }
+
+    ~Factory() {
+        for (T* instance : instances) {
+            delete instance;
+        }
+    }
+};
+
 }

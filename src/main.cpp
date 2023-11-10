@@ -20,31 +20,37 @@ protected:
     // MultiChartAccordion multiChartAccordion = MultiChartAccordion(
     //     gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
 
-    static void draw(void* context) {
-        BitstampHistoryApplication* that =
-            (BitstampHistoryApplication*)((Area*)context)
-                ->getRoot()->getGFX().getContext();
+    // static void draw(void* context) {
+    //     BitstampHistoryApplication* that =
+    //         (BitstampHistoryApplication*)((Area*)context)
+    //             ->getRoot()->getGFX().getContext();
 
-        that->chart.draw();
-        // that->closeBtn.draw();
-    }
+    //     // that->chart.draw();
+    //     // that->closeBtn.draw();
+    // }
 
-    Frame frame = Frame(gfx, 10, 10, 1580, 880, BUTTON_PUSHED, black);
-    Chart chart = Chart(frame);
+    // Frame frame = Frame(gfx, 10, 10, 1580, 880, BUTTON_PUSHED, black);
+    // Chart chart = Chart(frame);
     
+    MultiChartAccordion multiChartAccordion = MultiChartAccordion(gfx, 10, 10, 600);
+
 public:
     void init() override {
         FrameApplication::init();
         gui.setTitle("Bitstamp History");
 
-        mainFrame.child(frame);
-        frame.onDrawHandlers.push_back(draw);
+        // mainFrame.child(frame);
+        // frame.onDrawHandlers.push_back(draw);
 
         const string symbol = "BTCUSD";
         const ms_t startTime = datetime_to_ms("2023-10-28 00:50:00");
         const ms_t endTime = datetime_to_ms("2023-10-28 01:00:00");
         const ms_t period = period_to_ms("1m");
         BitstampHistory history(symbol, startTime, endTime, period);
+
+        // multiChartAccordion.openAt(0);
+        mainFrame.child(multiChartAccordion);
+        Chart chart = multiChartAccordion.addChart();
 
         Zoom zoom;
         Chart::CandleStyle candleStyle;
