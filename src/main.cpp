@@ -14,48 +14,71 @@ using namespace madlib::trading::strategy;
 
 class BitstampHistoryApplication: public FrameApplication {
 protected:
-    // const int multiChartAccordionLeft = 10;
-    // const int multiChartAccordionTop = 50;
-    // const int multiChartAccordionWidth = 1000;
-    // MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-    //     gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
 
-    // static void draw(void* context) {
-    //     BitstampHistoryApplication* that =
-    //         (BitstampHistoryApplication*)((Area*)context)
-    //             ->getRoot()->getGFX().getContext();
+    const string symbol = "BTCUSD";
+    const ms_t startTime = datetime_to_ms("2023-10-25 00:50:00");
+    const ms_t endTime = datetime_to_ms("2023-10-28 01:00:00");
+    const ms_t period = period_to_ms("1m");
+    BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
 
-    //     // that->chart.draw();
-    //     // that->closeBtn.draw();
-    // }
-
-    // Frame frame = Frame(gfx, 10, 10, 1580, 880, BUTTON_PUSHED, black);
-    // Chart chart = Chart(frame);
+    Zoom zoom;
+    Chart::CandleStyle candleStyle;
     
-    MultiChartAccordion multiChartAccordion = MultiChartAccordion(gfx, 10, 10, 600);
+    const bool showCandles = true;
+    const bool showPrices = true;
+    const bool showVolumes = true;
+    const Color priceColor = orange;
+    const Color volumeColor = darkGray;
+    TradeHistoryChartPlugin tradeHistoryChartPlugin = TradeHistoryChartPlugin(
+        history, zoom, candleStyle, 
+        showCandles, showPrices, showVolumes, 
+        priceColor, volumeColor
+    );
 
+    const double feeMarketPc = 0.04; //0.4;
+    const double feeLimitPc = 0.03;
+    const Fees fees = Fees(feeMarketPc, feeMarketPc, feeLimitPc, feeLimitPc);
+    const map<string, Pair> pairs = {
+        { symbol, Pair("MONTE", "CARLO", fees, 1000) },
+    };
+    const map<string, Balance> balances = {
+        { "MONTE", Balance(10) },
+        { "CARLO", Balance(100000) },
+    };
+    TestExchange testExchange = TestExchange(pairs, balances);
+    map<string, Strategy::Parameter> strategyParameters = {
+        {"symbol", Strategy::Parameter(symbol)},
+    };
+    ACandleStrategy aCandleStrategy = ACandleStrategy(testExchange, strategyParameters);
+
+    const int multiChartAccordionLeft = 10;
+    const int multiChartAccordionTop = 50;
+    const int multiChartAccordionWidth = 1000;
+    MultiChartAccordion multiChartAccordion = MultiChartAccordion(
+        gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
+
+    const int multiChartAccordionFramesHeight = 340;
+    const bool showBalanceQuotedScale = true;
+    const Chart::LabelStyle buyTextStyle = Chart::LabelStyle(red);
+    const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
+    const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
+    CandleStrategyTesterPlugin tester = CandleStrategyTesterPlugin(
+        history, tradeHistoryChartPlugin,
+        testExchange, aCandleStrategy, symbol, 
+        multiChartAccordionFramesHeight,
+        showBalanceQuotedScale,
+        buyTextStyle, sellTextStyle, errorTextStyle
+    );
 public:
     void init() override {
         FrameApplication::init();
         gui.setTitle("Bitstamp History");
 
-        // mainFrame.child(frame);
-        // frame.onDrawHandlers.push_back(draw);
+        tester.project(multiChartAccordion, NULL);
 
-        const string symbol = "BTCUSD";
-        const ms_t startTime = datetime_to_ms("2023-10-28 00:50:00");
-        const ms_t endTime = datetime_to_ms("2023-10-28 01:00:00");
-        const ms_t period = period_to_ms("1m");
-        BitstampHistory history(symbol, startTime, endTime, period);
+        // ----------------
 
-        // multiChartAccordion.openAt(0);
         mainFrame.child(multiChartAccordion);
-        Chart chart = multiChartAccordion.addChart();
-
-        Zoom zoom;
-        Chart::CandleStyle candleStyle;
-        TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);
-        candlesPlugin.project(chart, &history);
     }
 };
 
