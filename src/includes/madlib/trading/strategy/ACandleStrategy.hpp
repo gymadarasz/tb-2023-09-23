@@ -38,23 +38,21 @@ namespace madlib::trading::strategy {
                     if (orderAmountPrice < balanceQuoted09) {
                         marketBuy(symbol, orderAmount);
                     }
-                    exitAt = exchange.getBalanceQuotedFull(symbol);
+                    exitAt = exchange.getBalanceQuotedFull(symbol) * 1.25;
                     stage = 1;
                     break;
 
                 case 1: // sell
                     
-                    if (tick == 10) {
-                        if (exitAt > exchange.getBalanceQuotedFull(symbol)) {
-                            balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
-                            marketSell(symbol, buyAmount > balanceBase09 ? balanceBase09 : buyAmount);
-                        }
+                    if (tick > 150000 /*|| exitAt > exchange.getBalanceQuotedFull(symbol)*/) {
+                        balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
+                        marketSell(symbol, buyAmount > balanceBase09 ? balanceBase09 : buyAmount);
                         stage = 2;
                     }
                     break;
                     
                 case 2: // wait  
-                    if (tick == 30) {
+                    if (tick > 30) {
                         tick = -1;
                         stage = 0;
                     }
