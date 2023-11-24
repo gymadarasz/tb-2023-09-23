@@ -227,14 +227,14 @@ namespace madlib::trading {
                 normal_distribution<double> priceDistribution(0, priceStdDeviation);
                 double priceMovement = priceDistribution(gen);
 
-                // Calculate the new price based on the previous price and movement
+                // Calculate the price based on the previous price and movement
                 trade.price = previousPrice + priceMovement;
 
                 // Generate volume movement
                 normal_distribution<double> volumeDistribution(0, volumeStdDeviation);
                 double volumeMovement = volumeDistribution(gen);
 
-                // Calculate the new volume based on the previous volume and movement
+                // Calculate the volume based on the previous volume and movement
                 trade.volume = previousVolume + volumeMovement;
 
                 if (previousTime >= endTime) {

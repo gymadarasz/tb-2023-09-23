@@ -34,6 +34,8 @@ int main() {
 
     cout << "Testing in progress: ";
 
+    Tester::run(MadlibTest::test_str_to_lower);
+    Tester::run(MadlibTest::test_parse_bool);
     Tester::run(MadlibTest::test_FactoryWithParams_Int);
     Tester::run(MadlibTest::test_FactoryWithParams_CustomClass);
     Tester::run(MadlibTest::test_FactoryWithoutParams);

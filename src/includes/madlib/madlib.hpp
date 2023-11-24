@@ -255,6 +255,24 @@ namespace madlib {
         return regex_match(str, pattern);
     }
 
+    string str_to_lower(const string& str) {
+        string ret = "";
+        for (size_t i = 0; i < str.length(); i++) {
+            if (isupper(str[i])) ret += (char)tolower(str[i]);
+            else ret += str[i];
+        }
+        return ret;
+    }
+
+    bool parse_bool(const string& str) {
+        if (str.empty()) return false;
+        if (str == "0") return false;
+        string lower = str_to_lower(str);
+        if (lower == "false") return false;
+        if (lower == "no") return false;
+        return true;
+    }
+
     template<typename T>
     T parse(const string& s) {
         stringstream ss(s);
@@ -305,10 +323,10 @@ namespace madlib {
         size_t lastDotPos = filename.find_last_of('.');
 
         if (lastDotPos != string::npos) {
-            // Create a new string with the part before the last dot and the new extension
+            // Create a string with the part before the last dot and the extension
             return filename.substr(0, lastDotPos) + "." + extension;
         } 
-        // If there's no dot in the file name, simply append the new extension
+        // If there's no dot in the file name, simply append the extension
         return filename + "." + extension;
     }
 
@@ -472,6 +490,20 @@ namespace madlib {
         if (v1.size() != v2.size()) return false;
         for (size_t i = 0; i < v1.size(); ++i) if (!compareFunc(v1[i], v2[i])) return false;
         return true;
+    }
+
+    template<typename T>
+    T* vector_create(vector<T*> v) {
+        T* elem = new T();
+        v.push_back(elem);
+        return elem;
+    }
+
+    template<typename T, typename... Args>
+    T* vector_create(vector<T*> v, Args&&... args) {
+        T* elem = new T(forward<Args>(args)...);
+        v.push_back(elem);
+        return elem;
     }
 
     template<typename T>
@@ -639,7 +671,7 @@ namespace madlib {
 template <typename T>
 class Factory {
 protected:
-    std::vector<T*> instances;
+    vector<T*> instances;
 public:
     T& create() {
         T* instance = new T;
@@ -655,7 +687,7 @@ public:
     }
 
     void destroy(T& instance) {
-        auto it = std::find(instances.begin(), instances.end(), &instance);
+        auto it = find(instances.begin(), instances.end(), &instance);
         if (it != instances.end()) {
             delete *it;
             instances.erase(it);
@@ -663,10 +695,16 @@ public:
     }
 
     ~Factory() {
-        for (T* instance : instances) {
-            delete instance;
-        }
+        // for (T* instance : instances) {
+        //     delete instance;
+        // }
+        vector_destroy<T>(instances);
     }
+
+    vector<T*> getInstances() const {
+        return instances;
+    }
+
 };
 
 }

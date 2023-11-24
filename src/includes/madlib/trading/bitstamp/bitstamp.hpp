@@ -20,14 +20,20 @@ namespace madlib::trading::bitstamp {
     }
 
     vector<Candle> bitstamp_parse_candle_history_csv(
-        const string& csvFile, const string& datFile, 
-        bool readOutFileIfExists = true,
-        bool throwIfOutFileExists = true
+        const string& csvFile,
+        const string& datFile, 
+        bool readOutFileIfExists = false,
+        bool throwIfOutFileExists = false,
+        bool skipIfOutFileIsNewer = true
     ) {
         if (!file_exists(csvFile)) throw ERROR("File not found: " + csvFile);
         if (file_exists(datFile)) {
-            if (readOutFileIfExists) return bitstamp_read_candle_history_dat(datFile);
             if (throwIfOutFileExists) throw ERROR("File already exists: " + datFile);
+            if (skipIfOutFileIsNewer && file_get_mtime(csvFile) < file_get_mtime(datFile)) {
+                if (readOutFileIfExists) return bitstamp_read_candle_history_dat(datFile);
+                else return {};
+            }
+            if (readOutFileIfExists) return bitstamp_read_candle_history_dat(datFile);
         }
         logger.date().writeln(
             string("Parsing Bitstamp candle history data:\b")
@@ -65,12 +71,58 @@ namespace madlib::trading::bitstamp {
             candles.push_back(candle);
         }
         logger.date().writeln("Writing: [" + datFile + "]");
+        const string path = path_extract(datFile);
+        if (!file_exists(path)) {
+            file_create_path(path);
+        }
         vector_save(datFile, candles);
         return candles;
     }
 
+    void bitstamp_download_candle_history_csv_all(
+        const string& symbol,
+        int fromYear,
+        int toYear,
+        const string& period = "minute", 
+        bool overwrite = true
+    ) {
+        const string filename = str_replace(
+            "Bitstamp_{symbol}_{year}_{period}.csv",
+            {
+                {"{symbol}", symbol},
+                {"{period}", period},
+            }
+        );
+        const string path = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
+        if (!file_exists(path)) {
+            file_create_path(path);
+        }
+        for (int year = fromYear; year <= toYear; year++) {
+            const string filenameYear = str_replace(filename, "{year}", to_string(year));
+            const string filepath = path + filenameYear;
+            if (!overwrite && file_exists(filepath)) {
+                logger.writeln("File already exists: ", filepath, " (skiping...)");
+                continue;
+            }
+            const string url = "https://www.cryptodatadownload.com/cdd/" + filenameYear;
+            const string command = str_replace(
+                "curl -o {filepath} {url}",
+                {
+                    {"{filepath}", filepath},
+                    {"{url}", url},
+                }
+            );
+            logger.writeln("Execute: ", command);
+            const string output = exec(command);
+            logger.writeln(output);
+        }
+    }
+
     void bitstamp_parse_candle_history_csv_all(
-        const string& symbol, int yearFrom, int yearTo, const string& period = "minute"
+        const string& symbol,
+        int yearFrom,
+        int yearTo,
+        const string& period = "minute"
     ) {
         const string csvPath = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
         const string csvFileTpl = csvPath + "/Bitstamp_{symbol}_{year}_{period}.csv";
@@ -79,7 +131,7 @@ namespace madlib::trading::bitstamp {
             {"{period}", period},
         };
         string _datFileTpl = str_replace(datFileTpl, repl);
-        string _csvFileTpl = str_replace(datFileTpl, repl);
+        string _csvFileTpl = str_replace(csvFileTpl, repl);
         for (int year = yearFrom; year <= yearTo; year++) {
             const string csvFile = str_replace(_csvFileTpl, "{year}", to_string(year));
             const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));

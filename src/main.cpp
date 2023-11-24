@@ -39,11 +39,11 @@ protected:
     const double feeLimitPc = 0.03;
     const Fees fees = Fees(feeMarketPc, feeMarketPc, feeLimitPc, feeLimitPc);
     const map<string, Pair> pairs = {
-        { symbol, Pair("MONTE", "CARLO", fees, 1000) },
+        { symbol, Pair("BTC", "USD", fees, 38000) },
     };
     const map<string, Balance> balances = {
-        { "MONTE", Balance(10) },
-        { "CARLO", Balance(100000) },
+        { "BTC", Balance(1) },
+        { "USD", Balance(10000) },
     };
     TestExchange testExchange = TestExchange(pairs, balances);
     map<string, Strategy::Parameter> strategyParameters = {
@@ -91,13 +91,11 @@ public:
                 TradingApplication::testCommand, 
                 "Test command"
             }},
-            {"parse-bitstamp-csv", {
-                TradingApplication::parseBitstampCsv, 
-                "Parsing Bitstamp candle history csv\n"
+            {"download-bitstamp-csv", {
+                TradingApplication::downloadBitstampCsv, 
+                "Download Bitstamp candle history csv\n"
                 "Parameters:\n"
-                "\tparse-bitstamp-csv {symbol} {from-year} {to-year} {period(optional, default=minute)} {override(TODO)}\n"
-                "Note: to add more candle history, you should download and add manually\n"
-                ".csv files first two line ignored as header and source informations\n"
+                "\tdownload-bitstamp-csv {symbol} {from-year(optional, default=[actual year])} {to-year(optional, default=[actual year])} {period(optional, default=minute)} {override(optional, default=false or true if no year given so override the actual year data)}\n"
                 "see more at https://www.cryptodatadownload.com/data/bitstamp/"
             }},
             {"bitstamp-history", {
@@ -113,11 +111,13 @@ public:
         return 0;
     }
 
-    static int parseBitstampCsv(CommandLineApplication*, CommandArguments args) {
-        const string symbol = args.at(0);
-        const int yearFrom = parse<int>(args.at(1));
-        const int yearTo = parse<int>(args.at(2));
-        const string period = vector_has(args, 3) ? args.at(3) : "period";
+    static int downloadBitstampCsv(CommandLineApplication*, CommandArguments args) {
+        const string symbol = args.at(1);
+        const int yearFrom = parse<int>(vector_has(args, 2) ? args.at(2) : ms_to_datetime(now(), "%Y", false));
+        const int yearTo = parse<int>(vector_has(args, 3) ? args.at(3) : ms_to_datetime(now(), "%Y", false));
+        const string period = vector_has(args, 4) ? args.at(4) : "minute";
+        const bool overwrite = vector_has(args, 5) ? parse_bool(args.at(3)) : !(vector_has(args, 2) || vector_has(args, 3));
+        bitstamp_download_candle_history_csv_all(symbol, yearFrom, yearTo, period, overwrite);
         bitstamp_parse_candle_history_csv_all(symbol, yearFrom, yearTo, period);
         return 0;
     }

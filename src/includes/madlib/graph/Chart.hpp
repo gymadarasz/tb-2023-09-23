@@ -410,7 +410,8 @@ namespace madlib::graph {
         Painter& painter;
         Color borderColor = white; // TODO
         
-        vector<Scale*> scales;
+        // vector<Scale*> scales;
+        Factory<Scale> scales;
 
         typedef void (*DrawPairFunction)(Painter*, int, int, int, int);
 
@@ -430,24 +431,23 @@ namespace madlib::graph {
 
         explicit Chart(Painter& painter): painter(painter) {}
 
-        ~Chart() {
-            vector_destroy<Scale>(scales);
-        }
+        // ~Chart() {
+        //     vector_destroy<Scale>(scales);
+        // }
 
-        const vector<Scale*>& getScales() const {
-            return scales;
+        const vector<Scale*> getScales() const {
+            return scales.getInstances();
         }
 
         Scale& getScaleAt(size_t at) {
-            if (scales.size() <= at) throw ERROR("Invalid scale index: " + to_string(at));
-            return *scales.at(at);
+            if (getScales().size() <= at) throw ERROR("Invalid scale index: " + to_string(at));
+            return *getScales().at(at);
         }
 
         Scale& addScale(Shape shape = LINE, const void* context = NULL, const Zoom* zoom = NULL) {
-            Scale* scale = new Scale(painter.getWidth(), painter.getHeight(), shape, context);
-            scale->setZoom(zoom ? *zoom : this->zoom);
-            scales.push_back(scale);
-            return *scale;
+            Scale& scale = scales.create(painter.getWidth(), painter.getHeight(), shape, context);
+            scale.setZoom(zoom ? *zoom : this->zoom);
+            return scale;
         }
         
         void drawPoint(int x, int y) const {
@@ -459,7 +459,7 @@ namespace madlib::graph {
         }
 
         void drawPoints(const size_t scale, const Color color) const {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
             int painterHeight = painter.getHeight();
@@ -480,7 +480,7 @@ namespace madlib::graph {
         }
 
         void drawPairs(const size_t scale, const Color color, const Shape shape) const {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             painter.color(color);
             ProjectedPoint prjPoint = projectedPoints.at(0);
@@ -570,7 +570,7 @@ namespace madlib::graph {
         }
 
         void drawCandles(const size_t scale, const CandleStyle& candleStyle) const {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             size_t size = projectedPoints.size();
             int painterHeight = painter.getHeight();
@@ -606,9 +606,9 @@ namespace madlib::graph {
         }
 
         void putLabels(size_t scale, const LabelStyle& labelStyle) const {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
+            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
-            vector<string> texts = scales.at(scale)->getTexts();
+            vector<string> texts = getScales().at(scale)->getTexts();
             if (texts.empty()) return;
             int painterHeight = painter.getHeight();
             size_t size = projectedPoints.size();
@@ -628,7 +628,7 @@ namespace madlib::graph {
 
         void draw() const {
             size_t at = 0;
-            for (const Scale* scale: scales) {
+            for (const Scale* scale: getScales()) {
                 const Shape shape = scale->getShape();
                 const void* context = scale->getContext();
 
@@ -715,17 +715,16 @@ namespace madlib::graph {
         }
 
         Chart& addChartToArea(Area& area) {
-            Chart* chart = new Chart(area);
+            Chart* chart = vector_create(charts, area);
             area.setEventContext(chart);
             area.onDrawHandlers.push_back(draw);
-            charts.push_back(chart);
             return *chart;
         }
 
         Chart& addChartToAccordion(Accordion& accordion, const string& title = "Chart", int frameHeight = 150) {
             const Accordion::Container& container = accordion.addContainer(title, frameHeight);
             Frame& cntrFrame = container.getFrame();
-            Frame* frame = new Frame(
+            Frame* frame = vector_create(frames, 
                 accordion.getGFX(), 
                 innerBorderSize, innerBorderSize, 
                 cntrFrame.getWidth() - innerBorderSize*2,  // accordion.getWidth() - innerBorderSize*4, 
@@ -733,7 +732,6 @@ namespace madlib::graph {
                 BUTTON_PUSHED, black
             );
             cntrFrame.child(*frame);
-            frames.push_back(frame);
             return addChartToArea(*frame);
         }
     };

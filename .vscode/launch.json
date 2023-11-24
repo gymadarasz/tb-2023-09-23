@@ -30,7 +30,8 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/main",  // Replace with your executable path
-            "args": ["bitstamp-history"], //["test-command"],  // Optional: Specify program arguments here
+            // "args": ["test-command"],  // Optional: Specify program arguments here            
+            "args": ["download-bitstamp-csv", "BTCUSD", "2014", "2023", "minute"], 
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [{ "name": "GTK_PATH", "value": null }],

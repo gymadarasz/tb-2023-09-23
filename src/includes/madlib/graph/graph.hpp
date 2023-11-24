@@ -317,11 +317,11 @@ namespace madlib::graph {
             eventContext = this;
         }
 
-        void closeWindow() const {            
+        void closeWindow(bool closeDisplay = true) const {            
             if (fontInfo) XFreeFont(display, fontInfo);
             XFreeGC(display, gc);
             XDestroyWindow(display, window);
-            XCloseDisplay(display);
+            if (closeDisplay) XCloseDisplay(display);
         }
 
         void getWindowSize(int &width, int &height) const {
@@ -1343,10 +1343,10 @@ namespace madlib::graph {
             {
                 GFX& gfx = accordion.getGFX();
                 const int width = accordion.getWidth();
-                vector<Container*>& cntrs = accordion.getContainers();
+                size_t accordionContainerAt = accordion.getContainers().size();
                 const int togglerTop = accordion.height + innerBorderSize;
 
-                toggler = new Toggler(*this, gfx, cntrs.size(),
+                toggler = new Toggler(*this, gfx, accordionContainerAt,
                     innerBorderSize, togglerTop, 
                     width - innerBorderSize*2, 
                     togglerHeight - innerBorderSize*2, 
@@ -1358,8 +1358,7 @@ namespace madlib::graph {
             
                 accordion.child(*toggler);
                 accordion.child(*frame);
-                cntrs.push_back(this);
-                accordion.height = togglerHeight * (int)cntrs.size();
+                accordion.height = togglerHeight * ((int)accordionContainerAt + 1);
             }
 
             ~Container() {
@@ -1482,14 +1481,16 @@ namespace madlib::graph {
         }
 
         void openAll() {
-            size_t containersSize = containers.size();
-            for (size_t i = 0; i < containersSize; i++) {
-                openAt(i);
+            const size_t containersSize = containers.size();
+            for (size_t ii = 0; ii < containersSize; ii++) {
+                openAt(ii);
             }
         }
 
         Container& addContainer(const string& title, int frameHeight) {
-            return *(new Container(*this, title, textAlign, frameHeight));
+            Container* container = new Container(*this, title, textAlign, frameHeight);
+            containers.push_back(container);
+            return *container;
         }
 
         vector<Container*>& getContainers() {

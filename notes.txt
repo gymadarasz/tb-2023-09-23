@@ -15,6 +15,12 @@ build and run commands:
 ./cleanup.sh | ./build-run.sh RELEASE test-command arg1 arg2 arg3
 note: add parameters in launch.json "args": [...] for debugging in vscode
 
+download bitstamp candle history data:
+./build/main download-bitstamp-csv BTCUSD 2014 2023 minute
+
+download only the latest year (for updates):
+./build/main download-bitstamp-csv BTCUSD
+
 test coverage:
 ./cleanup.sh | ./test-cov.sh
 
