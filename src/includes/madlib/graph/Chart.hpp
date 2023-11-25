@@ -8,34 +8,6 @@ using namespace madlib;
 
 namespace madlib::graph {
 
-    template<typename T>
-    class PointTemplate {
-    protected:
-
-        T x, y;
-
-    public:
-
-        PointTemplate(T x = 0, T y = 0): x(x), y(y) {}
-
-        void setX(T x) {
-            this->x = x; 
-        }
-
-        T getX() const {
-            return x;
-        }
-
-        void setY(T y) {
-            this->y = y;
-        }
-
-        T getY() const {
-            return y;
-        }
-
-    };
-
     class RealPoint: public PointTemplate<double> {
     public:
         using PointTemplate<double>::PointTemplate;

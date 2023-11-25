@@ -14,6 +14,7 @@
 #include "includes/madlib/graph/chart_manual_test4_history.hpp"
 #include "includes/madlib/graph/chart_manual_test5_zoom.hpp"
 #include "includes/madlib/graph/ChartManualTest6.hpp"
+#include "includes/madlib/graph/ChartManualTest7Zoom.hpp"
 #include "includes/madlib/graph/AccordionManualTest1.hpp"
 #include "includes/madlib/graph/MultiChartAccordionManualTest1.hpp"
 #include "includes/madlib/trading/MonteCarloChartsTest1.hpp"
@@ -70,6 +71,7 @@ int main() {
 
     cout << "Manual tests: ";
     
+    delete (new ChartManualTest7Zoom)->run();
     delete (new MonteCarloChartsTest1)->run();
     delete (new MultiChartAccordionManualTest1)->run();
     delete (new AccordionManualTest1)->run();

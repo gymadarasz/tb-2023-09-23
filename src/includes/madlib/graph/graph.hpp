@@ -14,6 +14,39 @@ using namespace madlib;
 
 namespace madlib::graph {
 
+    template<typename T>
+    class PointTemplate {
+    protected:
+
+        T x, y;
+
+    public:
+
+        PointTemplate(T x = 0, T y = 0): x(x), y(y) {}
+
+        void setX(T x) {
+            this->x = x; 
+        }
+
+        T getX() const {
+            return x;
+        }
+
+        void setY(T y) {
+            this->y = y;
+        }
+
+        T getY() const {
+            return y;
+        }
+
+        void setXY(T x, T y) {
+            setX(x);
+            setY(y);
+        }
+
+    };
+
     typedef unsigned long Color;
 
     const Color black = 0x000000;
@@ -141,6 +174,7 @@ namespace madlib::graph {
         static const int frameMargin = 10;
         static const int textPadding = 10;
         static const Align labelTextAlign = LEFT;
+        static const int barThickness = 20;
     };
     const char* Theme::windowTitle = "graph";
     const char* Theme::windowFont = "10x20";
@@ -949,21 +983,21 @@ namespace madlib::graph {
         void propagateTouch(unsigned int button, int x, int y) {
             if (!contains(x, y)) return;
             for (const onTouchHandler& onTouch: onTouchHandlers)
-                onTouch(this, button, x, y);
+                onTouch(this, button, x - this->getLeft(true), y - this->getTop(true));
             for (Area* area: areas)
                 if (contains(area)) area->propagateTouch(button, x, y);
         }
 
         void propagateRelease(unsigned int button, int x, int y) {
             for (const onReleaseHandler& onRelease: onReleaseHandlers)
-                onRelease(this, button, x, y);
+                onRelease(this, button, x - this->getLeft(true), y - this->getTop(true));
             for (Area* area: areas)
                 if (contains(area)) area->propagateRelease(button, x, y);
         }
 
         void propagateMove(int x, int y) {
             for (const onMoveHandler& onMove: onMoveHandlers)
-                onMove(this, x, y);
+                onMove(this, x - this->getLeft(true), y - this->getTop(true));
             for (Area* area: areas)
                 if (contains(area)) area->propagateMove(x, y);
         }
@@ -1222,7 +1256,7 @@ namespace madlib::graph {
     public:
 
         Button(GFX& gfx, int left, int top, int width, int height, 
-            const string &text, const Align textAlign = Area::defaultAreaTextAlign
+            const string &text = "", const Align textAlign = Area::defaultAreaTextAlign
         ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
         {
             onTouchHandlers.push_back(touch);
@@ -1270,6 +1304,282 @@ namespace madlib::graph {
             const string &text, const Align textAlign = defaultLabelTextAlign
         ): Area(gfx, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
         {}
+    };
+
+
+    enum Direction { HORIZONTAL, VERTICAL };
+
+    class SlideBar: public Area {
+    public:
+
+        static void handlerTouch(void* context, unsigned int, int x, int y) {
+            SlideBar* that = (SlideBar*)context;
+            that->dragStarted = true;
+            that->dragStartAt = that->direction == HORIZONTAL ? x : y;
+        }
+
+        static void handlerRelease(void* context, unsigned int, int, int) {
+            SlideBar* that = (SlideBar*)context;
+            that->dragStarted = false;
+        }
+
+        static void handlerMove(void* context, int x, int y) {
+            SlideBar* that = (SlideBar*)context;
+            if (!that->dragStarted) return;
+
+            that->position = (that->direction == HORIZONTAL ? x : y) - that->size / 2;
+            if (that->position < 0) that->position = 0;
+            if (that->position > that->maxPosition) that->position = that->maxPosition;
+
+            that->direction == HORIZONTAL ? 
+                that->handler->setLeft(that->position + 1):
+                that->handler->setTop(that->position + 1);
+
+            that->value = that->calcValue();
+            // logger.writeln(that->value);
+            that->draw();
+        }
+
+    protected:
+
+        bool dragStarted = false;
+        // PointTemplate<int> dragStartAt = PointTemplate<int>(-1, -1);
+        int dragStartAt = -1;
+
+        Button* handler = NULL;
+
+        bool direction;
+        int thickness;
+        double minValue;
+        double maxValue;
+        double value;
+        int size;
+        int maxPosition;
+        int position;
+
+        int calcSize() {
+            return thickness;
+        }
+
+        int calcMaxPosition() {
+            return (direction == HORIZONTAL ? width : height) - thickness;
+        }
+
+        int calcPosition() {
+            return
+                (int)((value - minValue) * maxPosition) / 
+                (int)(maxValue - minValue);
+        }
+
+        double calcValue() {
+            return 
+                ((maxValue - minValue) * position) / 
+                maxPosition;
+        }
+
+    public:
+        SlideBar(
+            GFX& gfx, int left, int top, int length, bool direction,
+            double minValue = 0, double maxValue = 1, double value = 0,
+            int thickness = Theme::barThickness
+        ): Area(
+            gfx, left, top, 
+            direction == HORIZONTAL ? length : thickness,
+            direction == VERTICAL ? length : thickness, 
+            "", CENTER, BUTTON_PUSHED
+        ),  
+            direction(direction), thickness(thickness),
+            minValue(minValue), maxValue(maxValue), value(value),
+            size(calcSize()),
+            maxPosition(calcMaxPosition()), 
+            position(calcPosition())
+        {
+            handler = direction == HORIZONTAL ?
+                new Button(gfx, position, 1, thickness - 2, thickness - 2):
+                new Button(gfx, 1, position, thickness - 2, thickness - 2);
+            this->child(*handler);
+            onTouchHandlers.push_back(handlerTouch);
+            onReleaseHandlers.push_back(handlerRelease);
+            onMoveHandlers.push_back(handlerMove);
+        }
+
+        ~SlideBar() {
+            delete handler;
+        }
+
+        double getValue() {
+            return value;
+        }
+    };
+
+    class ScrollBar: public SlideBar {
+    protected:
+        double valueSize;
+
+        int calcSize() {
+            int size = (
+                (int)(valueSize * (direction == HORIZONTAL ? width : height)) /
+                (int)(maxValue - minValue)
+             ) - 1;
+            if (size < thickness) size = thickness;
+            return size;
+        }
+
+
+        int calcMaxPosition() {
+            return (direction == HORIZONTAL ? width : height) - size - 2;
+        }
+
+    public:
+        ScrollBar(
+            GFX& gfx, int left, int top, int length, bool direction,
+            double minValue = 0, double maxValue = 1, 
+            double value = 0, double valueSize = .3,
+            int thickness = Theme::barThickness
+        ): SlideBar(
+            gfx, left, top, length, direction, 
+            minValue, maxValue, value, thickness
+        ), valueSize(valueSize)
+        {
+            this->size = calcSize();
+            this->maxPosition = calcMaxPosition();
+            handler->setWidth(direction == HORIZONTAL ? size : thickness - 2);
+            handler->setHeight(direction == VERTICAL ? size : thickness - 2);
+        }
+
+        double getValueSize() {
+            return valueSize;
+        }
+    };
+
+    class IntervalBar: public ScrollBar {
+    public:
+
+        static void handlerMinTouch(void* context, unsigned int, int, int) {
+            Button* handlerMin = (Button*)context;
+            IntervalBar* that = (IntervalBar*)handlerMin->getParent()->getParent();
+            that->dragStarted = false;
+            that->dragMinStarted = true;
+        }
+
+        static void handlerMaxTouch(void* context, unsigned int, int, int) {
+            Button* handlerMax = (Button*)context;
+            IntervalBar* that = (IntervalBar*)handlerMax->getParent()->getParent();
+            that->dragStarted = false;
+            that->dragMaxStarted = true;
+        }
+
+        static void handlerRelease(void* context, unsigned int, int, int) {
+            IntervalBar* that = (IntervalBar*)context;
+            // that->dragStarted = false;
+            that->dragMinStarted = false;
+            that->dragMaxStarted = false;
+        }
+
+        static void handlerMove(void* context, int x, int y) {
+            IntervalBar* that = (IntervalBar*)context;
+            if (!that->dragMinStarted && !that->dragMaxStarted) return;
+
+            if (x < 0) x = 0;
+            if (x > that->width) x = that->width;
+            if (y < 0) y = 0;
+            if (y > that->height) y = that->height;
+
+            if (that->dragMinStarted) {
+                logger.writeln("drag min ", x, ":", y, " - from:", that->dragStartAt);
+
+                that->position = (that->direction == HORIZONTAL ? x : y) - that->thickness / 6;
+                if (that->position < 0) that->position = 0;
+                if (that->position > that->maxPosition) that->position = that->maxPosition;
+
+                if (that->direction == HORIZONTAL) {
+                    that->handler->setLeft(that->position + 1);
+                    int delta = that->dragStartAt - x;
+                    that->dragStartAt = x;
+                    that->size += delta;
+                    if (that->size < that->thickness) that->size = that->thickness;
+                    if (that->size > that->getWidth()) that->size = that->getWidth();
+                    that->handler->setWidth(that->size);
+                    that->handlerMax->setLeft(that->handler->getWidth() - that->thickness / 3);
+                } else {
+                    that->handler->setTop(that->position + 1);
+                    int delta = that->dragStartAt - y;
+                    that->dragStartAt = y;
+                    that->size += delta;
+                    if (that->size < that->thickness) that->size = that->thickness;
+                    if (that->size > that->getHeight()) that->size = that->getHeight();
+                    that->handler->setHeight(that->size);
+                    that->handlerMax->setTop(that->handler->getHeight() - that->thickness / 3);
+                }
+            }
+
+            if (that->dragMaxStarted) {
+                logger.writeln("drag max ", x, ":", y, " - from:", that->dragStartAt);
+
+                if (that->direction == HORIZONTAL) {
+                    int delta = x - that->dragStartAt;
+                    that->dragStartAt = x;
+                    that->size += delta;
+                    if (that->size < that->thickness) that->size = that->thickness;
+                    if (that->size > that->getWidth()) that->size = that->getWidth();
+                    that->handler->setWidth(that->size);
+                    that->handlerMax->setLeft(that->handler->getWidth() - that->thickness / 3);
+                } else {
+                    int delta = y - that->dragStartAt;
+                    that->dragStartAt = y;
+                    that->size += delta;
+                    if (that->size < that->thickness) that->size = that->thickness;
+                    if (that->size > that->getHeight()) that->size = that->getHeight();
+                    that->handler->setHeight(that->size);
+                    that->handlerMax->setTop(that->handler->getHeight() - that->thickness / 3);
+                }
+            }
+
+            that->maxPosition = that->calcMaxPosition();
+            if (that->position < 0) that->position = 0;
+            if (that->position > that->maxPosition) that->position = that->maxPosition;
+
+            that->value = that->calcValue();
+            // that->valueSize = ... // TODO calcValueSize
+            // logger.writeln(that->value, ", ", that->valueSize);
+            that->draw();
+        }
+
+    protected:
+        bool dragMinStarted = false;
+        bool dragMaxStarted = false;
+
+        Button* handlerMin = NULL;
+        Button* handlerMax = NULL;
+    public:
+        IntervalBar(
+            GFX& gfx, int left, int top, int length, bool direction,
+            double minValue = 0, double maxValue = 1, 
+            double value = 0, double valueSize = .3,
+            int thickness = Theme::barThickness
+        ): ScrollBar(
+            gfx, left, top, length, direction,
+            minValue, maxValue, value, valueSize, thickness
+        ) 
+        {
+            handlerMin = direction == HORIZONTAL ?
+                new Button(gfx, 0, 0, thickness / 3, thickness):
+                new Button(gfx, 0, 0, thickness, thickness / 3);
+            handlerMax = direction == HORIZONTAL ?
+                new Button(gfx, size - thickness / 3, 0, thickness / 3, thickness):
+                new Button(gfx, 0, size - thickness / 3, thickness, thickness / 3);
+            handler->child(*handlerMin);
+            handler->child(*handlerMax);
+            handlerMin->onTouchHandlers.push_back(handlerMinTouch);
+            handlerMax->onTouchHandlers.push_back(handlerMaxTouch);
+            onReleaseHandlers.push_back(handlerRelease);
+            onMoveHandlers.push_back(handlerMove);
+        }
+
+        ~IntervalBar() {
+            delete handlerMin;
+            delete handlerMax;
+        }
     };
 
 
