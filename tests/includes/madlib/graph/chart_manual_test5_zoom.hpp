@@ -15,7 +15,7 @@ Chart* chart_manual_test5_chartPtr;
 Button* chart_manual_test5_closeOkBtnPtr;
 
 void chart_manual_test5_draw(void* /*context*/) {
-    chart_manual_test5_chartPtr->draw();
+    //chart_manual_test5_chartPtr->draw();
     chart_manual_test5_closeOkBtnPtr->draw();
 }
 
@@ -26,22 +26,21 @@ void chart_manual_test5_close(void*, unsigned int, int, int) {
 int chart_manual_test5_zoom()
 {
     GFX gfx;
-    chart_manual_test5_gfxPtr = &gfx;
-    GUI gui(gfx, 1600, 600);
-    Frame frame(gfx, 10, 10, 1580, 580, BUTTON_PUSHED, black);
-    gui.child(frame);
-    Chart chart(frame);
     Zoom zoom(1.5, 1.5);
-    chart.setZoom(zoom);
-    chart_manual_test5_chartPtr = &chart;
-    frame.onDrawHandlers.push_back(chart_manual_test5_draw);
+    chart_manual_test5_gfxPtr = &gfx;
+    GUI gui(gfx, zoom, 1600, 600);
+    // Chart chart(gfx, zoom, 10, 10, 1580, 580, BUTTON_PUSHED, black);
+    // gui.child(chart);
+    // chart.setZoom(zoom);
+    // chart_manual_test5_chartPtr = &chart;
+    // chart.addDrawHandler(chart_manual_test5_draw);
 
 
-    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(gfx, zoom, 15, 15, 100, 30, "Ok");
     chart_manual_test5_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
-    closeOkBtn.onTouchHandlers.push_back(chart_manual_test5_close);
+    closeOkBtn.addTouchHandler(chart_manual_test5_close);
     gui.child(closeOkBtn);
 
 
@@ -66,9 +65,12 @@ int chart_manual_test5_zoom()
         timeLambda, seed
     );
 
-    Chart::CandleStyle candleStyle;
-    TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);
-    candlesPlugin.project(chart);
+    TradeHistoryChart chart(gfx, zoom, 10, 10, 1580, 580, history);
+    gui.child(chart);
+    chart.setZoom(zoom);
+    chart_manual_test5_chartPtr = &chart;
+    chart.addDrawHandler(chart_manual_test5_draw);    
+    chart.project();
 
     gui.loop();
     

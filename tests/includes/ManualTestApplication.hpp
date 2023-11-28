@@ -5,9 +5,16 @@
 using namespace madlib::graph;
 
 class ManualTestApplication: public FrameApplication {
+public:
+
+    static void closeHandler(void* context, unsigned int, int, int) {
+        Button* closeBtn = (Button*)context;
+        closeBtn->getRoot()->getGFX().close = true;
+    }
+
 protected:
 
-    Button closeBtn = Button(gfx, 10, 10, 100, 30, "OK");
+    Button closeBtn = Button(gfx, zoom, 10, 10, 100, 30, "OK");
 
 public:
 
@@ -16,7 +23,7 @@ public:
         
         closeBtn.setBackgroundColor(green);
         closeBtn.setTextColor(white);
-        closeBtn.onTouchHandlers.push_back(close);
+        closeBtn.addTouchHandler(closeHandler);
         mainFrame.child(closeBtn);
     }
 };

@@ -15,7 +15,7 @@ Chart* chart_manual_test4_chartPtr;
 Button* chart_manual_test4_closeOkBtnPtr;
 
 void chart_manual_test4_draw(void* /*context*/) {
-    chart_manual_test4_chartPtr->draw();
+    //chart_manual_test4_chartPtr->draw();
     chart_manual_test4_closeOkBtnPtr->draw();
 }
 
@@ -26,20 +26,16 @@ void chart_manual_test4_close(void*, unsigned int, int, int) {
 int chart_manual_test4_history()
 {
     GFX gfx;
+    Zoom zoom;
     chart_manual_test4_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test4_history");
-    Frame frame(gfx, 10, 10, 780, 580, BUTTON_PUSHED, black);
-    gui.child(frame);
-    Chart chart(frame);
-    chart_manual_test4_chartPtr = &chart;
-    frame.onDrawHandlers.push_back(chart_manual_test4_draw);
+    GUI gui(gfx, zoom, 800, 600, "chart_manual_test4_history");
 
 
-    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(gfx, zoom, 15, 15, 100, 30, "Ok");
     chart_manual_test4_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
-    closeOkBtn.onTouchHandlers.push_back(chart_manual_test4_close);
+    closeOkBtn.addTouchHandler(chart_manual_test4_close);
     gui.child(closeOkBtn);
 
 
@@ -64,10 +60,12 @@ int chart_manual_test4_history()
         timeLamda, seed
     );
 
-    Zoom zoom;
-    Chart::CandleStyle candleStyle;
-    TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);
-    candlesPlugin.project(chart);
+    // Zoom zoom;
+    TradeHistoryChart chart(gfx, zoom, 10, 10, 780, 580, history);
+    gui.child(chart);
+    chart_manual_test4_chartPtr = &chart;
+    chart.addDrawHandler(chart_manual_test4_draw);
+    chart.project();
 
     gui.loop();
     

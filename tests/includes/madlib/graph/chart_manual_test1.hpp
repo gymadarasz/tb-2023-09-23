@@ -10,15 +10,6 @@ const double chart_manual_test1_scaleXMin = 0;
 const double chart_manual_test1_scaleXMax = 1000;
 
 GFX* chart_manual_test1_gfxPtr;
-Chart* chart_manual_test1_chartPtr;
-
-void chart_manual_test1_draw(void* /*context*/) {
-    // Painter* painter = (Painter*)context;
-    chart_manual_test1_chartPtr->drawLines(0, lightGreen);
-    chart_manual_test1_chartPtr->drawPoints(0, white);
-
-    chart_manual_test1_chartPtr->drawLines(1, lightCyan);
-}
 
 void chart_manual_test1_generateRealPoints(vector<RealPoint>& realPoints) {
     realPoints.clear();
@@ -43,32 +34,30 @@ void chart_manual_test1_close(void*, unsigned int, int, int) {
 int chart_manual_test1()
 {
     GFX gfx;
+    Zoom zoom;
     chart_manual_test1_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test1");
-    Frame frame(gfx, 50, 50, 700, 500);
-    Chart chart(frame);
-    chart_manual_test1_chartPtr = &chart;
+    GUI gui(gfx, zoom, 800, 600, "chart_manual_test1");
+    Chart chart(gfx, zoom, 50, 50, 700, 500);
 
-    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(gfx, zoom, 10, 10, 100, 30, "Ok");
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
-    closeOkBtn.onTouchHandlers.push_back(chart_manual_test1_close);
+    closeOkBtn.addTouchHandler(chart_manual_test1_close);
     gui.child(closeOkBtn);
 
     // set up UI
-    frame.fixed = false;
-    frame.setBackgroundColor(black);
-    gui.child(frame);
-    frame.onDrawHandlers.push_back(chart_manual_test1_draw);
+    chart.fixed = false;
+    chart.setBackgroundColor(black);
+    gui.child(chart);
     
     // generate data and show on scales
     vector<RealPoint> realPoints;
     chart_manual_test1_generateRealPoints(realPoints);
 
-    chart.addScale().project(realPoints);
-    Chart::Scale& secondScale = chart.addScale();
-    secondScale.setZoom(Zoom(2.0, 1.5));
-    secondScale.project(realPoints);
+    chart.createScale(zoom, LINE, &lightGreen)->project(realPoints);
+    Chart::Scale* secondScale = chart.createScale(zoom, LINE, &lightCyan);
+    secondScale->setZoom(Zoom(2.0, 1.5));
+    secondScale->project(realPoints);
     
 
     gui.loop();

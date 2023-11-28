@@ -26,6 +26,18 @@ using namespace chrono;
 #define ERR_INVALID ERROR("Invalid");
 
 namespace madlib {
+    
+    /**
+        DBG_COUNTER;
+        if (DBG_counter == 1) {
+            DBG_BREAK;
+        }
+    */
+    int DBG_counter = 0;
+    #define DBG_COUNTER cout << "DBG counter: " << ++madlib::DBG_counter << " at " << __FILE__ << ":" << __LINE__ << endl;
+    #define DBG_BREAK cout << "DBG break at " << __FILE__ << ":" << __LINE__ << endl;
+
+    
 
     typedef long ms_t;
 
@@ -493,27 +505,28 @@ namespace madlib {
     }
 
     template<typename T>
-    T* vector_create(vector<T*> v) {
+    T* vector_create(vector<T*>& v) {
         T* elem = new T();
         v.push_back(elem);
         return elem;
     }
 
     template<typename T, typename... Args>
-    T* vector_create(vector<T*> v, Args&&... args) {
+    T* vector_create(vector<T*>& v, Args&&... args) {
         T* elem = new T(forward<Args>(args)...);
         v.push_back(elem);
         return elem;
     }
 
     template<typename T>
-    void vector_destroy(vector<T*> v) {
+    void vector_destroy(vector<T*>& v) {
         for (T* elem: v) 
             if (elem) {
                 delete elem;
                 elem = NULL;
             }
         v.clear();
+        if (v.size() > 0) throw ERROR("EEJH??");
     }
 
     template<typename T>
@@ -673,35 +686,40 @@ class Factory {
 protected:
     vector<T*> instances;
 public:
-    T& create() {
+    T* create() {
         T* instance = new T;
         instances.push_back(instance);
-        return *instance;
+        return instance;
     }
     
     template <typename... Args>
-    T& create(Args... args) {
+    T* create(Args... args) {
         T* instance = new T(args...);
         instances.push_back(instance);
-        return *instance;
+        return instance;
     }
 
-    void destroy(T& instance) {
-        auto it = find(instances.begin(), instances.end(), &instance);
+    void destroy(T* instance) {
+        auto it = find(instances.begin(), instances.end(), instance);
         if (it != instances.end()) {
             delete *it;
             instances.erase(it);
         }
     }
 
+    void destroy() {
+        vector_destroy<T>(instances);
+    }
+
     ~Factory() {
         // for (T* instance : instances) {
         //     delete instance;
         // }
-        vector_destroy<T>(instances);
+        // vector_destroy<T>(instances);
+        destroy();
     }
 
-    vector<T*> getInstances() const {
+    vector<T*>& getInstances() const {
         return instances;
     }
 

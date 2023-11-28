@@ -13,7 +13,7 @@ Button* chart_manual_test3_closeOkBtnPtr;
 
 void chart_manual_test3_draw(void* /*context*/) {
     // Painter* painter = (Painter*)context;
-    chart_manual_test3_chartPtr->draw();
+    // chart_manual_test3_chartPtr->draw();
     // chart_manual_test3_chartPtr->drawCandle(10, 10, 20, 20, 15, 25, 15, 5);
     chart_manual_test3_closeOkBtnPtr->draw();
 }
@@ -25,20 +25,20 @@ void chart_manual_test3_close(void*, unsigned int, int, int) {
 int chart_manual_test3_candles()
 {
     GFX gfx;
+    Zoom zoom;
     chart_manual_test3_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test3_candles");
-    Frame frame(gfx, 10, 10, 780, 580, BUTTON_PUSHED, black);
-    gui.child(frame);
-    Chart chart(frame);
+    GUI gui(gfx, zoom, 800, 600, "chart_manual_test3_candles");
+    Chart chart(gfx, zoom, 10, 10, 780, 580, BUTTON_PUSHED, black);
+    gui.child(chart);
     chart_manual_test3_chartPtr = &chart;
-    frame.onDrawHandlers.push_back(chart_manual_test3_draw);
+    chart.addDrawHandler(chart_manual_test3_draw);
 
 
-    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(gfx, zoom, 15, 15, 100, 30, "Ok");
     chart_manual_test3_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
-    closeOkBtn.onTouchHandlers.push_back(chart_manual_test3_close);
+    closeOkBtn.addTouchHandler(chart_manual_test3_close);
     gui.child(closeOkBtn);
 
 
@@ -68,11 +68,11 @@ int chart_manual_test3_candles()
         candlesRealPoints.push_back(RealPoint((double)middle, low));
         candlesRealPoints.push_back(RealPoint((double)middle, high));
     }
-    chart.addScale();
-    chart.getScaleAt(0).setShape(CANDLE);
-    chart.getScaleAt(0).project(candlesRealPoints);
-    chart.addScale(LINE, &orange);
-    chart.getScaleAt(1).project(pricesRealPoints);
+    chart.createScale(zoom);
+    chart.getScaleAt(0)->setShape(CANDLE);
+    chart.getScaleAt(0)->project(candlesRealPoints);
+    chart.createScale(zoom, LINE, &orange);
+    chart.getScaleAt(1)->project(pricesRealPoints);
 
     gui.loop();
     

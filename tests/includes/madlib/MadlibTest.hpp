@@ -49,14 +49,14 @@ public:
 
     static void test_FactoryWithParams_Int() {
         Factory<int> intFactory;
-        int& intInstance = intFactory.create(42);
+        int* intInstance = intFactory.create(42);
 
-        assert(intInstance == 42);
+        assert(*intInstance == 42);
 
         intFactory.destroy(intInstance);
 
         // After destroying, attempting to access the instance should fail.
-        assert(intInstance != 42);
+        assert(*intInstance != 42);
     }
 
     static void test_FactoryWithParams_CustomClass() {
@@ -68,14 +68,14 @@ public:
         };
 
         Factory<MyObject> objFactory;
-        MyObject& objInstance = objFactory.create(100);
+        MyObject* objInstance = objFactory.create(100);
 
-        assert(objInstance.value == 100);
+        assert(objInstance->value == 100);
 
         objFactory.destroy(objInstance);
 
         // After destroying, attempting to access the instance should fail.
-        assert(objInstance.value != 100);
+        assert(objInstance->value != 100);
     }
 
     static void test_FactoryWithoutParams() {
@@ -87,13 +87,13 @@ public:
         };
 
         Factory<NoParamClass> noParamFactory;
-        NoParamClass& noParamInstance = noParamFactory.create();
+        NoParamClass* noParamInstance = noParamFactory.create();
 
-        assert(noParamInstance.value == 999);
+        assert(noParamInstance->value == 999);
 
         noParamFactory.destroy(noParamInstance);
 
         // After destroying, attempting to access the instance should fail.
-        assert(noParamInstance.value != 999);
+        assert(noParamInstance->value != 999);
     }
 };

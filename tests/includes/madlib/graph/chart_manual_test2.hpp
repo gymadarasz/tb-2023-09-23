@@ -8,10 +8,12 @@ using namespace madlib::graph;
 
 GFX* chart_manual_test2_gfxPtr;
 Chart* chart_manual_test2_chartPtr;
+Button* chart_manual_test2_closeOkBtnPtr;
 
 void chart_manual_test2_draw(void* /*context*/) {
     // Painter* painter = (Painter*)context;
     chart_manual_test2_chartPtr->draw();
+    chart_manual_test2_closeOkBtnPtr->draw();
 }
 
 void chart_manual_test2_close(void*, unsigned int, int, int) {
@@ -21,19 +23,21 @@ void chart_manual_test2_close(void*, unsigned int, int, int) {
 int chart_manual_test2()
 {
     GFX gfx;
+    Zoom zoom;
     chart_manual_test2_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test2", black);
-    Chart chart(gui);
-    chart.addScale();
+    GUI gui(gfx, zoom, 800, 600, "chart_manual_test2", black);
+    Chart chart(gfx, zoom, 5, 5, 790, 590);
+    chart.createScale(zoom, LINE, &green);
     chart_manual_test2_chartPtr = &chart;
-    gui.onDrawHandlers.push_back(chart_manual_test2_draw);
-    chart.addScale(LABEL, &black);
+    gui.addDrawHandler(chart_manual_test2_draw);
+    chart.createScale(zoom, LABEL, &black);
 
 
-    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(gfx, zoom, 10, 10, 100, 30, "Ok");
+    chart_manual_test2_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
-    closeOkBtn.onTouchHandlers.push_back(chart_manual_test2_close);
+    closeOkBtn.addTouchHandler(chart_manual_test2_close);
     gui.child(closeOkBtn);
 
 
@@ -54,8 +58,9 @@ int chart_manual_test2()
     }
     
 
-    chart.getScaleAt(0).project(realPoints);
-    chart.getScaleAt(1).project(textRealChoords, texts);
+    chart.getScaleAt(0)->project(realPoints);
+    chart.getScaleAt(1)->project(textRealChoords, texts);
+    chart.draw();
 
 
     gui.loop();

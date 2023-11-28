@@ -18,6 +18,7 @@
 #include "includes/madlib/graph/AccordionManualTest1.hpp"
 #include "includes/madlib/graph/MultiChartAccordionManualTest1.hpp"
 #include "includes/madlib/trading/MonteCarloChartsTest1.hpp"
+#include "includes/madlib/graph/LabelManualTest1.hpp"
 
 using namespace std;
 
@@ -71,6 +72,7 @@ int main() {
 
     cout << "Manual tests: ";
     
+    delete (new LabelManualTest1)->run();
     delete (new ChartManualTest7Zoom)->run();
     delete (new MonteCarloChartsTest1)->run();
     delete (new MultiChartAccordionManualTest1)->run();

@@ -12,25 +12,41 @@ using namespace madlib::trading;
 class ChartManualTest7Zoom: public ManualTestApplication {
 protected:
 
-    static void draw(void* context) {
-        ChartManualTest7Zoom* that =
-            (ChartManualTest7Zoom*)((Area*)context)
-                ->getRoot()->getGFX().getContext();
+    // Define parameters and desired time range
+    const string symbol = "MONTECARLO";
+    const double volumeMean = 100;  // Initial volume
+    const double volumeStdDeviation = 10;
+    const double priceMean = 100;  // Initial price
+    const double priceStdDeviation = 10;
+    const double timeLambda = MS_PER_MIN;
+    const ms_t startTime = datetime_to_ms("2021-01-01");
+    const ms_t endTime = datetime_to_ms("2021-01-07");
+    const ms_t period = period_to_ms("1h");
+    const unsigned int seed = 6000;
 
-        that->chart.draw();
-        that->closeBtn.draw();
-    }
+    // Create a MonteCarloHistory object with the specified parameters
+    MonteCarloHistory history = MonteCarloHistory(
+        symbol, 
+        startTime, endTime, period,
+        volumeMean, volumeStdDeviation,
+        priceMean, priceStdDeviation,
+        timeLambda, seed
+    );
 
-    Frame frame = Frame(gfx, 300, 300, 1000, 300, BUTTON_PUSHED, black);
-    Chart chart = Chart(frame);
+    TradeHistoryChart chart = TradeHistoryChart(
+        gfx, zoom, 300, 300, 1000, 300, history
+    );
 
-    SlideBar slideBarHorizontal = SlideBar(gfx, 10, 60, 200, HORIZONTAL);
-    ScrollBar scrollBarHorizontal = ScrollBar(gfx, 10, 90, 200, HORIZONTAL);
-    IntervalBar intervalBarHorizontal = IntervalBar(gfx, 10, 120, 200, HORIZONTAL);
 
-    SlideBar slideBarVertical = SlideBar(gfx, 260, 60, 200, VERTICAL);
-    ScrollBar scrollBarVertical = ScrollBar(gfx, 290, 60, 200, VERTICAL);
-    IntervalBar intervalBarVertical = IntervalBar(gfx, 320, 60, 200, VERTICAL);
+    // test sliders...
+
+    SlideBar slideBarHorizontal = SlideBar(gfx, zoom, 10, 60, 200, HORIZONTAL);
+    ScrollBar scrollBarHorizontal = ScrollBar(gfx, zoom, 10, 90, 200, HORIZONTAL);
+    IntervalBar intervalBarHorizontal = IntervalBar(gfx, zoom, 10, 120, 200, HORIZONTAL);
+
+    SlideBar slideBarVertical = SlideBar(gfx, zoom, 260, 60, 200, VERTICAL);
+    ScrollBar scrollBarVertical = ScrollBar(gfx, zoom, 290, 60, 200, VERTICAL);
+    IntervalBar intervalBarVertical = IntervalBar(gfx, zoom, 320, 60, 200, VERTICAL);
 
 public:
 
@@ -45,35 +61,8 @@ public:
         mainFrame.child(scrollBarVertical);
         mainFrame.child(intervalBarVertical);
 
-        mainFrame.child(frame);
-        frame.onDrawHandlers.push_back(draw);
+        mainFrame.child(chart);
 
-        // Define parameters and desired time range
-        const string symbol = "MONTECARLO";
-        const double volumeMean = 100;  // Initial volume
-        const double volumeStdDeviation = 10;
-        const double priceMean = 100;  // Initial price
-        const double priceStdDeviation = 10;
-        const double timeLambda = MS_PER_MIN;
-        const ms_t startTime = datetime_to_ms("2021-01-01");
-        const ms_t endTime = datetime_to_ms("2021-01-07");
-        const ms_t period = period_to_ms("1h");
-        const unsigned int seed = 6000;
-
-        // Create a MonteCarloHistory object with the specified parameters
-        MonteCarloHistory history(
-            symbol, 
-            startTime, endTime, period,
-            volumeMean, volumeStdDeviation,
-            priceMean, priceStdDeviation,
-            timeLambda, seed
-        );
-
-        const double ratioX = 5;
-        const double ratioY = 1;
-        Zoom zoom(ratioX, ratioY);
-        Chart::CandleStyle candleStyle;
-        TradeHistoryChartPlugin candlesPlugin(history, zoom, candleStyle);
-        candlesPlugin.project(chart, &history);
+        chart.project();
     }
 };

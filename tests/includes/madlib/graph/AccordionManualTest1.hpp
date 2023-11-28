@@ -18,26 +18,26 @@ protected:
         app->accordion.setSingle(stickyBtn->isPushed());
     }
 
-    Accordion accordion = Accordion(gfx, 10, 50, 400, false, LEFT);
-    Button stickyBtn = Button(gfx, 420, 50, 100, 40, "Sticky");
-    Button singleBtn = Button(gfx, 420, 100, 100, 40, "Single");
+    Accordion accordion = Accordion(gfx, zoom, 10, 50, 400, false, LEFT);
+    Button stickyBtn = Button(gfx, zoom, 420, 50, 100, 40, "Sticky");
+    Button singleBtn = Button(gfx, zoom, 420, 100, 100, 40, "Single");
 
 public:
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("AccordionManualTest1");
         
-        accordion.addContainer("First", 100);
-        accordion.addContainer("Second", 100);
-        accordion.addContainer("Third", 100);
+        accordion.createContainer(zoom, "First", 100);
+        accordion.createContainer(zoom, "Second", 100);
+        accordion.createContainer(zoom, "Third", 100);
         mainFrame.child(accordion);
 
         stickyBtn.setSticky(true);
-        stickyBtn.onTouchHandlers.push_back(stickyBtnClick);
+        stickyBtn.addTouchHandler(stickyBtnClick);
         mainFrame.child(stickyBtn);
 
         singleBtn.setSticky(true);
-        singleBtn.onTouchHandlers.push_back(singleBtnClick);
+        singleBtn.addTouchHandler(singleBtnClick);
         mainFrame.child(singleBtn);
     }
 };

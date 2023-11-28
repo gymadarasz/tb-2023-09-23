@@ -29,7 +29,7 @@ protected:
     const bool showVolumes = true;
     const Color priceColor = orange;
     const Color volumeColor = darkGray;
-    TradeHistoryChartPlugin tradeHistoryChartPlugin = TradeHistoryChartPlugin(
+    TradeHistoryChart tradeHistoryChartPlugin = TradeHistoryChart(
         history, zoom, candleStyle, 
         showCandles, showPrices, showVolumes, 
         priceColor, volumeColor

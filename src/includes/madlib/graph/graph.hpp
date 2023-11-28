@@ -9,20 +9,21 @@
 
 #include "../madlib.hpp"
 
+
 using namespace std;
 using namespace madlib;
 
 namespace madlib::graph {
 
     template<typename T>
-    class PointTemplate {
+    class Point {
     protected:
 
         T x, y;
 
     public:
 
-        PointTemplate(T x = 0, T y = 0): x(x), y(y) {}
+        Point(T x = 0, T y = 0): x(x), y(y) {}
 
         void setX(T x) {
             this->x = x; 
@@ -47,6 +48,16 @@ namespace madlib::graph {
 
     };
 
+    class RealPoint: public Point<double> {
+    public:
+        using Point<double>::Point;
+    };
+
+    class ProjectedPoint: public Point<int> {
+    public:
+        using Point<int>::Point;
+    };
+
     typedef unsigned long Color;
 
     const Color black = 0x000000;
@@ -68,6 +79,32 @@ namespace madlib::graph {
 
     class ColorMixer {
     public:
+
+        static bool isValidColor(Color color, bool throws = true) {
+            switch (color) {
+                case black:
+                case white:
+                case gray:
+                case darkGray:
+                case red:
+                case green:
+                case blue:
+                case lightRed:
+                case lightGreen:
+                case lightBlue:
+                case cyan:
+                case purple:
+                case orange:
+                case lightCyan:
+                case lightPurple:
+                case yellow:
+                    return true;
+                default:
+                    if (throws) 
+                        throw ERROR("Invalid color");
+                    return false;
+            } 
+        }
 
         static Color light(Color color) {
             switch (color) {
@@ -175,14 +212,16 @@ namespace madlib::graph {
         static const int textPadding = 10;
         static const Align labelTextAlign = LEFT;
         static const int barThickness = 20;
+        static const Border chartBorder = BUTTON_PUSHED;
+        static const Color chartBackgroundColor = black;
+        static const Color defaultCandleColorUp = green;
+        static const Color defaultCandleColorDown = red;
     };
     const char* Theme::windowTitle = "graph";
     const char* Theme::windowFont = "10x20";
 
     class EventHandler {
     public:
-
-        void* eventContext = NULL;
 
         typedef void (*onResizeHandler)(void*, int, int);
         typedef void (*onKeyPressHandler)(void*, unsigned long);
@@ -191,6 +230,13 @@ namespace madlib::graph {
         typedef void (*onReleaseHandler)(void*, unsigned int, int, int);
         typedef void (*onMoveHandler)(void*, int, int);
         typedef void (*onLoopHandler)(void*);
+        typedef void (*onDrawHandler)(void*);
+        // typedef void (*onScrollHandler)(const void*, unsigned int);
+        // typedef void (*onZoomHandler)(const void*, unsigned int);
+
+    protected:
+
+        void* eventContext = NULL;
         
         vector<onResizeHandler> onResizeHandlers;
         vector<onKeyPressHandler> onKeyPressHandlers;
@@ -199,6 +245,13 @@ namespace madlib::graph {
         vector<onReleaseHandler> onReleaseHandlers;
         vector<onMoveHandler> onMoveHandlers;
         vector<onLoopHandler> onLoopHandlers;
+        vector<onDrawHandler> onDrawHandlers;
+        // vector<onScrollHandler> onScrollHandlers;
+        // vector<onZoomHandler> onZoomHandlers;
+
+    public:
+
+        EventHandler(void* eventContext = NULL): eventContext(eventContext) {}
 
         void setEventContext(void* eventContext) {
             this->eventContext = eventContext;
@@ -207,6 +260,87 @@ namespace madlib::graph {
         void* getEventContext() const {
             return eventContext;
         }
+
+        vector<onResizeHandler> getResizeHandlers() {
+            return onResizeHandlers;
+        }
+
+        void addResizeHandler(onResizeHandler handler) {
+            onResizeHandlers.push_back(handler);
+        }
+
+        vector<onKeyPressHandler> getKeyPressHandlers() {
+            return onKeyPressHandlers;
+        }
+
+        void addKeyPressHandler(onKeyPressHandler handler) {
+            onKeyPressHandlers.push_back(handler);
+        }
+
+        vector<onKeyReleaseHandler> getKeyReleaseHandlers() {
+            return onKeyReleaseHandlers;
+        }
+
+        void addKeyReleaseHandler(onKeyReleaseHandler handler) {
+            onKeyReleaseHandlers.push_back(handler);
+        }
+
+        vector<onTouchHandler> getTouchHandlers() {
+            return onTouchHandlers;
+        }
+
+        void addTouchHandler(onTouchHandler handler) {
+            onTouchHandlers.push_back(handler);
+        }
+
+        vector<onReleaseHandler> getReleaseHandlers() {
+            return onReleaseHandlers;
+        }
+
+        void addReleaseHandler(onReleaseHandler handler) {
+            onReleaseHandlers.push_back(handler);
+        }
+
+        vector<onMoveHandler> getMoveHandlers() {
+            return onMoveHandlers;
+        }
+
+        void addMoveHandler(onMoveHandler handler) {
+            onMoveHandlers.push_back(handler);
+        }
+
+        vector<onLoopHandler> getLoopHandlers() {
+            return onLoopHandlers;
+        }
+
+        void addLoopHandler(onLoopHandler handler) {
+            onLoopHandlers.push_back(handler);
+        }
+
+        vector<onDrawHandler> getDrawHandlers() {
+            return onDrawHandlers;
+        }
+
+        void addDrawHandler(onDrawHandler handler) {
+            onDrawHandlers.push_back(handler);
+        }
+
+        // vector<onScrollHandler> getScrollHandlers() {
+        //     return onScrollHandlers;
+        // }
+
+        // void addScrollHandler(onScrollHandler handler) {
+        //     onScrollHandlers.push_back(handler);
+        // }
+
+        // vector<onZoomHandler> getZoomHandlers() {
+        //     return onZoomHandlers;
+        // }
+
+        // void addZoomHandler(onZoomHandler handler) {
+        //     onZoomHandlers.push_back(handler);
+        // }
+
     };
 
     struct Rectangle {
@@ -469,11 +603,11 @@ namespace madlib::graph {
             while (!txt.empty()) {
                 int width, height;
                 getTextSize(txt, width, height);
-                // const int textYFixer4 = 0; //4; // ??4
+                const int textYFixer4 = 4; // ??4
                 int x1 = x;
-                int y1 = y; // + textYFixer4;
+                int y1 = y + textYFixer4;
                 int x2 = x + width;
-                int y2 = y - height; // + textYFixer4;
+                int y2 = y - height + textYFixer4;
                 if (x1 > x2) swap(x1, x2);
                 if (y1 > y2) swap(y1, y2);
                 
@@ -560,9 +694,29 @@ namespace madlib::graph {
                         break;
 
                     case ButtonPress:
-                        // Handle mouse button press event
+
+                        // logger.writeln("DBG Btn: ", event.xbutton.button, " ", event.xbutton.x, ":", event.xbutton.y);
+                        // switch (event.xbutton.button) {
+
+                        //     case Button4:
+                        //         logger.writeln("Scrolled up"); // TODO
+                        //         break;
+
+                        //     case Button5:
+                        //         logger.writeln("Scrolled down"); // TODO
+                        //         break;
+
+                        //     default:
+                        //         // Handle mouse button press / click / touch / scroll / zoom event
+                        //         for (const onTouchHandler& onTouch: onTouchHandlers)
+                        //             onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                        //         break;
+                        // }
+
+                        // Handle mouse button press / click / touch / scroll / zoom event
                         for (const onTouchHandler& onTouch: onTouchHandlers)
                             onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+
                         break;
 
                     case ButtonRelease:
@@ -590,27 +744,292 @@ namespace madlib::graph {
     const char* GFX::defaultWindowFont = Theme::windowFont;
 
 
-    class Painter {
+    class Zoom {
     public:
 
-        struct TextSize { int width = 0, height = 0; };
+        const int defaultCenterX = 0, defaultCenterY = 0;
+        const double defaultRatioX = 1.0, defaultRatioY = 1.0;
+    protected:
+        ProjectedPoint center = ProjectedPoint(defaultCenterX, defaultCenterY);
+        RealPoint ratio = RealPoint(defaultRatioX, defaultRatioY);
 
-        virtual void color(Color) const { throw ERR_UNIMP; }
+    public:
+
+        Zoom(): center(defaultCenterX, defaultCenterY), ratio(defaultRatioX, defaultRatioY) {}
+        Zoom(int centerX, int centerY): center(centerX, centerY), ratio(defaultRatioX, defaultRatioY) {}
+        explicit Zoom(const ProjectedPoint& center): center(center), ratio(defaultRatioX, defaultRatioY) {}
+        Zoom(double ratioX, double ratioY): center(defaultCenterX, defaultCenterY), ratio(ratioX, ratioY) {}
+        explicit Zoom(const RealPoint& ratio): center(defaultCenterX, defaultCenterY), ratio(ratio) {}
+        Zoom(int centerX, int centerY, double ratioX, double ratioY): center(centerX, centerY), ratio(ratioX, ratioY) {}
+        Zoom(const ProjectedPoint& center, const RealPoint& ratio): center(center), ratio(ratio) {}
+        Zoom(double ratioX, double ratioY, int centerX, int centerY): center(centerX, centerY), ratio(ratioX, ratioY) {}
+        Zoom(const RealPoint& ratio, const ProjectedPoint& center): center(center), ratio(ratio) {}
+        
+        Zoom& operator=(const Zoom& other) {
+            if (this != &other) { // Check for self-assignment
+                this->center = other.center;
+                this->ratio = other.ratio;
+            }
+            return *this;
+        }
+
+        ProjectedPoint getCenter() const {
+            return center;
+        }
+
+        void setCenter(const ProjectedPoint& center) {
+            this->center = center;
+        }
+
+        void setCenter(int x = 0, int y = 0) {
+            setCenter(ProjectedPoint(x, y));
+        }
+
+        RealPoint getRatio() const {
+            return ratio;
+        }
+
+        void setRatio(const RealPoint& ratio) {
+            this->ratio = ratio;
+        }
+
+        void setRatio(double x = 1.0, double y = 1.0) {
+            setRatio(RealPoint(x, y));
+        }
+
+        void setRatioX(double ratioX) {
+            this->ratio.setX(ratioX);
+        }
+
+        void setRatioY(double ratioY) {
+            this->ratio.setY(ratioY);
+        }
+
+        int applyX(int origoX, int pointX) const {
+            int origoXAddCenterX = origoX + center.getX();
+            int pointXSubCenterX = pointX - origoXAddCenterX;
+            double pointXSubCenterXMulRatioX = pointXSubCenterX * ratio.getX();
+            return origoXAddCenterX + (int)pointXSubCenterXMulRatioX;
+        }
+
+        int applyY(int origoY, int pointY) const {
+            int origoYAddCenterY = origoY + center.getY();
+            int pointYSubCenterY = pointY - origoYAddCenterY;
+            double pointYSubCenterYMulRatioY = pointYSubCenterY * ratio.getY();
+            return origoYAddCenterY + (int)pointYSubCenterYMulRatioY;
+        }
+
+        ProjectedPoint apply(int origoX, int origoY, int pointX, int pointY) const {
+            ProjectedPoint result(
+                applyX(origoX, pointX),
+                applyY(origoY, pointY)
+            );
+
+            return result;
+        }
+        
+        ProjectedPoint apply(const ProjectedPoint& origo, const ProjectedPoint& point) const {
+            return apply(origo.getX(), origo.getY(), point.getX(), point.getY());
+        }
+    };
+
+    class Zoomable {
+    protected:
+    
+        Zoom& zoom;
+
+    public:
+
+        Zoomable(Zoom& zoom): zoom(zoom) {}
+
+        void setZoom(const Zoom& zoom) {
+            this->zoom = zoom;
+        }
+
+        Zoom& getZoom() {
+            return zoom;
+        }
+    };
+
+    class Scrollable {
+    protected:
+
+        bool fixed = false;
+
+        int width, height;
+
+        int scrollX = 0, scrollY = 0,
+            scrollXMin = 0, scrollYMin = 0,
+            scrollXMax = 0, scrollYMax = 0;
+
+    public:
+
+        Scrollable(int width, int height): width(width), height(height) {}
+
+        void setFixed(bool fixed) {
+            this->fixed = fixed;
+        }
+
+        bool isFixed() const {
+            return fixed;
+        }
+
+        int getScrollX() const {
+            return scrollX;
+        }
+
+        int getScrollY() const {
+            return scrollY;
+        }
+
+        int getScrollXMin() const {
+            return scrollXMin;
+        }
+
+        int getScrollXMax() const {
+            return scrollXMax;
+        }
+
+        int getScrollYMin() const {
+            return scrollYMin;
+        }
+
+        int getScrollYMax() const {
+            return scrollYMax;
+        }
+
+        void resetScrollXYMax() {
+            scrollXMax = 0;
+            scrollYMax = 0;
+        }
+
+        void setWidth(int width) {
+            this->width = width;
+        }
+
+        int getWidth() const {
+            return width;
+        }
+
+        void setHeight(int height) {
+            this->height = height;
+        }
+
+        int getHeight() const {
+            return height;
+        }
+
+        void forceScrollInRange() {
+            if (scrollX < scrollXMin) 
+                scrollX = scrollXMin;
+            if (scrollY < scrollYMin) 
+                scrollY = scrollYMin;
+            if (scrollX > scrollXMax) 
+                scrollX = scrollXMax;
+            if (scrollY > scrollYMax) 
+                scrollY = scrollYMax;
+        }
+
+        void setScrollXYMin(int x, int y, bool forceInRange = true) {
+            int xMin = x;
+            int yMin = y;
+            if (xMin < scrollXMin) scrollXMin = xMin;
+            if (yMin < scrollYMin) scrollYMin = yMin;
+            if (forceInRange) forceScrollInRange();
+        }
+        
+        void setScrollXYMax(int x, int y, bool forceInRange = true) {
+            int xMax = x - width;
+            int yMax = y - height;
+            if (xMax > scrollXMax) 
+                scrollXMax = xMax;
+            if (yMax > scrollYMax) 
+                scrollYMax = yMax;
+            if (forceInRange) forceScrollInRange();
+        }
+
+        void setScrollXY12MinMax(int x1, int y1, int x2, int y2, bool forceInRange = true) {
+            setScrollXYMin(x1, y1, false);
+            setScrollXYMax(x2, y2, false);
+            if (forceInRange) forceScrollInRange();
+        }
+        
+        void setScrollXYMinMax(int x, int y, bool forceInRange = true) {
+            setScrollXYMin(x, y, false);
+            setScrollXYMax(x, y, false);
+            if (forceInRange) forceScrollInRange();
+        }
+        
+        void setScrollXY(int x, int y) {
+            if (fixed) return;
+            scrollX = x;
+            scrollY = y;
+            forceScrollInRange();
+        }
+
+        void moveScrollXY(int x, int y) {
+            if (fixed) return;
+            scrollX += x;
+            scrollY += y;
+            forceScrollInRange();
+        }
+
+        Point<int> getScrollXY() const {
+            return Point<int>(scrollX, scrollY);
+        }
+    };
+
+    // class Scrollable: public Scroll {
+    // protected:
+    
+    //     // Scroll* scroll = NULL;
+
+    // public:
+
+    //     using Scroll::Scroll;
+
+    //     // Scrollable(int width, int height) {
+    //     //     scroll = new Scroll(width, height);
+    //     // }
+
+    //     // ~Scrollable() {
+    //     //     if (scroll) delete scroll;
+    //     //     scroll = NULL;
+    //     // }
+
+    //     // Scroll* getScroll() const {
+    //     //     return scroll;
+    //     // }
+    // };
+
+    class Painter: public Scrollable, public Zoomable, public EventHandler {
+    public:
+
+        typedef struct { int width = 0, height = 0; } TextSize;
+
+        Painter(int width, int height, Zoom& zoom): 
+            Scrollable(width, height),
+            Zoomable(zoom)
+        {}
+
+        virtual void brush(Color) const { throw ERR_UNIMP; }
         virtual void point(int, int) { throw ERR_UNIMP; }
         virtual void rect(int, int, int, int) { throw ERR_UNIMP; }
-        virtual void fillRect(int, int, int, int) { throw ERR_UNIMP; }
+        virtual void fRect(int, int, int, int) { throw ERR_UNIMP; }
         virtual void line(int, int, int, int) { throw ERR_UNIMP; }
         virtual void hLine(int, int, int) { throw ERR_UNIMP; }
         virtual void vLine(int, int, int) { throw ERR_UNIMP; }
         virtual void font(const char*) const { throw ERR_UNIMP; }
         virtual void write(int, int, const string&) { throw ERR_UNIMP; }
         virtual TextSize getTextSize(const string&) const { throw ERR_UNIMP; }
-        virtual int getWidth() const { throw ERR_UNIMP; } // = 0; // { return 0; };
-        virtual int getHeight() const { throw ERR_UNIMP; } // = 0; // { return 0; };
+        // virtual int getWidth() const { throw ERR_UNIMP; } // = 0; // { return 0; };
+        // virtual int getHeight() const { throw ERR_UNIMP; } // = 0; // { return 0; };
+
+        virtual void draw() = 0;
     };
 
 
-    class Area: public EventHandler, public Painter {
+    class Area: public Painter {
     public:
 
         static const Align defaultAreaTextAlign = Theme::textAlign;
@@ -621,15 +1040,10 @@ namespace madlib::graph {
         static const int defaultFrameMargin = Theme::frameMargin;
         static const int defaultTextMargin = Theme::textPadding;
 
-        typedef void (*onDrawHandler)(void*);
-        
-        vector<onDrawHandler> onDrawHandlers;
-
     protected:
         GFX& gfx;
 
         int left, top;
-        int width, height;
         const string text;
         const Align textAlign;
         Color borderColor = defaultAreaBorderColor;
@@ -641,16 +1055,8 @@ namespace madlib::graph {
 
         vector<Area*> areas;
         Area* parent = NULL;
-        int scrollX = 0, scrollY = 0,
-            scrollXMin = 0, scrollYMin = 0,
-            scrollXMax = 0, scrollYMax = 0;
 
-        void forceScrollInRange() {
-            if (scrollX < scrollXMin) scrollX = scrollXMin;
-            if (scrollY < scrollYMin) scrollY = scrollYMin;
-            if (scrollX > scrollXMax) scrollX = scrollXMax;
-            if (scrollY > scrollYMax) scrollY = scrollYMax;
-        }
+        bool calcScrollOnly = false;
 
         void reduceViewport(Rectangle& viewport) const {
             if (!parent) return;
@@ -689,24 +1095,33 @@ namespace madlib::graph {
 
     public:
 
-        Area(GFX& gfx, int left, int top, int width, int height, 
+        Area(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
             const string &text = "", const Align textAlign = defaultAreaTextAlign,
             const Border border = defaultAreaBorder,
             const Color backgroundColor = defaultAreaBackgroundColor,
             const int frameMargin = defaultFrameMargin,
             const int textPadding = defaultTextMargin
-        ):
+        ): 
+            Painter(width, height, zoom),
             gfx(gfx),
-            left(left), top(top), width(width), height(height), 
+            left(left), top(top), // width(width), height(height), 
             text(text), textAlign(textAlign), border(border), 
             backgroundColor(backgroundColor), frameMargin(frameMargin),
             textPadding(textPadding)
         {
-            setScrollXYMinMax(0, 0, width, height);
+            setScrollXY12MinMax(0, 0, width, height);
         }
 
         virtual ~Area() {
             // TODO: manage area pointers: vector_destroy<Area>(areas);
+        }
+
+        bool isCalcScrollOnly() const {
+            return calcScrollOnly;
+        }
+
+        void setCalcScrollOnly(bool calcScrollOnly) {
+            this->calcScrollOnly = calcScrollOnly;
         }
 
         const Rectangle& getViewport(Rectangle& viewport) const {
@@ -718,44 +1133,50 @@ namespace madlib::graph {
             return viewport;
         }
 
-        void color(Color color) const override {
+        void brush(Color color) const override {
             gfx.setColor(color);
         }
 
         void point(int x, int y) override {
             setScrollXYMinMax(x, y);
+            if (calcScrollOnly) return;
             prepare(x, y);
             gfx.drawPoint(x, y);
         }
 
         void rect(int x1, int y1, int x2, int y2) override {
-            setScrollXYMinMax(x1, y1, x2, y2);
+            setScrollXY12MinMax(x1, y1, x2, y2);
+            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawRectangle(x1, y1, x2, y2);
         }
 
-        void fillRect(int x1, int y1, int x2, int y2) override {
-            setScrollXYMinMax(x1, y1, x2, y2);
+        void fRect(int x1, int y1, int x2, int y2) override {
+            setScrollXY12MinMax(x1, y1, x2, y2);
+            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.fillRectangle(x1, y1, x2, y2);
         }
 
         void line(int x1, int y1, int x2, int y2) override {
-            setScrollXYMinMax(x1, y1, x2, y2);
+            setScrollXY12MinMax(x1, y1, x2, y2);
+            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawLine(x1, y1, x2, y2);
         }
 
         void hLine(int x1, int y1, int x2) override {
             int y2 = y1;
-            setScrollXYMinMax(x1, y1, x2, y2);
+            setScrollXY12MinMax(x1, y1, x2, y2);
+            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawHorizontalLine(x1, y1, x2);
         }
 
         void vLine(int x1, int y1, int y2) override {
             int x2 = x1;
-            setScrollXYMinMax(x1, y1, x2, y2);
+            setScrollXY12MinMax(x1, y1, x2, y2);
+            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawVerticalLine(x1, y1, y2);
         }
@@ -766,6 +1187,7 @@ namespace madlib::graph {
 
         void write(int x, int y, const string &text) override {
             setScrollXYMinMax(x, y);
+            if (calcScrollOnly) return;
             prepare(x, y);
             gfx.writeText(x, y, text);
         }
@@ -797,67 +1219,20 @@ namespace madlib::graph {
         }
 
         Area& child(Area& area) {
-            area.setParent(this);
-            areas.push_back(&area);
             setScrollXYMinMax(
                 area.left + area.width + frameMargin,
                 area.top + area.height + frameMargin
             );
+            if (calcScrollOnly) return area;
+            area.setParent(this);
+            areas.push_back(&area);
             return area;
-        }
-
-        void setScrollXYMin(int x, int y, bool forceInRange = true) {
-            int xMin = x;
-            int yMin = y;
-            if (xMin < scrollXMin) scrollXMin = xMin;
-            if (yMin < scrollYMin) scrollYMin = yMin;
-            if (forceInRange) forceScrollInRange();
-        }
-
-        void setScrollXYMax(int x, int y, bool forceInRange = true) {
-            int xMax = x - width;
-            int yMax = y - height;
-            if (xMax > scrollXMax) scrollXMax = xMax;
-            if (yMax > scrollYMax) scrollYMax = yMax;
-            if (forceInRange) forceScrollInRange();
-        }
-
-        void setScrollXYMinMax(int x, int y, bool forceInRange = true) {
-            setScrollXYMin(x, y, false);
-            setScrollXYMax(x, y, false);
-            if (forceInRange) forceScrollInRange();
-        }
-
-        void setScrollXYMinMax(int x1, int y1, int x2, int y2, bool forceInRange = true) {
-            setScrollXYMin(x1, y1, false);
-            setScrollXYMax(x2, y2, false);
-            if (forceInRange) forceScrollInRange();
-        }
-
-        void setScrollXY(int x, int y) {
-            scrollX = x;
-            scrollY = y;
-            forceScrollInRange();
-        }
-
-        void moveScrollXY(int x, int y) {
-            scrollX += x;
-            scrollY += y;
-            forceScrollInRange();
-        }
-
-        int getScrollX() const {
-            return scrollX;
-        }
-
-        int getScrollY() const {
-            return scrollY;
         }
 
         int getTop(bool withParent = true) const {
             if (!withParent) return top;
-            Area* p = getParent();
-            return top + (p ? p->getTop() - p->getScrollY() : 0);
+            Area* parent = getParent();
+            return top + (parent ? parent->getTop() - parent->scrollY : 0);
         }
 
         void setTop(int top) {
@@ -866,36 +1241,20 @@ namespace madlib::graph {
 
         int getLeft(bool withParent = true) const {
             if (!withParent) return left;
-            Area* p = getParent();
-            return left + (p ? p->getLeft() - p->getScrollX() : 0);
+            Area* parent = getParent();
+            return left + (parent ? parent->getLeft() - parent->scrollX : 0);
         }
 
         void setLeft(int left) {
             this->left = left;
-        }    
-
-        int getWidth() const override {
-            return width;
-        }
-
-        void setWidth(int width) {
-            this->width = width;
-        }
-
-        int getHeight() const override {
-            return height;
-        }
-
-        void setHeight(int height) {
-            this->height = height;
         }
 
         int getRight(bool withParent = true) const {
-            return getLeft(withParent) + getWidth();
+            return getLeft(withParent) + width;
         }
 
         int getRight(int left) const {
-            return left + getWidth();
+            return left + width;
         }
 
         int getRight(int left, int width) const {
@@ -903,11 +1262,11 @@ namespace madlib::graph {
         }
 
         int getBottom(bool withParent = true) const {
-            return getTop(withParent) + getHeight();
+            return getTop(withParent) + height;
         }
 
         int getBottom(int top) const {
-            return top + getHeight();
+            return top + height;
         }
 
         int getBottom(int top, int height) const {
@@ -972,7 +1331,7 @@ namespace madlib::graph {
             return !(l >= x2 || x1 >= r || t >= y2 || y1 >= b);
         }
 
-        bool contains(Area* area) const {
+        bool contains(const Area* area) const {
             int l = area->getLeft();
             int t = area->getTop();
             int r = area->getRight(l);
@@ -1062,11 +1421,11 @@ namespace madlib::graph {
             drawBorder(l, t, r, b);
         }
 
-        void draw() {
+        virtual void draw() override {
             int t = getTop();
             int l = getLeft();
-            int w = getWidth();
-            int h = getHeight();
+            int w = width;
+            int h = height;
             int r = getRight(l, w);
             int b = getBottom(t, h);
 
@@ -1079,10 +1438,9 @@ namespace madlib::graph {
 
             drawBorder(l, t, r, b);
 
-            const string txt = getText();
-            if(!txt.empty()) {
+            if(!text.empty()) {
                 int txtWidth, txtHeight;
-                gfx.getTextSize(txt, txtWidth, txtHeight);
+                gfx.getTextSize(text, txtWidth, txtHeight);
                 int txtLeft;
                 Align txtAlign = getTextAlign();
                 switch (txtAlign) {
@@ -1104,15 +1462,16 @@ namespace madlib::graph {
                         break;
                 }
                 int txtTop = t + ((h - txtHeight) / 2) + 16; // ??16
-                gfx.setColor(getTextColor());
-                gfx.writeText(txtLeft, txtTop, txt);
+                gfx.setColor(textColor);
+                gfx.writeText(txtLeft, txtTop, text);
             }
 
             for (Area* area: areas)
                 if (contains(area)) area->draw();
 
-            for (const onDrawHandler& onDraw: onDrawHandlers) 
+            for (const onDrawHandler& onDraw: onDrawHandlers) {
                 onDraw(this);
+            }
 
         }
     };
@@ -1120,40 +1479,40 @@ namespace madlib::graph {
     class GUI: public Area {
     protected:
 
-        static void resize(void* context, int width, int height) {
-            GUI* that = static_cast<GUI*>(context);
-            that->setWidth(width);
-            that->setHeight(height);
+        static void resizeHandler(void* context, int width, int height) {
+            GUI* that = (GUI*)(context);
+            that->width = width;
+            that-> height = height;
             that->draw();
         }
 
-        static void touch(void* context, unsigned int button, int x, int y) {
-            Area* that = static_cast<Area*>(context);
+        static void touchHandler(void* context, unsigned int button, int x, int y) {
+            Area* that = (Area*)(context);
             that->propagateTouch(button, x, y);
         }
 
-        static void release(void* context, unsigned int button, int x, int y) {
-            Area* that = static_cast<Area*>(context);
+        static void releaseHandler(void* context, unsigned int button, int x, int y) {
+            Area* that = (Area*)(context);
             that->propagateRelease(button, x, y);
         }
 
-        static void move(void* context, int x, int y) {
-            Area* that = static_cast<Area*>(context);
+        static void moveHandler(void* context, int x, int y) {
+            Area* that = (Area*)(context);
             that->propagateMove(x, y);
         }
 
         void init(int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor) {
             gfx.openWindow(width, height, title, color);
-            gfx.eventContext = this;
-            gfx.onResizeHandlers.push_back(resize);
-            gfx.onTouchHandlers.push_back(touch);
-            gfx.onReleaseHandlers.push_back(release);
-            gfx.onMoveHandlers.push_back(move);
+            gfx.setEventContext(this);
+            gfx.addResizeHandler(resizeHandler);
+            gfx.addTouchHandler(touchHandler);
+            gfx.addReleaseHandler(releaseHandler);
+            gfx.addMoveHandler(moveHandler);
         }
 
     public:
-        GUI(GFX& gfx, int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor):
-            Area(gfx, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
+        GUI(GFX& gfx, Zoom& zoom, int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor):
+            Area(gfx, zoom, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
         {
             init(width, height, title, color);
         }
@@ -1182,8 +1541,8 @@ namespace madlib::graph {
         bool drag = false;
         int dragStartedX = 0, dragStartedY = 0, dragScrollStartedX = 0, dragScrollStartedY = 0;
 
-        static void touch(void* context, unsigned int, int x, int y) {
-            Frame* that = static_cast<Frame*>(context);
+        static void touchHandler(void* context, unsigned int, int x, int y) {
+            Frame* that = (Frame*)(context);
 
             // drag & scroll only if no child in the event focus
             for (Area* area: that->areas)
@@ -1192,17 +1551,17 @@ namespace madlib::graph {
             that->drag = true;
             that->dragStartedX = x;
             that->dragStartedY = y;
-            that->dragScrollStartedX = that->getScrollX();
-            that->dragScrollStartedY = that->getScrollY();
+            that->dragScrollStartedX = that->scrollX;
+            that->dragScrollStartedY = that->scrollY;
         }
         
-        static void release(void* context, unsigned int, int, int) {
-            Frame* that = static_cast<Frame*>(context);
+        static void releaseHandler(void* context, unsigned int, int, int) {
+            Frame* that = (Frame*)(context);
             that->drag = false;
         }
         
-        static void move(void* context, int x, int y) {
-            Frame* that = static_cast<Frame*>(context);
+        static void moveHandler(void* context, int x, int y) {
+            Frame* that = (Frame*)(context);
             if (!that->fixed && that->drag) {
                 that->setScrollXY(
                     that->dragScrollStartedX + (that->dragStartedX - x), 
@@ -1216,14 +1575,17 @@ namespace madlib::graph {
 
         bool fixed = false;
 
-        Frame(GFX& gfx, int left, int top, int width, int height,
+        Frame(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
             const Border border = defaultFrameBorder,
-            const Color backgroundColor = defaultFrameBackgroundColor
-        ): Area(gfx, left, top, width, height, "", CENTER, border, backgroundColor)
+            const Color backgroundColor = defaultFrameBackgroundColor, 
+            const int frameMargin = defaultFrameMargin,
+            const int textPadding = defaultTextMargin
+        ): Area(gfx, zoom, left, top, width, height, 
+            "", CENTER, border, backgroundColor, frameMargin, textPadding)
         {
-            onTouchHandlers.push_back(touch);
-            onReleaseHandlers.push_back(release);
-            onMoveHandlers.push_back(move);
+            addTouchHandler(touchHandler);
+            addReleaseHandler(releaseHandler);
+            addMoveHandler(moveHandler);
         }
     };
 
@@ -1231,8 +1593,8 @@ namespace madlib::graph {
     class Button: public Area {
     protected:
         
-        static void touch(void* context, unsigned int, int, int) {
-            Button* that = static_cast<Button*>(context);
+        static void touchHandler(void* context, unsigned int, int, int) {
+            Button* that = (Button*)(context);
             
             if (that->sticky) {
                 that->pushed ? that->release() : that->push();                
@@ -1242,8 +1604,8 @@ namespace madlib::graph {
             if (!that->pushed) that->push();
         }
         
-        static void release(void* context, unsigned int, int, int) {
-            Button* that = static_cast<Button*>(context);
+        static void releaseHandler(void* context, unsigned int, int, int) {
+            Button* that = (Button*)(context);
 
             if (that->sticky) return;
                 
@@ -1255,12 +1617,12 @@ namespace madlib::graph {
 
     public:
 
-        Button(GFX& gfx, int left, int top, int width, int height, 
+        Button(GFX& gfx, Zoom& zoom, int left, int top, int width, int height, 
             const string &text = "", const Align textAlign = Area::defaultAreaTextAlign
-        ): Area(gfx, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
+        ): Area(gfx, zoom, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
         {
-            onTouchHandlers.push_back(touch);
-            onReleaseHandlers.push_back(release);
+            addTouchHandler(touchHandler);
+            addReleaseHandler(releaseHandler);
         }
 
         bool isPushed() const {
@@ -1300,9 +1662,9 @@ namespace madlib::graph {
         static const Align defaultLabelTextAlign = Theme::labelTextAlign;
 
     public:
-        Label(GFX& gfx, int left, int top, int width, int height, 
+        Label(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
             const string &text, const Align textAlign = defaultLabelTextAlign
-        ): Area(gfx, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
+        ): Area(gfx, zoom, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
         {}
     };
 
@@ -1343,7 +1705,7 @@ namespace madlib::graph {
     protected:
 
         bool dragStarted = false;
-        // PointTemplate<int> dragStartAt = PointTemplate<int>(-1, -1);
+        // Point<int> dragStartAt = Point<int>(-1, -1);
         int dragStartAt = -1;
 
         Button* handler = NULL;
@@ -1379,11 +1741,11 @@ namespace madlib::graph {
 
     public:
         SlideBar(
-            GFX& gfx, int left, int top, int length, bool direction,
+            GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, double value = 0,
             int thickness = Theme::barThickness
         ): Area(
-            gfx, left, top, 
+            gfx, zoom, left, top, 
             direction == HORIZONTAL ? length : thickness,
             direction == VERTICAL ? length : thickness, 
             "", CENTER, BUTTON_PUSHED
@@ -1395,12 +1757,12 @@ namespace madlib::graph {
             position(calcPosition())
         {
             handler = direction == HORIZONTAL ?
-                new Button(gfx, position, 1, thickness - 2, thickness - 2):
-                new Button(gfx, 1, position, thickness - 2, thickness - 2);
+                new Button(gfx, zoom, position, 1, thickness - 2, thickness - 2):
+                new Button(gfx, zoom, 1, position, thickness - 2, thickness - 2);
             this->child(*handler);
-            onTouchHandlers.push_back(handlerTouch);
-            onReleaseHandlers.push_back(handlerRelease);
-            onMoveHandlers.push_back(handlerMove);
+            addTouchHandler(handlerTouch);
+            addReleaseHandler(handlerRelease);
+            addMoveHandler(handlerMove);
         }
 
         ~SlideBar() {
@@ -1432,12 +1794,12 @@ namespace madlib::graph {
 
     public:
         ScrollBar(
-            GFX& gfx, int left, int top, int length, bool direction,
+            GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::barThickness
         ): SlideBar(
-            gfx, left, top, length, direction, 
+            gfx, zoom, left, top, length, direction, 
             minValue, maxValue, value, thickness
         ), valueSize(valueSize)
         {
@@ -1498,7 +1860,7 @@ namespace madlib::graph {
                     that->dragStartAt = x;
                     that->size += delta;
                     if (that->size < that->thickness) that->size = that->thickness;
-                    if (that->size > that->getWidth()) that->size = that->getWidth();
+                    if (that->size > that->width) that->size = that->width;
                     that->handler->setWidth(that->size);
                     that->handlerMax->setLeft(that->handler->getWidth() - that->thickness / 3);
                 } else {
@@ -1507,7 +1869,7 @@ namespace madlib::graph {
                     that->dragStartAt = y;
                     that->size += delta;
                     if (that->size < that->thickness) that->size = that->thickness;
-                    if (that->size > that->getHeight()) that->size = that->getHeight();
+                    if (that->size > that->height) that->size = that->height;
                     that->handler->setHeight(that->size);
                     that->handlerMax->setTop(that->handler->getHeight() - that->thickness / 3);
                 }
@@ -1521,7 +1883,7 @@ namespace madlib::graph {
                     that->dragStartAt = x;
                     that->size += delta;
                     if (that->size < that->thickness) that->size = that->thickness;
-                    if (that->size > that->getWidth()) that->size = that->getWidth();
+                    if (that->size > that->width) that->size = that->width;
                     that->handler->setWidth(that->size);
                     that->handlerMax->setLeft(that->handler->getWidth() - that->thickness / 3);
                 } else {
@@ -1529,7 +1891,7 @@ namespace madlib::graph {
                     that->dragStartAt = y;
                     that->size += delta;
                     if (that->size < that->thickness) that->size = that->thickness;
-                    if (that->size > that->getHeight()) that->size = that->getHeight();
+                    if (that->size > that->height) that->size = that->height;
                     that->handler->setHeight(that->size);
                     that->handlerMax->setTop(that->handler->getHeight() - that->thickness / 3);
                 }
@@ -1553,27 +1915,27 @@ namespace madlib::graph {
         Button* handlerMax = NULL;
     public:
         IntervalBar(
-            GFX& gfx, int left, int top, int length, bool direction,
+            GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::barThickness
         ): ScrollBar(
-            gfx, left, top, length, direction,
+            gfx, zoom, left, top, length, direction,
             minValue, maxValue, value, valueSize, thickness
         ) 
         {
             handlerMin = direction == HORIZONTAL ?
-                new Button(gfx, 0, 0, thickness / 3, thickness):
-                new Button(gfx, 0, 0, thickness, thickness / 3);
+                new Button(gfx, zoom, 0, 0, thickness / 3, thickness):
+                new Button(gfx, zoom, 0, 0, thickness, thickness / 3);
             handlerMax = direction == HORIZONTAL ?
-                new Button(gfx, size - thickness / 3, 0, thickness / 3, thickness):
-                new Button(gfx, 0, size - thickness / 3, thickness, thickness / 3);
+                new Button(gfx, zoom, size - thickness / 3, 0, thickness / 3, thickness):
+                new Button(gfx, zoom, 0, size - thickness / 3, thickness, thickness / 3);
             handler->child(*handlerMin);
             handler->child(*handlerMax);
-            handlerMin->onTouchHandlers.push_back(handlerMinTouch);
-            handlerMax->onTouchHandlers.push_back(handlerMaxTouch);
-            onReleaseHandlers.push_back(handlerRelease);
-            onMoveHandlers.push_back(handlerMove);
+            handlerMin->addTouchHandler(handlerMinTouch);
+            handlerMax->addTouchHandler(handlerMaxTouch);
+            addReleaseHandler(handlerRelease);
+            addMoveHandler(handlerMove);
         }
 
         ~IntervalBar() {
@@ -1591,7 +1953,7 @@ namespace madlib::graph {
         class Toggler: public Button {
         protected:
             
-            static void toggle(void* context, unsigned int, int, int) {
+            static void toggleHandler(void* context, unsigned int, int, int) {
                 Toggler* that = (Toggler*)context;
                 Accordion& accordion = that->container.getAccordion(); 
                 
@@ -1611,16 +1973,16 @@ namespace madlib::graph {
             Container& container;
             size_t containerIndex;
         public:
-            Toggler(Container& container, GFX& gfx, size_t containerIndex, 
+            Toggler(Container& container, GFX& gfx, Zoom& zoom, size_t containerIndex, 
                 int left, int top, int width, int height, 
                 const string &text, const Align textAlign = Area::defaultAreaTextAlign
             ): 
-                Button(gfx, left, top, width, height, text, textAlign),
+                Button(gfx, zoom, left, top, width, height, text, textAlign),
                 container(container),
                 containerIndex(containerIndex)
             {
                 sticky = container.getAccordion().isSticky();
-                onTouchHandlers.push_back(toggle);
+                addTouchHandler(toggleHandler);
             }
 
             Container& getContainer() const {
@@ -1641,28 +2003,28 @@ namespace madlib::graph {
             Frame* frame = NULL;
 
             Accordion& accordion;
-            int frameHeight = 100; // TODO
+            int frameHeight;
             bool opened = false;
         public:
             Container(
-                Accordion& accordion,
+                Accordion& accordion, Zoom& zoom,
                 const string& title, const Align textAlign, 
-                int frameHeight = 100 // TODO
+                int frameHeight
             ): 
                 accordion(accordion), frameHeight(frameHeight) 
             {
                 GFX& gfx = accordion.getGFX();
-                const int width = accordion.getWidth();
+                const int width = accordion.width;
                 size_t accordionContainerAt = accordion.getContainers().size();
                 const int togglerTop = accordion.height + innerBorderSize;
 
-                toggler = new Toggler(*this, gfx, accordionContainerAt,
+                toggler = new Toggler(*this, gfx, zoom, accordionContainerAt,
                     innerBorderSize, togglerTop, 
                     width - innerBorderSize*2, 
                     togglerHeight - innerBorderSize*2, 
                     title, textAlign);
 
-                frame = new Frame(gfx, 
+                frame = new Frame(gfx, zoom, 
                     innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
                     width, 0, NONE);
             
@@ -1722,8 +2084,9 @@ namespace madlib::graph {
         bool sticky = false; // TODO
         bool single = false; // TODO
         bool one = false; // TODO
+
     public:
-        Accordion(GFX& gfx, int left, int top, int width, 
+        Accordion(GFX& gfx, Zoom& zoom, int left, int top, int width,
             bool sticky = false, // TODO
             const Align textAlign = Area::defaultAreaTextAlign, // TODO
             const Border border = NONE, //Area::defaultAreaBorder, // TODO
@@ -1731,8 +2094,11 @@ namespace madlib::graph {
             const int frameMargin = Area::defaultFrameMargin, // TODO
             const int textPadding = Area::defaultTextMargin // TODO
         ): 
-            Area(gfx, left, top, width, 0, "", 
-                textAlign, border, backgroundColor, frameMargin, textPadding), sticky(sticky) {}
+            Area(gfx, zoom, left, top, width, 0, "", textAlign, 
+                border, backgroundColor, frameMargin, textPadding
+            ),
+            sticky(sticky)
+        {}
 
         ~Accordion() {
             vector_destroy<Container>(containers);
@@ -1797,8 +2163,8 @@ namespace madlib::graph {
             }
         }
 
-        Container& addContainer(const string& title, int frameHeight) {
-            Container* container = new Container(*this, title, textAlign, frameHeight);
+        Container& createContainer(Zoom& zoom, const string& title, int frameHeight) {
+            Container* container = new Container(*this, zoom, title, textAlign, frameHeight);
             containers.push_back(container);
             return *container;
         }
@@ -1859,13 +2225,10 @@ namespace madlib::graph {
     
     class Application {
     protected:
-        
-        static void close(void* context, unsigned int, int, int) {
-            ((Area*)context)->getRoot()->getGFX().close = true;
-        }
 
         GFX gfx = GFX(this);
-        GUI gui = GUI(gfx, 1600, 900, "Application");
+        Zoom zoom;
+        GUI gui = GUI(gfx, zoom, 1600, 900, "Application");
 
     public:
 
@@ -1873,7 +2236,6 @@ namespace madlib::graph {
 
         Application* run() {
             try {
-                // Application::init();
                 init();
                 gui.loop();
             } catch (exception& e) {
@@ -1890,7 +2252,7 @@ namespace madlib::graph {
 
     class FrameApplication: public Application {
     protected:
-        Frame mainFrame = Frame(gfx, 0, 0, gui.getWidth(), gui.getHeight(), NONE, Theme::windowColor);
+        Frame mainFrame = Frame(gfx, zoom, 0, 0, gui.getWidth(), gui.getHeight(), NONE, Theme::windowColor);
     public:
         virtual void init() override {
             gui.child(mainFrame);

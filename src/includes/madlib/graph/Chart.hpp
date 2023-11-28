@@ -8,16 +8,6 @@ using namespace madlib;
 
 namespace madlib::graph {
 
-    class RealPoint: public PointTemplate<double> {
-    public:
-        using PointTemplate<double>::PointTemplate;
-    };
-
-    class ProjectedPoint: public PointTemplate<int> {
-    public:
-        using PointTemplate<int>::PointTemplate;
-    };
-
     enum Shape { DOT, LINE, BOX, FILLED, CANDLE, LABEL };
 
     class ShapeName {
@@ -35,101 +25,7 @@ namespace madlib::graph {
         }
     };
 
-    class Zoom {
-    public:
-        const int defaultCenterX = 0, defaultCenterY = 0;
-        const double defaultRatioX = 1.0, defaultRatioY = 1.0;
-    protected:
-        ProjectedPoint center = ProjectedPoint(defaultCenterX, defaultCenterY);
-        RealPoint ratio = RealPoint(defaultRatioX, defaultRatioY);
-
-    public:
-
-        Zoom(): center(defaultCenterX, defaultCenterY), ratio(defaultRatioX, defaultRatioY) {}
-        Zoom(int centerX, int centerY): center(centerX, centerY), ratio(defaultRatioX, defaultRatioY) {}
-        explicit Zoom(const ProjectedPoint& center): center(center), ratio(defaultRatioX, defaultRatioY) {}
-        Zoom(double ratioX, double ratioY): center(defaultCenterX, defaultCenterY), ratio(ratioX, ratioY) {}
-        explicit Zoom(const RealPoint& ratio): center(defaultCenterX, defaultCenterY), ratio(ratio) {}
-        Zoom(int centerX, int centerY, double ratioX, double ratioY): center(centerX, centerY), ratio(ratioX, ratioY) {}
-        Zoom(const ProjectedPoint& center, const RealPoint& ratio): center(center), ratio(ratio) {}
-        Zoom(double ratioX, double ratioY, int centerX, int centerY): center(centerX, centerY), ratio(ratioX, ratioY) {}
-        Zoom(const RealPoint& ratio, const ProjectedPoint& center): center(center), ratio(ratio) {}
-        
-        Zoom& operator=(const Zoom& other) {
-            if (this != &other) { // Check for self-assignment
-                this->center = other.center;
-                this->ratio = other.ratio;
-            }
-            return *this;
-        }
-
-        ProjectedPoint getCenter() const {
-            return center;
-        }
-
-        void setCenter(const ProjectedPoint& center) {
-            this->center = center;
-        }
-
-        void setCenter(int x = 0, int y = 0) {
-            setCenter(ProjectedPoint(x, y));
-        }
-
-        RealPoint getRatio() const {
-            return ratio;
-        }
-
-        void setRatio(const RealPoint& ratio) {
-            this->ratio = ratio;
-        }
-
-        void setRatio(double x = 1.0, double y = 1.0) {
-            setRatio(RealPoint(x, y));
-        }
-
-        int applyX(int origoX, int pointX) const {
-            int origoXAddCenterX = origoX + center.getX();
-            int pointXSubCenterX = pointX - origoXAddCenterX;
-            double pointXSubCenterXMulRatioX = pointXSubCenterX * ratio.getX();
-            return origoXAddCenterX + (int)pointXSubCenterXMulRatioX;
-        }
-
-        int applyY(int origoY, int pointY) const {
-            int origoYAddCenterY = origoY + center.getY();
-            int pointYSubCenterY = pointY - origoYAddCenterY;
-            double pointYSubCenterYMulRatioY = pointYSubCenterY * ratio.getY();
-            return origoYAddCenterY + (int)pointYSubCenterYMulRatioY;
-        }
-
-        ProjectedPoint apply(int origoX, int origoY, int pointX, int pointY) const {
-            ProjectedPoint result(
-                applyX(origoX, pointX),
-                applyY(origoY, pointY)
-            );
-
-            return result;
-        }
-        
-        ProjectedPoint apply(const ProjectedPoint& origo, const ProjectedPoint& point) const {
-            return apply(origo.getX(), origo.getY(), point.getX(), point.getY());
-        }
-    };
-
-    class Zoomable {
-    protected:
-        Zoom zoom;
-
-    public:
-        void setZoom(const Zoom& zoom) {
-            this->zoom = zoom;
-        }
-
-        Zoom& getZoom() {
-            return zoom;
-        }
-    };
-
-    class Chart: public Zoomable {
+    class Chart: public Frame {
     public:
 
         class LabelStyle {
@@ -178,12 +74,12 @@ namespace madlib::graph {
 
         class CandleStyle {
         protected:
-            const Color colorUp = green; // TODO
-            const Color colorDown = red; // TODO
+            const Color colorUp; // TODO
+            const Color colorDown; // TODO
         public:
             CandleStyle(
-                const Color colorUp = green, // TODO
-                const Color colorDown = red // TODO
+                const Color colorUp = Theme::defaultCandleColorUp, // TODO
+                const Color colorDown = Theme::defaultCandleColorDown // TODO
             ):
                 colorUp(colorUp),
                 colorDown(colorDown)
@@ -202,9 +98,12 @@ namespace madlib::graph {
 
 
         class Scale: public Zoomable {
+        public:
+
+            const static CandleStyle defaultCandleStyle;
+            const static LabelStyle defaultLabelStyle;
+
         protected:
-            const CandleStyle defaultCandleStyle;
-            const LabelStyle defaultLabelStyle;
 
             const void* getDefaultScaleContext(Shape shape) {
                 switch (shape)
@@ -251,7 +150,11 @@ namespace madlib::graph {
             
         public:
 
-            Scale(int width, int height, Shape shape = LINE, const void* context = NULL): 
+            Scale(
+                Zoom& zoom, int width, int height, 
+                Shape shape = LINE, const void* context = NULL
+            ):
+                Zoomable(zoom),
                 width(width), height(height), shape(shape), 
                 context(context ? context : getDefaultScaleContext(shape))
             {
@@ -379,86 +282,138 @@ namespace madlib::graph {
 
     protected:
 
-        Painter& painter;
+        static const int zoomInScrollButton = 4;
+        static const int zoomOutScrollButton = 5;
+        static constexpr double zoomInRatio = 1.25;
+        static constexpr double zoomOutRatio = .8;
+        static constexpr double zoomRatioMax = INFINITY;
+        static constexpr double zoomRatioMin = 1;
+
+        static void zoomHandler(void* context, unsigned int button, int, int) {
+            Chart* that = (Chart*)context;
+
+            // change zoom ratio
+
+            double ratioX;
+            switch (button) {
+                case zoomInScrollButton:
+                    ratioX = that->getZoom().getRatio().getX() * zoomInRatio;
+                    if (ratioX > zoomRatioMax) ratioX = zoomRatioMax;
+                    break;
+                case zoomOutScrollButton:
+                    ratioX = that->getZoom().getRatio().getX() * zoomOutRatio;
+                    if (ratioX < zoomRatioMin) ratioX = zoomRatioMin;
+                    break;
+                default:
+                    return; // no scroll
+            }
+            that->getZoom().setRatioX(ratioX);
+            
+            // redraw
+
+            that->project();
+            that->redraw();
+        }
+
         Color borderColor = white; // TODO
         
-        // vector<Scale*> scales;
-        Factory<Scale> scales;
+        vector<Scale*> scales;
+        // Factory<Scale> scales;
 
-        typedef void (*DrawPairFunction)(Painter*, int, int, int, int);
+        typedef void (*DrawPairFunction)(Chart*, int, int, int, int);
 
-        static void drawPairAsLine(Painter* painter, int x1, int y1, int x2, int y2) {
-            painter->line(x1, y1, x2, y2);
+        static void drawPairAsLine(Chart* chart, int x1, int y1, int x2, int y2) {
+            chart->line(x1, y1, x2, y2);
         }
 
-        static void drawPairAsBox(Painter* painter, int x1, int y1, int x2, int y2) {
-            painter->rect(x1, y1, x2, y2);
+        static void drawPairAsBox(Chart* chart, int x1, int y1, int x2, int y2) {
+            chart->rect(x1, y1, x2, y2);
         }
 
-        static void drawPairAsFilled(Painter* painter, int x1, int y1, int x2, int y2) {
-            painter->fillRect(x1, y1, x2, y2);
+        static void drawPairAsFilled(Chart* chart, int x1, int y1, int x2, int y2) {
+            chart->fRect(x1, y1, x2, y2);
         }
 
     public:
 
-        explicit Chart(Painter& painter): painter(painter) {}
+        Chart(
+            GFX& gfx, Zoom& zoom, 
+            const int left, const int top, 
+            const int width, const int height,
+            const Border border = Theme::chartBorder,
+            const Color backgroundColor = Theme::chartBackgroundColor
+        ): Frame(
+            gfx, zoom, left, top, width, height,
+            border, backgroundColor
+        ) {
+            addTouchHandler(zoomHandler);
+        }
 
-        // ~Chart() {
-        //     vector_destroy<Scale>(scales);
-        // }
+        ~Chart() {
+            vector_destroy<Scale>(scales);
+        }
+
+        virtual void project() {
+            // if (onDrawHandlers.empty()) {
+            //     throw ERROR("Chart does not show anything because projection is not implemented nor drawHandler added");
+            // }
+        };
 
         const vector<Scale*> getScales() const {
-            return scales.getInstances();
+            return scales;
         }
 
-        Scale& getScaleAt(size_t at) {
-            if (getScales().size() <= at) throw ERROR("Invalid scale index: " + to_string(at));
-            return *getScales().at(at);
+        Scale* getScaleAt(size_t at) {
+            if (scales.size() <= at) throw ERROR("Invalid scale index: " + to_string(at));
+            return scales.at(at);
         }
 
-        Scale& addScale(Shape shape = LINE, const void* context = NULL, const Zoom* zoom = NULL) {
-            Scale& scale = scales.create(painter.getWidth(), painter.getHeight(), shape, context);
-            scale.setZoom(zoom ? *zoom : this->zoom);
+        Scale* createScale(Zoom& zoom, Shape shape = LINE, const void* context = NULL) {
+            Scale* scale = vector_create(scales, zoom, width, height, shape, context);
             return scale;
         }
+
+        void destroyScales() {
+            vector_destroy(scales);
+        }
         
-        void drawPoint(int x, int y) const {
-            painter.point(x, painter.getHeight() - y);
+        void drawPoint(int x, int y) {
+            point(x, height - y);
         }
 
         void drawPoint(const ProjectedPoint& projectedPoint) {
-            painter.point(projectedPoint.getX(), painter.getHeight() - projectedPoint.getY());
+            point(projectedPoint.getX(), height - projectedPoint.getY());
         }
 
-        void drawPoints(const size_t scale, const Color color) const {
-            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
+        void drawPoints(const size_t scale, const Color color) {
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
-            painter.color(color);
-            int painterHeight = painter.getHeight();
+            brush(color);
+            int h = height;
             for (const ProjectedPoint& projectedPoint: projectedPoints) 
-                painter.point(projectedPoint.getX(), painterHeight - projectedPoint.getY());
+                point(projectedPoint.getX(), h - projectedPoint.getY());
         }
 
-        void drawLine(int x1, int y1, int x2, int y2) const {
-            painter.line(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
+        void drawLine(int x1, int y1, int x2, int y2) {
+            line(x1, height - y1, x2, height - y2);
         }
 
-        void drawRect(int x1, int y1, int x2, int y2) const {
-            painter.rect(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
+        void drawRect(int x1, int y1, int x2, int y2) {
+            rect(x1, height - y1, x2, height - y2);
         }
 
-        void fillRect(int x1, int y1, int x2, int y2) const {
-            painter.fillRect(x1, painter.getHeight() - y1, x2, painter.getHeight() - y2);
+        void fillRect(int x1, int y1, int x2, int y2) {
+            fRect(x1, height - y1, x2, height - y2);
         }
 
-        void drawPairs(const size_t scale, const Color color, const Shape shape) const {
-            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
+        void drawPairs(const size_t scale, const Color color, const Shape shape) {
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
-            painter.color(color);
+            brush(color);
             ProjectedPoint prjPoint = projectedPoints.at(0);
             int x1 = prjPoint.getX();
             int y1 = prjPoint.getY();
-            int painterHeight = painter.getHeight();
+            int painterHeight = height;
             DrawPairFunction func;
             switch (shape) {
                 case LINE:
@@ -476,21 +431,21 @@ namespace madlib::graph {
             for (const ProjectedPoint& projectedPoint: projectedPoints) {
                 int x2 = projectedPoint.getX();
                 int y2 = projectedPoint.getY();
-                func(&painter, x1, painterHeight - y1, x2, painterHeight - y2);
+                func(this, x1, painterHeight - y1, x2, painterHeight - y2);
                 x1 = x2;
                 y1 = y2;
             }
         }
 
-        void drawLines(const size_t scale, const Color color) const {
+        void drawLines(const size_t scale, const Color color) {
             drawPairs(scale, color, LINE);
         }
 
-        void drawRectangles(const size_t scale, const Color color) const {
+        void drawRectangles(const size_t scale, const Color color) {
             drawPairs(scale, color, BOX);
         }
 
-        void fillRectangles(const size_t scale, const Color color) const {
+        void fillRectangles(const size_t scale, const Color color) {
             drawPairs(scale, color, FILLED);
         }
 
@@ -502,14 +457,14 @@ namespace madlib::graph {
             const Color colorInc = green,
             const Color colorDec = red,
             int painterHeight = 0
-        ) const {
+        ) {
             Color color = (openY < closeY) ? colorInc : colorDec;
-            painterHeight = painterHeight ? painterHeight : painter.getHeight();
-            painter.color(ColorMixer::light(color));
-            painter.vLine(lowX, painterHeight - lowY, painterHeight - highY);
-            painter.color(color);
+            painterHeight = painterHeight ? painterHeight : height;
+            brush(ColorMixer::light(color));
+            vLine(lowX, painterHeight - lowY, painterHeight - highY);
+            brush(color);
             if (openY == closeY) {
-                painter.hLine(openX, painterHeight - openY, closeX);
+                hLine(openX, painterHeight - openY, closeX);
                 return;
             }
             const int width = closeX - openX;
@@ -518,7 +473,7 @@ namespace madlib::graph {
             if (width > 20) { openX++; closeX--; }
             if (width > 50) { openX++; closeX--; }
             if (width > 100) { openX++; closeX--; }
-            painter.fillRect(openX, painterHeight - openY, closeX, painterHeight - closeY);
+            fRect(openX, painterHeight - openY, closeX, painterHeight - closeY);
         }
 
         void drawCandle(
@@ -530,7 +485,7 @@ namespace madlib::graph {
             const Color colorInc = green, 
             const Color colorDec = red,
             int painterHeight = 0
-        ) const {
+        ) {
             drawCandle(
                 open.getX(), open.getY(), // FlawFinder: ignore
                 close.getX(), close.getY(),
@@ -541,48 +496,57 @@ namespace madlib::graph {
             );
         }
 
-        void drawCandles(const size_t scale, const CandleStyle& candleStyle) const {
-            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
+        void drawCandles(const size_t scale, const CandleStyle& candleStyle) {
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
             size_t size = projectedPoints.size();
-            int painterHeight = painter.getHeight();
+            int painterHeight = height;
             for (size_t i = 0; i < size; i += 4) {
                 const ProjectedPoint& open = projectedPoints.at(i);
                 const ProjectedPoint& close = projectedPoints.at(i + 1);
                 const ProjectedPoint& low = projectedPoints.at(i + 2);
                 const ProjectedPoint& high = projectedPoints.at(i + 3);
-                drawCandle(open, close, low, high, candleStyle.getColorUp(), candleStyle.getColorDown(), painterHeight); // FlawFinder: ignore
-                // Color color = open.getY() < close.getY() ? colorInc : colorDec;
-                // painter.color(color);
-                // painter.fillRect(open.getX(), painterHeight - open.getY(), close.getX(), painterHeight - close.getY());
-                // painter.line(low.getX(), painterHeight - low.getY(), high.getX(), painterHeight - high.getY());
+                drawCandle(
+                    open, close, low, high, 
+                    candleStyle.getColorUp(), 
+                    candleStyle.getColorDown(), 
+                    painterHeight
+                );
             }
         }
 
-        void putLabel(int x, int y, const string &text, Color color = white /* TODO */, bool hasBackground = true /* TODO */, Color backgroundColor = black /* TODO */, Color borderColor = gray /* TODO */, int padding = 3, int painterHeight = -1) const {
-            painterHeight = painterHeight == -1 ? painter.getHeight() : painterHeight;
+        void putLabel(
+            int x, int y, const string &text, 
+            Color color = white /* TODO */, 
+            bool hasBackground = true /* TODO */, 
+            Color backgroundColor = black /* TODO */, 
+            Color borderColor = gray /* TODO */, 
+            int padding = 3, 
+            int painterHeight = -1
+        ) {
+            painterHeight = painterHeight == -1 ? height : painterHeight;
             const int painterHeight_y = painterHeight - y;
             if (hasBackground) {
-                Painter::TextSize textSize = painter.getTextSize(text);
+                Painter::TextSize textSize = getTextSize(text);
                 const int x1 = x - padding;
                 const int y1 = painterHeight_y - textSize.height - padding;
                 const int x2 = x + textSize.width + padding;
                 const int y2 = painterHeight_y + padding; // + textSize.height;
-                painter.color(backgroundColor);
-                painter.fillRect(x1, y1, x2, y2);
-                painter.color(borderColor);
-                painter.rect(x1, y1, x2, y2);
+                brush(backgroundColor);
+                fRect(x1, y1, x2, y2);
+                brush(borderColor);
+                rect(x1, y1, x2, y2);
             }
-            painter.color(color);
-            painter.write(x, painterHeight_y - 3, text); // -3??
+            brush(color);
+            write(x, painterHeight_y - 3, text); // -3??
         }
 
-        void putLabels(size_t scale, const LabelStyle& labelStyle) const {
-            vector<ProjectedPoint> projectedPoints = getScales().at(scale)->getProjectedPoints();
+        void putLabels(size_t scale, const LabelStyle& labelStyle) {
+            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
             if (projectedPoints.empty()) return;
-            vector<string> texts = getScales().at(scale)->getTexts();
+            vector<string> texts = scales.at(scale)->getTexts();
             if (texts.empty()) return;
-            int painterHeight = painter.getHeight();
+            int painterHeight = height;
             size_t size = projectedPoints.size();
             for (size_t i = 0; i < size; i++) {
                 ProjectedPoint projectedPoint = projectedPoints.at(i);
@@ -597,10 +561,27 @@ namespace madlib::graph {
 
         // -------- 
 
+        void redraw() {
+            // recalc
+            setCalcScrollOnly(true);
+            Point<int> scrollXY = getScrollXY();
+            resetScrollXYMax();
+            drawScales();
+            setScrollXY(scrollXY.getX(), scrollXY.getY());
 
-        void draw() const {
+            // actual drawing
+            setCalcScrollOnly(false);
+            draw();
+        }
+
+        virtual void draw() override {
+            if (!calcScrollOnly) Frame::draw();
+            drawScales();
+        }
+
+        void drawScales() {
             size_t at = 0;
-            for (const Scale* scale: getScales()) {
+            for (const Scale* scale: scales) {
                 const Shape shape = scale->getShape();
                 const void* context = scale->getContext();
 
@@ -657,88 +638,54 @@ namespace madlib::graph {
 
     };
 
-    class ChartArea {
-    public:
-        static void draw(void* context) {
-            Area* that = (Area*)context;
-            Chart* chart = (Chart*)that->getEventContext();
-            if (chart) chart->draw();
-        }
-    };
 
+    const Chart::CandleStyle Chart::Scale::defaultCandleStyle = CandleStyle();
+    const Chart::LabelStyle Chart::Scale::defaultLabelStyle = LabelStyle();
 
-    class MultiChart: public ChartArea {
+    class MultiChartAccordion: public Accordion {
     protected:
 
         const int innerBorderSize = 2; // TODO
-
         vector<Chart*> charts;
-        vector<Frame*> frames;
 
-    public:
-
-        ~MultiChart() {
-            vector_destroy<Frame>(frames);
-            vector_destroy<Chart>(charts);
+        void setupChart(Chart& chart, int frameWidth, int frameHeight) {
+            chart.setTop(innerBorderSize);
+            chart.setLeft(innerBorderSize);
+            chart.setWidth(frameWidth - innerBorderSize * 2);
+            chart.setHeight(frameHeight - innerBorderSize * 2);
+            chart.setBorder(BUTTON_PUSHED);
+            chart.setBackgroundColor(black);
         }
 
-        Chart& getChartAt(size_t chartIndex) const {
-            return *charts.at(chartIndex);
-        }
-
-        Chart& addChartToArea(Area& area) {
-            Chart* chart = vector_create(charts, area);
-            area.setEventContext(chart);
-            area.onDrawHandlers.push_back(draw);
-            return *chart;
-        }
-
-        Chart& addChartToAccordion(Accordion& accordion, const string& title = "Chart", int frameHeight = 150) {
-            const Accordion::Container& container = accordion.addContainer(title, frameHeight);
-            Frame& cntrFrame = container.getFrame();
-            Frame* frame = vector_create(frames, 
-                accordion.getGFX(), 
-                innerBorderSize, innerBorderSize, 
-                cntrFrame.getWidth() - innerBorderSize*2,  // accordion.getWidth() - innerBorderSize*4, 
-                frameHeight - innerBorderSize*2,  // frameHeight - innerBorderSize*2,
-                BUTTON_PUSHED, black
-            );
-            cntrFrame.child(*frame);
-            return addChartToArea(*frame);
-        }
-    };
-
-    class MultiChartAccordion: public MultiChart, public Accordion {
-    protected:
     public:
         using Accordion::Accordion;
 
-        Chart& addChart(const string& title = "Chart", int frameHeight = 150) {
-            return addChartToAccordion(*this, title, frameHeight);
+        ~MultiChartAccordion() {
+            vector_destroy(charts);
         }
-    };
 
-    // -- VIRTUAL PLUGINS --
+        Chart& createChart(const string& title, int frameHeight) { // TODO bubble up params default
+            const Accordion::Container& container = createContainer(zoom, title, frameHeight);
+            Frame& cntrFrame = container.getFrame();
+            cntrFrame.setFixed(true);
+            Chart* chart = vector_create(
+                charts, gfx, zoom, 0, 0, 0, 0
+            );
+            setupChart(*chart, cntrFrame.getWidth(), frameHeight);
+            cntrFrame.child(*chart);
+            return *chart;
+        }
 
-    class ChartPlugin {
-    public:
-        virtual void project(Chart& /*chart*/, const void* /*context*/) const {
-            throw ERR_UNIMP;
-        };
-    };
-
-    class MultiChartPlugin {
-    public:
-        virtual void project(MultiChart& /*multiChart*/, const void* /*context*/) const {
-            throw ERR_UNIMP;
-        };
-    };
-
-    class MultiChartAccordionPlugin {
-    public:
-        virtual void project(MultiChartAccordion& /*multiChartAccordion*/, const void* /*context*/) const {
-            throw ERR_UNIMP;
-        };
+        Chart& addChart(const string& title, Chart& chart, int frameHeight) {
+            const Accordion::Container& container = 
+                createContainer(zoom, title, frameHeight);
+            Frame& cntrFrame = container.getFrame();
+            cntrFrame.setFixed(true);
+            setupChart(chart, cntrFrame.getWidth(), frameHeight);
+            cntrFrame.child(chart);
+            return chart;
+        }
+        
     };
 
 }
