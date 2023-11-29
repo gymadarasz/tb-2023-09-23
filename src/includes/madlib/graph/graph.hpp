@@ -2093,7 +2093,7 @@ namespace madlib::graph {
         vector<Container*> containers;
         bool sticky;
         bool single;
-        bool one;
+        bool one; // TODO: keep "only one" or "at least one" open?
 
     public:
         Accordion(GFX& gfx, Zoom& zoom, int left, int top, int width,
