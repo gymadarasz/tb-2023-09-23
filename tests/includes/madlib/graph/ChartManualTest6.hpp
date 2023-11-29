@@ -49,38 +49,11 @@ protected:
     );
 public:
 
-    ~ChartManualTest6() {
-        // if (history) {
-        //     delete history; 
-        //     history = NULL;
-        // }
-        // if (chart) {
-        //     delete chart; 
-        //     chart = NULL;
-        // }
-    }
-
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("ChartManualTest6");
 
         mainFrame.child(chart);
-        // frame.addDrawHandler(draw);
-
-        // // Create a MonteCarloHistory object with the specified parameters
-        // history = new MonteCarloHistory(
-        //     symbol, 
-        //     startTime, endTime, period,
-        //     volumeMean, volumeStdDeviation,
-        //     priceMean, priceStdDeviation,
-        //     timeLambda, seed
-        // );
-
-        // Zoom zoom;
-        // Chart::CandleStyle candleStyle;
-        // chart = new TradeHistoryChart(
-        //     chart, history, zoom, candleStyle
-        // );
 
         chart.project();
     }

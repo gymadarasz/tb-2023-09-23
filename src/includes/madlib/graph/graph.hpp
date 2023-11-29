@@ -979,29 +979,6 @@ namespace madlib::graph {
         }
     };
 
-    // class Scrollable: public Scroll {
-    // protected:
-    
-    //     // Scroll* scroll = NULL;
-
-    // public:
-
-    //     using Scroll::Scroll;
-
-    //     // Scrollable(int width, int height) {
-    //     //     scroll = new Scroll(width, height);
-    //     // }
-
-    //     // ~Scrollable() {
-    //     //     if (scroll) delete scroll;
-    //     //     scroll = NULL;
-    //     // }
-
-    //     // Scroll* getScroll() const {
-    //     //     return scroll;
-    //     // }
-    // };
-
     class Painter: public Scrollable, public Zoomable, public EventHandler {
     public:
 
@@ -2164,9 +2141,7 @@ namespace madlib::graph {
         }
 
         Container& createContainer(Zoom& zoom, const string& title, int frameHeight) {
-            Container* container = new Container(*this, zoom, title, textAlign, frameHeight);
-            containers.push_back(container);
-            return *container;
+            return *vector_create(containers, *this, zoom, title, textAlign, frameHeight);
         }
 
         vector<Container*>& getContainers() {
