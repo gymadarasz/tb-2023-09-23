@@ -30,18 +30,18 @@ namespace madlib::graph {
 
         class LabelStyle {
         protected:
-            Color color = white; // TODO
-            bool hasBackground = true; // TODO
-            Color backgroundColor = black; // TODO
-            Color borderColor = gray; // TODO
-            int padding = 3; // TODO
+            Color color;
+            bool hasBackground;
+            Color backgroundColor;
+            Color borderColor;
+            int padding;
         public:
             LabelStyle(
-                const Color color = white, // TODO
-                const bool hasBackground = true, // TODO
-                const Color backgroundColor = black, // TODO
-                const Color borderColor = gray, // TODO
-                const int padding = 3 // TODO
+                const Color color = Theme::defaultChartLabelColor,
+                const bool hasBackground = Theme::defaultChartLabelHasBackground,
+                const Color backgroundColor = Theme::defaultChartLabelBackgroundColor,
+                const Color borderColor = Theme::defaultChartLabelBorderColor,
+                const int padding = Theme::defaultChartLabelPadding
             ):
                 color(color),
                 hasBackground(hasBackground),
@@ -74,12 +74,12 @@ namespace madlib::graph {
 
         class CandleStyle {
         protected:
-            const Color colorUp; // TODO
-            const Color colorDown; // TODO
+            const Color colorUp;
+            const Color colorDown;
         public:
             CandleStyle(
-                const Color colorUp = Theme::defaultCandleColorUp, // TODO
-                const Color colorDown = Theme::defaultCandleColorDown // TODO
+                const Color colorUp = Theme::defaultCandleColorUp,
+                const Color colorDown = Theme::defaultCandleColorDown
             ):
                 colorUp(colorUp),
                 colorDown(colorDown)
@@ -105,13 +105,13 @@ namespace madlib::graph {
 
         protected:
 
-            const void* getDefaultScaleContext(Shape shape) {
+            static const void* getDefaultScaleContext(Shape shape) {
                 switch (shape)
                 {
-                    case DOT: return &white; // TODO;
-                    case LINE: return &white; // TODO;
-                    case BOX: return &white; // TODO;
-                    case FILLED: return &white; // TODO;
+                    case DOT: return &Theme::defaultChartDotScaleContext;
+                    case LINE: return &Theme::defaultChartLineScaleContext;
+                    case BOX: return &Theme::defaultChartBoxScaleContext;
+                    case FILLED: return &Theme::defaultChartFilledScaleContext;
                     case CANDLE: return &defaultCandleStyle; // TODO;
                     case LABEL: return &defaultLabelStyle; // TODO;
                     default: throw ERROR("Invalid shape");
@@ -282,12 +282,12 @@ namespace madlib::graph {
 
     protected:
 
-        static const int zoomInScrollButton = 4;
-        static const int zoomOutScrollButton = 5;
-        static constexpr double zoomInRatio = 1.25;
-        static constexpr double zoomOutRatio = .8;
-        static constexpr double zoomRatioMax = INFINITY;
-        static constexpr double zoomRatioMin = 1;
+        static const int zoomInScrollButton = 4; // TODO
+        static const int zoomOutScrollButton = 5; // TODO
+        static constexpr double zoomInRatio = 1.25; // TODO
+        static constexpr double zoomOutRatio = .8; // TODO
+        static constexpr double zoomRatioMax = INFINITY; // TODO
+        static constexpr double zoomRatioMin = 1; // TODO
 
         static void zoomHandler(void* context, unsigned int button, int, int) {
             Chart* that = (Chart*)context;
@@ -517,11 +517,11 @@ namespace madlib::graph {
 
         void putLabel(
             int x, int y, const string &text, 
-            Color color = white /* TODO */, 
-            bool hasBackground = true /* TODO */, 
-            Color backgroundColor = black /* TODO */, 
-            Color borderColor = gray /* TODO */, 
-            int padding = 3, 
+            Color color = Theme::defaultChartLabelColor,
+            bool hasBackground = Theme::defaultChartLabelHasBackground,
+            Color backgroundColor = Theme::defaultChartLabelBackgroundColor,
+            Color borderColor = Theme::defaultChartLabelBorderColor,
+            int padding = Theme::defaultChartLabelPadding,
             int painterHeight = -1
         ) {
             painterHeight = painterHeight == -1 ? height : painterHeight;
@@ -538,7 +538,7 @@ namespace madlib::graph {
                 rect(x1, y1, x2, y2);
             }
             brush(color);
-            write(x, painterHeight_y - 3, text); // -3??
+            write(x, painterHeight_y - padding, text);
         }
 
         void putLabels(size_t scale, const LabelStyle& labelStyle) {

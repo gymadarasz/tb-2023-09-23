@@ -199,26 +199,54 @@ namespace madlib::graph {
     };
 
     struct Theme {
-        static const unsigned long eventLoopMs = 100;
-        static const Color windowColor = gray;
-        static const char* windowTitle;
-        static const char* windowFont;
-        static const Align textAlign = CENTER;
-        static const Color borderColor = gray;
-        static const Color textColor = black;
-        //static const Color backgroundColor = gray;
+        static const unsigned long defaultGFXEventLoopMs = 100;
+        static const Color defaultWindowColor = gray;
+        static const char* defaultWindowTitle;
+        static const char* defaultWindowFont;
+
+        static const Align defaultAreaTextAlign = CENTER;
+        static const Border defaultAreaBorder = NONE;
+        static const Color defaultAreaBackgroundColor = gray;
+        static const int defaultAreaMargin = 10;
+        static const int defaultAreaTextMargin = 10;
+        static const Color defaultAreaBorderColor = gray;
+        static const Color defaultAreaTextColor = black;
+
         static const Color frameBackgroundColor = darkGray;
         static const int frameMargin = 10;
         static const int textPadding = 10;
+        static const Border defaultFrameBorder = NONE;
+        static const Color defaultFrameBackgroundColor = gray;
+
+        static const Align defaultButtonTextAlign = CENTER;
+        static const Border defaultButtonBorder = BUTTON_RELEASED;
+
+        static const Border defaultAccordionBorder = NONE;
+        static const Color defaultAccordionBackgroundColor = darkGray;
+        static const Align defaultAccordionTogglerTextAlign = CENTER;
+
         static const Align labelTextAlign = LEFT;
         static const int barThickness = 20;
         static const Border chartBorder = BUTTON_PUSHED;
         static const Color chartBackgroundColor = black;
         static const Color defaultCandleColorUp = green;
         static const Color defaultCandleColorDown = red;
+        static const Color defaultChartLabelColor = white;
+        static const bool defaultChartLabelHasBackground = true;
+        static const Color defaultChartLabelBackgroundColor = black;
+        static const Color defaultChartLabelBorderColor =  gray;
+        static const int defaultChartLabelPadding = 3;
+        static const Color defaultChartDotScaleContext;
+        static const Color defaultChartLineScaleContext;
+        static const Color defaultChartBoxScaleContext;
+        static const Color defaultChartFilledScaleContext;
     };
-    const char* Theme::windowTitle = "graph";
-    const char* Theme::windowFont = "10x20";
+    const char* Theme::defaultWindowTitle = "graph";
+    const char* Theme::defaultWindowFont = "10x20";
+    const Color Theme::defaultChartDotScaleContext = darkGray;
+    const Color Theme::defaultChartLineScaleContext = darkGray;
+    const Color Theme::defaultChartBoxScaleContext = darkGray;
+    const Color Theme::defaultChartFilledScaleContext = darkGray;
 
     class EventHandler {
     public:
@@ -420,13 +448,6 @@ namespace madlib::graph {
     };
 
     class GFX: public EventHandler {
-    public:
-
-        static const unsigned long defaultLoopMs = Theme::eventLoopMs;
-        static const Color defaultWindowColor = Theme::windowColor;
-        static const char* defaultWindowTitle;
-        static const char* defaultWindowFont;
-
     protected:
 
         static Display *display;
@@ -456,7 +477,12 @@ namespace madlib::graph {
             this->viewport = viewport;
         }
 
-        void openWindow(int width, int height, const char* title = defaultWindowTitle, Color color = defaultWindowColor, const char* font = defaultWindowFont) {
+        void openWindow(
+            int width, int height, 
+            const char* title = Theme::defaultWindowTitle, 
+            Color color = Theme::defaultWindowColor, 
+            const char* font = Theme::defaultWindowFont
+        ) {
             // Initialize the X display
             if (!display) display = XOpenDisplay(NULL);
             if (!display) throw ERROR("Unable to open display.");
@@ -648,7 +674,7 @@ namespace madlib::graph {
             height = 0;
         }
 
-        void eventLoop(unsigned long ms = defaultLoopMs) const {
+        void eventLoop(unsigned long ms = Theme::defaultGFXEventLoopMs) const {
 
             while (!close) {
 
@@ -694,25 +720,6 @@ namespace madlib::graph {
                         break;
 
                     case ButtonPress:
-
-                        // logger.writeln("DBG Btn: ", event.xbutton.button, " ", event.xbutton.x, ":", event.xbutton.y);
-                        // switch (event.xbutton.button) {
-
-                        //     case Button4:
-                        //         logger.writeln("Scrolled up"); // TODO
-                        //         break;
-
-                        //     case Button5:
-                        //         logger.writeln("Scrolled down"); // TODO
-                        //         break;
-
-                        //     default:
-                        //         // Handle mouse button press / click / touch / scroll / zoom event
-                        //         for (const onTouchHandler& onTouch: onTouchHandlers)
-                        //             onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
-                        //         break;
-                        // }
-
                         // Handle mouse button press / click / touch / scroll / zoom event
                         for (const onTouchHandler& onTouch: onTouchHandlers)
                             onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
@@ -740,14 +747,12 @@ namespace madlib::graph {
     };
 
     Display* GFX::display = NULL;
-    const char* GFX::defaultWindowTitle = Theme::windowTitle;
-    const char* GFX::defaultWindowFont = Theme::windowFont;
 
 
     class Zoom {
     public:
 
-        const int defaultCenterX = 0, defaultCenterY = 0;
+        const int defaultCenterX = 0, defaultCenterY = 0; // TODO
         const double defaultRatioX = 1.0, defaultRatioY = 1.0;
     protected:
         ProjectedPoint center = ProjectedPoint(defaultCenterX, defaultCenterY);
@@ -1007,28 +1012,18 @@ namespace madlib::graph {
 
 
     class Area: public Painter {
-    public:
-
-        static const Align defaultAreaTextAlign = Theme::textAlign;
-        static const Color defaultAreaBorderColor = Theme::borderColor;
-        static const Color defaultAreaTextColor = Theme::textColor;
-        static const Border defaultAreaBorder = NONE; // TODO: to theme
-        static const Color defaultAreaBackgroundColor = GFX::defaultWindowColor;
-        static const int defaultFrameMargin = Theme::frameMargin;
-        static const int defaultTextMargin = Theme::textPadding;
-
     protected:
         GFX& gfx;
 
         int left, top;
         const string text;
         const Align textAlign;
-        Color borderColor = defaultAreaBorderColor;
-        Color textColor = defaultAreaTextColor;
         Border border;
         Color backgroundColor;
-        int frameMargin;
+        int areaMargin;
         int textPadding;
+        Color borderColor;
+        Color textColor;
 
         vector<Area*> areas;
         Area* parent = NULL;
@@ -1072,19 +1067,31 @@ namespace madlib::graph {
 
     public:
 
-        Area(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
-            const string &text = "", const Align textAlign = defaultAreaTextAlign,
-            const Border border = defaultAreaBorder,
-            const Color backgroundColor = defaultAreaBackgroundColor,
-            const int frameMargin = defaultFrameMargin,
-            const int textPadding = defaultTextMargin
+        Area(
+            GFX& gfx, Zoom& zoom, 
+            int left, int top, 
+            int width, int height,
+            const string &text = "", 
+            const Align textAlign = Theme::defaultAreaTextAlign,
+            const Border border = Theme::defaultAreaBorder,
+            const Color backgroundColor = Theme::defaultAreaBackgroundColor,
+            const int areaMargin = Theme::defaultAreaMargin,
+            const int textPadding = Theme::defaultAreaTextMargin,
+            const Color borderColor = Theme::defaultAreaBorderColor,
+            const Color textColor = Theme::defaultAreaTextColor
         ): 
             Painter(width, height, zoom),
             gfx(gfx),
-            left(left), top(top), // width(width), height(height), 
-            text(text), textAlign(textAlign), border(border), 
-            backgroundColor(backgroundColor), frameMargin(frameMargin),
-            textPadding(textPadding)
+            left(left), 
+            top(top),
+            text(text), 
+            textAlign(textAlign), 
+            border(border), 
+            backgroundColor(backgroundColor), 
+            areaMargin(areaMargin),
+            textPadding(textPadding),
+            borderColor(borderColor),
+            textColor(textColor)
         {
             setScrollXY12MinMax(0, 0, width, height);
         }
@@ -1197,8 +1204,8 @@ namespace madlib::graph {
 
         Area& child(Area& area) {
             setScrollXYMinMax(
-                area.left + area.width + frameMargin,
-                area.top + area.height + frameMargin
+                area.left + area.width + areaMargin,
+                area.top + area.height + areaMargin
             );
             if (calcScrollOnly) return area;
             area.setParent(this);
@@ -1478,7 +1485,11 @@ namespace madlib::graph {
             that->propagateMove(x, y);
         }
 
-        void init(int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor) {
+        void init(
+            int width, int height, 
+            const char* title = Theme::defaultWindowTitle, 
+            Color color = Theme::defaultWindowColor
+        ) {
             gfx.openWindow(width, height, title, color);
             gfx.setEventContext(this);
             gfx.addResizeHandler(resizeHandler);
@@ -1488,8 +1499,13 @@ namespace madlib::graph {
         }
 
     public:
-        GUI(GFX& gfx, Zoom& zoom, int width, int height, const char* title = GFX::defaultWindowTitle, Color color = GFX::defaultWindowColor):
-            Area(gfx, zoom, 0, 0, width, height, "", defaultAreaTextAlign, defaultAreaBorder) 
+        GUI(
+            GFX& gfx, Zoom& zoom, 
+            int width, int height, 
+            const char* title = Theme::defaultWindowTitle, 
+            Color color = Theme::defaultWindowColor
+        ):
+            Area(gfx, zoom, 0, 0, width, height, "")
         {
             init(width, height, title, color);
         }
@@ -1498,7 +1514,7 @@ namespace madlib::graph {
             gfx.closeWindow();
         }
 
-        void loop(unsigned long ms = GFX::defaultLoopMs) const {
+        void loop(unsigned long ms = Theme::defaultGFXEventLoopMs) const {
             gfx.eventLoop(ms);
         }
 
@@ -1552,13 +1568,20 @@ namespace madlib::graph {
 
         bool fixed = false;
 
-        Frame(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
-            const Border border = defaultFrameBorder,
-            const Color backgroundColor = defaultFrameBackgroundColor, 
-            const int frameMargin = defaultFrameMargin,
-            const int textPadding = defaultTextMargin
-        ): Area(gfx, zoom, left, top, width, height, 
-            "", CENTER, border, backgroundColor, frameMargin, textPadding)
+        Frame(
+            GFX& gfx, Zoom& zoom, 
+            int left, int top, 
+            int width, int height,
+            Border border = Theme::defaultFrameBorder,
+            Color backgroundColor = Theme::defaultFrameBackgroundColor
+        ):
+            Area(
+                gfx, zoom, 
+                left, top, 
+                width, height, 
+                "", CENTER, 
+                border, backgroundColor
+            )
         {
             addTouchHandler(touchHandler);
             addReleaseHandler(releaseHandler);
@@ -1594,10 +1617,17 @@ namespace madlib::graph {
 
     public:
 
-        Button(GFX& gfx, Zoom& zoom, int left, int top, int width, int height, 
-            const string &text = "", const Align textAlign = Area::defaultAreaTextAlign
-        ): Area(gfx, zoom, left, top, width, height, text, textAlign, BUTTON_RELEASED) // TODO: border = BUTTON_RELEASED to theme
-        {
+        Button(
+            GFX& gfx, Zoom& zoom, 
+            int left, int top, 
+            int width, int height, 
+            const string &text = "", 
+            const Align textAlign = Theme::defaultButtonTextAlign,
+            const Border buttonBorder = Theme::defaultButtonBorder
+        ): Area(
+            gfx, zoom, left, top, width, height, text, 
+            textAlign, buttonBorder
+        ) {
             addTouchHandler(touchHandler);
             addReleaseHandler(releaseHandler);
         }
@@ -1950,9 +1980,12 @@ namespace madlib::graph {
             Container& container;
             size_t containerIndex;
         public:
-            Toggler(Container& container, GFX& gfx, Zoom& zoom, size_t containerIndex, 
+            Toggler(
+                Container& container, GFX& gfx, Zoom& zoom, 
+                size_t containerIndex, 
                 int left, int top, int width, int height, 
-                const string &text, const Align textAlign = Area::defaultAreaTextAlign
+                const string &text, 
+                const Align textAlign = Theme::defaultAccordionTogglerTextAlign
             ): 
                 Button(gfx, zoom, left, top, width, height, text, textAlign),
                 container(container),
@@ -2003,7 +2036,7 @@ namespace madlib::graph {
 
                 frame = new Frame(gfx, zoom, 
                     innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
-                    width, 0, NONE);
+                    width, 0, NONE, accordion.getBackgroundColor());
             
                 accordion.child(*toggler);
                 accordion.child(*frame);
@@ -2058,23 +2091,23 @@ namespace madlib::graph {
 
     protected:
         vector<Container*> containers;
-        bool sticky = false; // TODO
-        bool single = false; // TODO
-        bool one = false; // TODO
+        bool sticky;
+        bool single;
+        bool one;
 
     public:
         Accordion(GFX& gfx, Zoom& zoom, int left, int top, int width,
-            bool sticky = false, // TODO
-            const Align textAlign = Area::defaultAreaTextAlign, // TODO
-            const Border border = NONE, //Area::defaultAreaBorder, // TODO
-            const Color backgroundColor = Area::defaultAreaBackgroundColor, // TODO
-            const int frameMargin = Area::defaultFrameMargin, // TODO
-            const int textPadding = Area::defaultTextMargin // TODO
+            bool sticky = false, bool single = false, bool one = true, // TODO
+            const Border border = Theme::defaultAccordionBorder,
+            const Color backgroundColor = Theme::defaultAccordionBackgroundColor
         ): 
-            Area(gfx, zoom, left, top, width, 0, "", textAlign, 
-                border, backgroundColor, frameMargin, textPadding
+            Area(
+                gfx, zoom, left, top, width, 0, "", CENTER,
+                border, backgroundColor
             ),
-            sticky(sticky)
+            sticky(sticky),
+            single(single),
+            one(one)
         {}
 
         ~Accordion() {
@@ -2227,7 +2260,11 @@ namespace madlib::graph {
 
     class FrameApplication: public Application {
     protected:
-        Frame mainFrame = Frame(gfx, zoom, 0, 0, gui.getWidth(), gui.getHeight(), NONE, Theme::windowColor);
+        Frame mainFrame = Frame(
+            gfx, zoom, 0, 0, 
+            gui.getWidth(), gui.getHeight(), 
+            NONE, Theme::defaultWindowColor
+        );
     public:
         virtual void init() override {
             gui.child(mainFrame);
