@@ -653,7 +653,7 @@ namespace madlib::graph {
             chart.setLeft(innerBorderSize);
             chart.setWidth(frameWidth - innerBorderSize * 2);
             chart.setHeight(frameHeight - innerBorderSize * 2);
-            chart.setBorder(BUTTON_PUSHED);
+            chart.setBorder(PUSHED);
             chart.setBackgroundColor(black);
         }
 

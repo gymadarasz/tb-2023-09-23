@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+
 using namespace std;
 using namespace chrono;
 
@@ -681,48 +682,48 @@ namespace madlib {
         }
     };
 
-template <typename T>
-class Factory {
-protected:
-    vector<T*> instances;
-public:
-    T* create() {
-        T* instance = new T;
-        instances.push_back(instance);
-        return instance;
-    }
-    
-    template <typename... Args>
-    T* create(Args... args) {
-        T* instance = new T(args...);
-        instances.push_back(instance);
-        return instance;
-    }
-
-    void destroy(T* instance) {
-        auto it = find(instances.begin(), instances.end(), instance);
-        if (it != instances.end()) {
-            delete *it;
-            instances.erase(it);
+    template <typename T>
+    class Factory {
+    protected:
+        vector<T*> instances;
+    public:
+        T* create() {
+            T* instance = new T;
+            instances.push_back(instance);
+            return instance;
         }
-    }
+        
+        template <typename... Args>
+        T* create(Args... args) {
+            T* instance = new T(args...);
+            instances.push_back(instance);
+            return instance;
+        }
 
-    void destroy() {
-        vector_destroy<T>(instances);
-    }
+        void destroy(T* instance) {
+            auto it = find(instances.begin(), instances.end(), instance);
+            if (it != instances.end()) {
+                delete *it;
+                instances.erase(it);
+            }
+        }
 
-    ~Factory() {
-        // for (T* instance : instances) {
-        //     delete instance;
-        // }
-        // vector_destroy<T>(instances);
-        destroy();
-    }
+        void destroy() {
+            vector_destroy<T>(instances);
+        }
 
-    vector<T*>& getInstances() const {
-        return instances;
-    }
+        ~Factory() {
+            // for (T* instance : instances) {
+            //     delete instance;
+            // }
+            // vector_destroy<T>(instances);
+            destroy();
+        }
 
-};
+        vector<T*>& getInstances() const {
+            return instances;
+        }
+
+    };
 
 }

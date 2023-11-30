@@ -21,7 +21,7 @@ protected:
     //     that->closeBtn.draw();
     // }
 
-    // Chart chart = Chart(gfx, zoom, 10, 60, 1580, 780, BUTTON_PUSHED, black);
+    // Chart chart = Chart(gfx, zoom, 10, 60, 1580, 780, PUSHED, black);
 
     // Define parameters and desired time range
     const string symbol = "MONTECARLO";

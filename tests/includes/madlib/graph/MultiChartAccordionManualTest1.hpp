@@ -6,9 +6,9 @@
 class MultiChartAccordionManualTest1: public ManualTestApplication {
 protected:
 
-    Chart chart1 = Chart(gfx, zoom, 10, 100, 300, 180, BUTTON_PUSHED, black);
-    Chart chart2 = Chart(gfx, zoom, 10, 300, 300, 180, BUTTON_PUSHED, black);
-    Chart chart3 = Chart(gfx, zoom, 10, 500, 300, 180, BUTTON_PUSHED, black);
+    Chart chart1 = Chart(gfx, zoom, 10, 100, 300, 180, PUSHED, black);
+    Chart chart2 = Chart(gfx, zoom, 10, 300, 300, 180, PUSHED, black);
+    Chart chart3 = Chart(gfx, zoom, 10, 500, 300, 180, PUSHED, black);
 
     MultiChartAccordion accordion = MultiChartAccordion(gfx, zoom, 350, 10, 300);
 
@@ -16,7 +16,7 @@ protected:
 
     MultiChartAccordion multiChartAccordion = MultiChartAccordion(gfx, zoom, 700, 10, 850);
 
-    Chart testChart = Chart(gfx, zoom, 700, 400, 850, 300, BUTTON_PUSHED, black);
+    Chart testChart = Chart(gfx, zoom, 700, 400, 850, 300, PUSHED, black);
 
     vector<RealPoint> generateRealPoints(size_t n, double min = 0, double max = 1) {
         vector<RealPoint> realPoints;

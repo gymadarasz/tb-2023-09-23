@@ -29,7 +29,7 @@ int chart_manual_test5_zoom()
     Zoom zoom(1.5, 1.5);
     chart_manual_test5_gfxPtr = &gfx;
     GUI gui(gfx, zoom, 1600, 600);
-    // Chart chart(gfx, zoom, 10, 10, 1580, 580, BUTTON_PUSHED, black);
+    // Chart chart(gfx, zoom, 10, 10, 1580, 580, PUSHED, black);
     // gui.child(chart);
     // chart.setZoom(zoom);
     // chart_manual_test5_chartPtr = &chart;

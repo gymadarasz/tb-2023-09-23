@@ -22,17 +22,14 @@ protected:
     BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
 
     Zoom zoom;
-    Chart::CandleStyle candleStyle;
     
     const bool showCandles = true;
     const bool showPrices = true;
     const bool showVolumes = true;
     const Color priceColor = orange;
     const Color volumeColor = darkGray;
-    TradeHistoryChart tradeHistoryChartPlugin = TradeHistoryChart(
-        history, zoom, candleStyle, 
-        showCandles, showPrices, showVolumes, 
-        priceColor, volumeColor
+    TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
+        gfx, zoom, 0, 0, 600, 300, history
     );
 
     const double feeMarketPc = 0.04; //0.4;
@@ -55,26 +52,24 @@ protected:
     const int multiChartAccordionTop = 50;
     const int multiChartAccordionWidth = 1000;
     MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-        gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
+        gfx, zoom, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
 
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
     const Chart::LabelStyle buyTextStyle = Chart::LabelStyle(red);
     const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
     const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
-    CandleStrategyTesterPlugin tester = CandleStrategyTesterPlugin(
-        history, tradeHistoryChartPlugin,
-        testExchange, aCandleStrategy, symbol, 
-        multiChartAccordionFramesHeight,
-        showBalanceQuotedScale,
-        buyTextStyle, sellTextStyle, errorTextStyle
+    CandleStrategyBacktester tester = CandleStrategyBacktester(
+        multiChartAccordion, zoom,  
+        history, tradeHistoryChart,
+        testExchange, aCandleStrategy
     );
 public:
     void init() override {
         FrameApplication::init();
-        gui.setTitle("Bitstamp History");
+        gui.setTitle("Bitstamp History Backtest");
 
-        tester.project(multiChartAccordion, NULL);
+        tester.backtest();
 
         // ----------------
 

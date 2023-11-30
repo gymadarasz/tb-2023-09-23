@@ -28,7 +28,7 @@ int chart_manual_test3_candles()
     Zoom zoom;
     chart_manual_test3_gfxPtr = &gfx;
     GUI gui(gfx, zoom, 800, 600, "chart_manual_test3_candles");
-    Chart chart(gfx, zoom, 10, 10, 780, 580, BUTTON_PUSHED, black);
+    Chart chart(gfx, zoom, 10, 10, 780, 580, PUSHED, black);
     gui.child(chart);
     chart_manual_test3_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test3_draw);

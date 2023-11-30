@@ -194,8 +194,8 @@ namespace madlib::graph {
     enum Border {
         NONE,
         SIMPLE,
-        BUTTON_RELEASED,
-        BUTTON_PUSHED,
+        RELEASED,
+        PUSHED,
     };
 
     struct Theme {
@@ -215,11 +215,11 @@ namespace madlib::graph {
         static const Color frameBackgroundColor = darkGray;
         static const int frameMargin = 10;
         static const int textPadding = 10;
-        static const Border defaultFrameBorder = NONE;
+        static const Border defaultFrameBorder = PUSHED;
         static const Color defaultFrameBackgroundColor = gray;
 
         static const Align defaultButtonTextAlign = CENTER;
-        static const Border defaultButtonBorder = BUTTON_RELEASED;
+        static const Border defaultButtonBorder = RELEASED;
 
         static const Border defaultAccordionBorder = NONE;
         static const Color defaultAccordionBackgroundColor = darkGray;
@@ -227,7 +227,7 @@ namespace madlib::graph {
 
         static const Align labelTextAlign = LEFT;
         static const int barThickness = 20;
-        static const Border chartBorder = BUTTON_PUSHED;
+        static const Border chartBorder = PUSHED;
         static const Color chartBackgroundColor = black;
         static const Color defaultCandleColorUp = green;
         static const Color defaultCandleColorDown = red;
@@ -1360,7 +1360,7 @@ namespace madlib::graph {
                     gfx.drawRectangle(left, top, right, bottom);
                     break;
 
-                case BUTTON_RELEASED:
+                case RELEASED:
                     // button borders get the background color
                     bColor = getBackgroundColor();
                     bColorLight = ColorMixer::light(bColor);
@@ -1373,7 +1373,7 @@ namespace madlib::graph {
                     gfx.drawVerticalLine(right, top, bottom);
                     break;
 
-                case BUTTON_PUSHED:
+                case PUSHED:
                     // button borders get the background color
                     bColor = getBackgroundColor();
                     bColorLight = ColorMixer::light(bColor);
@@ -1526,7 +1526,7 @@ namespace madlib::graph {
     class Frame: public Area {
     public:
 
-        static const Border defaultFrameBorder = BUTTON_PUSHED; // TODO: to theme
+        static const Border defaultFrameBorder = PUSHED; // TODO: to theme
         static const Color defaultFrameBackgroundColor = Theme::frameBackgroundColor;
 
     protected:
@@ -1650,13 +1650,13 @@ namespace madlib::graph {
         }
 
         void push() {
-            setBorder(BUTTON_PUSHED);
+            setBorder(PUSHED);
             drawBorder();
             pushed = true;
         }
 
         void release() {
-            setBorder(BUTTON_RELEASED);
+            setBorder(RELEASED);
             drawBorder();
             pushed = false;
         }
@@ -1755,7 +1755,7 @@ namespace madlib::graph {
             gfx, zoom, left, top, 
             direction == HORIZONTAL ? length : thickness,
             direction == VERTICAL ? length : thickness, 
-            "", CENTER, BUTTON_PUSHED
+            "", CENTER, PUSHED
         ),  
             direction(direction), thickness(thickness),
             minValue(minValue), maxValue(maxValue), value(value),
@@ -1973,7 +1973,7 @@ namespace madlib::graph {
                 
                 Container* container = accordion.getContainers().at(that->containerIndex);
                 if (container->isOpened()) {
-                    if (!accordion.isOne()) accordion.closeAt(that->containerIndex);
+                    if (accordion.isOne()) accordion.closeAt(that->containerIndex);
                 } else accordion.openAt(that->containerIndex);
             }
 

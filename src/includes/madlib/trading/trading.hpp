@@ -761,8 +761,6 @@ namespace madlib::trading {
         }
     };
 
-    // -- CHART PLUGINS --
-
     class TradeHistoryChart: public Chart {
     protected:
 
@@ -885,7 +883,7 @@ namespace madlib::trading {
     class CandleStrategyBacktester {
     protected:
         MultiChartAccordion& multiChartAccordion;
-        Zoom& zoom; 
+        Zoom& zoom;
         const TradeHistory& history;
         TradeHistoryChart& tradeHistoryChart;
         TestExchange& testExchange;
