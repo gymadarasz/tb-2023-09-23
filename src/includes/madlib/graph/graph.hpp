@@ -1705,7 +1705,6 @@ namespace madlib::graph {
                 that->handler->setTop(that->position + 1);
 
             that->value = that->calcValue();
-            // logger.writeln(that->value);
             that->draw();
         }
 
@@ -1855,8 +1854,6 @@ namespace madlib::graph {
             if (y > that->height) y = that->height;
 
             if (that->dragMinStarted) {
-                logger.writeln("drag min ", x, ":", y, " - from:", that->dragStartAt);
-
                 that->position = (that->direction == HORIZONTAL ? x : y) - that->thickness / 6;
                 if (that->position < 0) that->position = 0;
                 if (that->position > that->maxPosition) that->position = that->maxPosition;
@@ -1883,8 +1880,6 @@ namespace madlib::graph {
             }
 
             if (that->dragMaxStarted) {
-                logger.writeln("drag max ", x, ":", y, " - from:", that->dragStartAt);
-
                 if (that->direction == HORIZONTAL) {
                     int delta = x - that->dragStartAt;
                     that->dragStartAt = x;
@@ -2247,7 +2242,7 @@ namespace madlib::graph {
                 init();
                 gui.loop();
             } catch (exception& e) {
-                logger.date().writeln("Exception: " + string(e.what()));
+                LOG("Exception: " + string(e.what()));
                 throw ERROR("Application error, see more at log...");
             }
             return this;

@@ -281,13 +281,32 @@ public:
 
         try {
             map<const string, string> result = args_parse(argc, argv);
+            // If no exception is thrown, the test has failed
+            assert(false);
         } catch (const exception& e) {
             // Exception expected for invalid key "-valueA"
-            cout << "Exception: " << e.what() << endl;
-            return;
+            assert(str_start_with("Invalid argument key: -valueA", e.what()));
         }
+    }
 
-        // If no exception is thrown, the test has failed
-        assert(false);
+    static void test_shared_lib() {
+        // Redirect standard output to a stringstream
+        stringstream buffer;
+        streambuf* original_cout = cout.rdbuf(buffer.rdbuf());
+
+        SharedFactory sharedFactory("build/src/shared");
+
+        Printer* printer1 = (Printer*)sharedFactory.create("Test1Printer");
+        printer1->println("Printer1 is printing");
+        assert(buffer.str() == "Test1Printer prints: Printer1 is printing\n");
+
+        buffer.str("");  // Clear the buffer for reuse
+        
+        Printer* printer2 = (Printer*)sharedFactory.create("Test2Printer");
+        printer2->println("Printer2 is printing");
+        assert(buffer.str() == "Test2Printer prints: Printer2 is printing\n");
+
+        // Restore the original cout
+        cout.rdbuf(original_cout);
     }
 };

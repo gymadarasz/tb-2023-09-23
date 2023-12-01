@@ -35,7 +35,7 @@ namespace madlib::trading::bitstamp {
             }
             if (readOutFileIfExists) return bitstamp_read_candle_history_dat(datFile);
         }
-        logger.date().writeln(
+        LOG(
             string("Parsing Bitstamp candle history data:\b")
                 + "csv input file   : " + csvFile + "\n"
                 + "output data file : " + datFile
@@ -57,7 +57,7 @@ namespace madlib::trading::bitstamp {
         for (size_t i = csvDataSize - 1; i >= headerLines; i--) {
             string line = trim(csvData.at(i));
             if (line.empty()) continue;
-            if (i % 1000 == 0) logger.date().writeln("Parse CSV: [" + line + "]");
+            if (i % 1000 == 0) LOG("Parse CSV: [" + line + "]");
             vector<string> fields = split(",", line);
             if (!is_numeric(trim(fields.at(BitstampCandlesCsvField::UNIX)))) break;            
             double open = parse<double>(trim(fields.at(BitstampCandlesCsvField::OPEN)));
@@ -70,7 +70,7 @@ namespace madlib::trading::bitstamp {
             Candle candle(open, close, low, high, volume, start, end);
             candles.push_back(candle);
         }
-        logger.date().writeln("Writing: [" + datFile + "]");
+        LOG("Writing: [" + datFile + "]");
         const string path = path_extract(datFile);
         if (!file_exists(path)) {
             file_create_path(path);
@@ -101,7 +101,7 @@ namespace madlib::trading::bitstamp {
             const string filenameYear = str_replace(filename, "{year}", to_string(year));
             const string filepath = path + filenameYear;
             if (!overwrite && file_exists(filepath)) {
-                logger.writeln("File already exists: ", filepath, " (skiping...)");
+                LOG("File already exists: ", filepath, " (skiping...)");
                 continue;
             }
             const string url = "https://www.cryptodatadownload.com/cdd/" + filenameYear;
@@ -112,9 +112,9 @@ namespace madlib::trading::bitstamp {
                     {"{url}", url},
                 }
             );
-            logger.writeln("Execute: ", command);
+            LOG("Execute: ", command);
             const string output = exec(command);
-            logger.writeln(output);
+            LOG(output);
         }
     }
 

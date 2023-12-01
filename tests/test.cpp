@@ -36,9 +36,9 @@ int main() {
 
     cout << "Testing in progress: ";
 
+    Tester::run(MadlibTest::test_shared_lib);
     Tester::run(MadlibTest::test_str_start_with_positive);
     Tester::run(MadlibTest::test_str_start_with_negative);
-
     Tester::run(MadlibTest::test_args_parse_without_shortcuts);
     Tester::run(MadlibTest::test_args_parse_with_shortcuts);
     Tester::run(MadlibTest::test_args_parse_empty_key);

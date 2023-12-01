@@ -606,8 +606,7 @@ namespace madlib::graph {
                     contextAsLabelStyle->getBackgroundColor(),
                     contextAsLabelStyle->getBorderColor()
                 );
-                logger.writeln("[" + to_string((long long)context) + "][" + to_string(contextAsLabelStyle->getBorderColor()) + "]");
-
+                
                 switch (shape)
                 {
                     case DOT:

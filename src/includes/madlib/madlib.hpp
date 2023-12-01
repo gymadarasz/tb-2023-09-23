@@ -16,7 +16,9 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
+#include "interfaces/Printer.h"
 
 using namespace std;
 using namespace chrono;
@@ -90,6 +92,22 @@ namespace madlib {
 
         // Extract the trimmed substring
         return str.substr(start, end - start);
+    }
+
+    inline int reg_match(const string& pattern, const string& str, vector<string>* matches = nullptr) {
+        regex r(pattern);
+        smatch m;
+        if (regex_search(str, m, r)) {
+            if (matches != nullptr) {
+                // Clear the vector before adding new matches
+                matches->clear();
+                for (unsigned int i = 0; i < m.size(); i++) {
+                    matches->push_back(m[i].str());
+                }
+            }
+            return 1;
+        }
+        return 0;
     }
         
     string normalize_datetime(const string& datetime) {
@@ -381,9 +399,7 @@ namespace madlib {
 
     string path_extract(const string& filepath) {
         size_t lastSlashPos = filepath.find_last_of('/');
-        if (lastSlashPos != string::npos) {
-            return filepath.substr(0, lastSlashPos);
-        }
+        if (lastSlashPos != string::npos) return filepath.substr(0, lastSlashPos);
         // If there's no directory separator, return an empty string or the whole path, depending on your preference.
         return "";  // Alternatively, you can return filepath;
     }
@@ -576,21 +592,62 @@ namespace madlib {
         return zenity("--file-selection --title '" + title + "'", err);
     }
 
-    class Log {
+    typedef map<const string, string> args_t;
+    typedef map<const char, string> args_shortcuts_t;
+
+    args_t args_parse(int argc, const char* argv[], const args_shortcuts_t* shorts = NULL) {
+        args_t args;
+        for (int i = 1; i < argc; i++) {
+            if (argv[i][0] == '-') {
+                string key = string(argv[i]).substr(argv[i][1] == '-' ? 2 : 1);
+                if (key.empty()) throw ERROR("Empty argument key");
+                if (argv[i][1] != '-') {
+                    if (key.length() != 1) 
+                        throw ERROR("Invalid argument key: " + string(argv[i]));
+                    if (key.length() == 1 && shorts && shorts->count(key[0])) key = shorts->at(key[0]);
+                }
+                string value = i < argc - 1 && argv[i + 1][0] != '-' ? argv[i + 1] : "";
+                args[key] = value;
+            }
+        }
+        return args;
+    }
+
+    bool args_has(const args_t& args, const string& key) {
+        return args.count(key);
+    }
+
+    const string args_get(const args_t& args, const string& key, const string* defval = NULL) {
+        if (args.count(key)) return args.at(key);
+        if (defval) return *defval;
+        throw ERROR("Missing argument: " + key);
+    }
+
+    const string args_get(const args_t& args, const string& key, const string& defval) {
+        const string defstr = string(defval);
+        return args_get(args, key, &defstr);
+    }
+
+    const string args_get(const args_t& args, const string& key, const char* defval) {
+        const string defstr = string(defval);
+        return args_get(args, key, &defstr);
+    }
+
+    class Log: public Printer {
     protected:
         string filename;
 
     public:
-        Log(const string& f = "app.log") : filename(f) {}
+        Log(const string& f = "app.log"): Printer(), filename(f) {}
 
-        const Log& date() const {
+        Log& date() {
             write("[" + ms_to_datetime() + "] ");
             return *this;
         }
 
         // Variadic template for writeln method
         template <typename... Args>
-        const Log& writeln(Args... args) const {
+        Log& writeln(Args... args) {
             // Concatenate all arguments into a single string
             string message = concat(args...);
             write(message + "\n");
@@ -599,92 +656,21 @@ namespace madlib {
 
         // Variadic template for writeln method
         template <typename... Args>
-        const Log& write(Args... args) const {
+        Log& write(Args... args) {
             // Concatenate all arguments into a single string
             string message = concat(args...);
-            file_put_contents(filename, message, true);
+            print(message);
+            
             return *this;
         }
+
+        void print(const string& message) override final {
+            file_put_contents(filename, message, true);
+        }
+
     } logger;
 
     #define LOG(...) logger.date().writeln(__VA_ARGS__)
-
-    // class CommandLineApplication {
-    // public:
-    //     typedef vector<string> CommandArguments;
-    //     typedef int (*CommandFunction)(CommandLineApplication*, CommandArguments);
-        
-    //     class Command {
-    //     protected:
-    //         CommandFunction function;
-    //         string description = "";
-    //     public:
-    //         Command(
-    //             CommandFunction function, string description = ""
-    //         ):
-    //             function(function), description(description) 
-    //         {}
-
-    //         CommandFunction getFunction() const {
-    //             return function;
-    //         }
-
-    //         const string& getDescription() const {
-    //             return description;
-    //         }
-    //     };
-
-    //     typedef map<string, Command> CommandMap;
-
-    //     const Command DefaultHelpCommand = Command(
-    //         help, "Default command that shows this screen");
-
-    // protected:
-    //     string execName;
-    //     CommandMap cmds;
-    //     CommandArguments args = {};
-    //     int result = 1;
-    // public:
-    //     CommandLineApplication(
-    //         int argc, char* argv[], CommandMap cmds
-    //     ): 
-    //         cmds(cmds) 
-    //     {
-    //         if (!map_key_exists(this->cmds, "help"))
-    //             this->cmds.insert(make_pair("help", DefaultHelpCommand));
-    //         execName = argv[0];
-    //         for (int i = 1; i < argc; i++) args.push_back(argv[i]);
-    //         Command cmd = vector_has(args, 0) && map_has(this->cmds, args.at(0))
-    //             ? this->cmds.at(args.at(0)) : DefaultHelpCommand;
-    //         try {
-    //             CommandFunction cmdf = cmd.getFunction();
-    //             result = cmdf(this, args);
-    //         } catch (exception& e) {
-    //             logger.date().writeln("Command error: " + string(e.what()));
-    //             exit(1);
-    //         }
-    //     }
-
-    //     static int help(CommandLineApplication* that, CommandArguments) {
-    //         string help = str_replace(
-    //             "Usages:\n"
-    //             "\t  $ {execName} command [...arguments]\n"
-    //             "Commands:\n",
-    //             "{execName}", that->execName
-    //         );
-    //         for (const auto& cmd: that->cmds) {
-    //             help += 
-    //                 "\n - " + cmd.first + 
-    //                 "\n\t" + str_replace(cmd.second.getDescription(), "\n", "\n\t") + "\n";
-    //         }
-    //         cout << help;
-    //         return 0;
-    //     }
-
-    //     int getResult() const {
-    //         return result;
-    //     }
-    // };
 
     template <typename T>
     class Factory {
@@ -730,59 +716,50 @@ namespace madlib {
 
     };
 
-    inline int reg_match(const string& pattern, const string& str, vector<string>* matches = nullptr) {
-        regex r(pattern);
-        smatch m;
-        if (regex_search(str, m, r)) {
-            if (matches != nullptr) {
-                // Clear the vector before adding new matches
-                matches->clear();
-                for (unsigned int i = 0; i < m.size(); i++) {
-                    matches->push_back(m[i].str());
-                }
-            }
-            return 1;
+    class SharedFactory {
+    protected:
+        typedef void* (*SharedCreator)(void*);
+        typedef void (*SharedDestroyer)(void*);
+
+        typedef struct {
+            void* library = NULL;
+            void* handle = NULL;
+            SharedDestroyer destroyer;
+        } SharedInstance;
+
+        vector<SharedInstance> instances;
+
+        const string path;
+    public:
+
+        SharedFactory(const string path): path(path) {} 
+
+        void* create(const string& libname, void* context = NULL) {
+            const string soPath = path_normalize(path + "/" + libname + ".so");
+            const string create = "create" + libname;
+            const string destroy = "destroy" + libname;
+
+            void* handle = dlopen((soPath).c_str(), RTLD_LAZY);
+            if (!handle) throw ERROR("Unable to open: " + soPath);
+
+            SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
+            if (!creator) throw ERROR("Unable to create: " + libname);
+
+            SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
+            
+            void* library = creator(context);
+            if (!library) throw ERROR("Unable to instanciate: " + libname);
+
+            instances.push_back({ library, handle, destroyer });
+
+            return instances.at(instances.size() - 1).library;
         }
-        return 0;
-    }
 
-    typedef map<const string, string> args_t;
-    typedef map<const char, string> args_shortcuts_t;
-
-    args_t args_parse(int argc, const char* argv[], const args_shortcuts_t* shorts = NULL) {
-        args_t args;
-        for (int i = 1; i < argc; i++) {
-            if (argv[i][0] == '-') {
-                string key = string(argv[i]).substr(argv[i][1] == '-' ? 2 : 1);
-                if (key.empty()) throw ERROR("Empty argument key");
-                if (argv[i][1] != '-') {
-                    if (key.length() != 1) throw ERROR("Invalid argument key: " + string(argv[i]));
-                    if (key.length() == 1 && shorts && shorts->count(key[0])) key = shorts->at(key[0]);
-                }
-                string value = i < argc - 1 && argv[i + 1][0] != '-' ? argv[i + 1] : "";
-                args[key] = value;
+        ~SharedFactory() {
+            for (const SharedInstance& instance: instances) {
+                if (instance.destroyer) instance.destroyer(instance.library);
+                if (instance.handle) dlclose(instance.handle);
             }
         }
-        return args;
-    }
-
-    bool args_has(const args_t& args, const string& key) {
-        return args.count(key);
-    }
-
-    const string args_get(const args_t& args, const string& key, const string* defval = NULL) {
-        if (args.count(key)) return args.at(key);
-        if (defval) return *defval;
-        throw ERROR("Missing argument: " + key);
-    }
-
-    const string args_get(const args_t& args, const string& key, const string& defval) {
-        const string defstr = string(defval);
-        return args_get(args, key, &defstr);
-    }
-
-    const string args_get(const args_t& args, const string& key, const char* defval) {
-        const string defstr = string(defval);
-        return args_get(args, key, &defstr);
-    }
+    };
 }

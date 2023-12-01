@@ -741,7 +741,7 @@ namespace madlib::trading {
                 addBuyText(symbol, currentTime, currentPrice);
                 return true;
             }
-            logger.date().writeln(
+            LOG(
                 " Exchange time: " + ms_to_datetime(currentTime) 
                 + ", Strategy BUY Error, [" + symbol + "] " + to_string(amount)
             );
@@ -756,7 +756,7 @@ namespace madlib::trading {
                 addSellText(symbol, currentTime, currentPrice);
                 return true;
             }
-            logger.date().writeln(
+            LOG(
                 " Exchange time: " + ms_to_datetime(currentTime) 
                 + ", Strategy SELL Error, [" + symbol + "] " + to_string(amount)
             );

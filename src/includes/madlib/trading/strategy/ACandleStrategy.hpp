@@ -16,7 +16,7 @@ namespace madlib::trading::strategy {
 
         void onCandleClose(const Candle& candle) override {
             const string symbol = parameters.at("symbol").getString();
-            // logger.date().writeln(
+            // LOG(
             //     ms_to_datetime(candle.getEnd()), 
             //     " ", candle.getClose(), 
             //     " QF:", exchange.getBalanceQuotedFull(symbol), 
