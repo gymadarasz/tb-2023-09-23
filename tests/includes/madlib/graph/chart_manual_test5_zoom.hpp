@@ -65,7 +65,8 @@ int chart_manual_test5_zoom()
         timeLambda, seed
     );
 
-    TradeHistoryChart chart(gfx, zoom, 10, 10, 1580, 580, history);
+    TradeTexts tradeTexts;
+    TradeHistoryChart chart(gfx, zoom, 10, 10, 1580, 580, history, tradeTexts);
     gui.child(chart);
     chart.setZoom(zoom);
     chart_manual_test5_chartPtr = &chart;

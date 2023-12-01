@@ -12,17 +12,6 @@ using namespace madlib::trading;
 class ChartManualTest6: public ManualTestApplication {
 protected:
 
-    // static void draw(void* context) {
-    //     ChartManualTest6* that =
-    //         (ChartManualTest6*)((Area*)context)
-    //             ->getRoot()->getGFX().getContext();
-
-    //     that->chart.draw();
-    //     that->closeBtn.draw();
-    // }
-
-    // Chart chart = Chart(gfx, zoom, 10, 60, 1580, 780, PUSHED, black);
-
     // Define parameters and desired time range
     const string symbol = "MONTECARLO";
     const double volumeMean = 100;  // Initial volume
@@ -44,8 +33,9 @@ protected:
         timeLambda, seed
     );
 
+    TradeTexts tradeTexts;
     TradeHistoryChart chart = TradeHistoryChart(
-        gfx, zoom, 10, 60, 1580, 780, history
+        gfx, zoom, 10, 60, 1580, 780, history, tradeTexts
     );
 public:
 

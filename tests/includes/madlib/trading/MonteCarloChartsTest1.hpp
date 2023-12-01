@@ -55,8 +55,9 @@ protected:
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
     };
+    TradeTexts tradeTexts;
     ACandleStrategy aCandleStrategy = ACandleStrategy(
-        testExchange, strategyParameters
+        testExchange, strategyParameters, tradeTexts
     );
     
     const bool showCandles = true;
@@ -72,7 +73,7 @@ protected:
     const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
     const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
     TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-        gfx, zoom, 10, 10, 300, 150, history, aCandleStrategy, 
+        gfx, zoom, 10, 10, 300, 150, history, aCandleStrategy.getTradeTexts(), 
         showCandles, showPrices, showVolumes, showTexts, 
         priceColor, volumeColor, border, backgroundColor, 
         candleStyle, buyTextStyle, sellTextStyle, errorTextStyle

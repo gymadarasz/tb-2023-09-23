@@ -61,7 +61,8 @@ int chart_manual_test4_history()
     );
 
     // Zoom zoom;
-    TradeHistoryChart chart(gfx, zoom, 10, 10, 780, 580, history);
+    TradeTexts tradeTexts;
+    TradeHistoryChart chart(gfx, zoom, 10, 10, 780, 580, history, tradeTexts);
     gui.child(chart);
     chart_manual_test4_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test4_draw);
