@@ -100,11 +100,6 @@ namespace madlib::graph {
         class Scale: public Zoomable {
         public:
 
-            const static CandleStyle defaultCandleStyle;
-            const static LabelStyle defaultLabelStyle;
-
-        protected:
-
             static const void* getDefaultScaleContext(Shape shape) {
                 switch (shape)
                 {
@@ -118,6 +113,11 @@ namespace madlib::graph {
                 }
                 return NULL;
             }
+
+            const static CandleStyle defaultCandleStyle;
+            const static LabelStyle defaultLabelStyle;
+
+        protected:
 
             double xmin, ymin, xmax, ymax;
             int width, height;
@@ -232,9 +232,11 @@ namespace madlib::graph {
 
             void project(const vector<RealPoint>& realPoints, const vector<string>& texts, bool adapt = true) {
                 project(realPoints, adapt);
+
                 // Make sure 'texts' vector has enough capacity before the assignment
                 if ((signed)texts.size() < 0) throw ERROR("Invalid or too large text vector");
                 this->texts.resize(texts.size());
+
                 this->texts = texts;
             }
 
@@ -372,7 +374,7 @@ namespace madlib::graph {
         }
 
         Scale* createScale(Zoom& zoom, Shape shape = LINE, const void* context = NULL) {
-            Scale* scale = vector_create(scales, zoom, width, height, shape, context);
+            Scale* scale = vector_create(scales, zoom, width, height, shape, context ? context : Scale::getDefaultScaleContext(shape));
             return scale;
         }
 
@@ -577,7 +579,7 @@ namespace madlib::graph {
             draw();
         }
 
-        virtual void draw() override {
+        virtual void draw() override final {
             if (!calcScrollOnly) Frame::draw();
             drawScales();
         }
@@ -604,6 +606,7 @@ namespace madlib::graph {
                     contextAsLabelStyle->getBackgroundColor(),
                     contextAsLabelStyle->getBorderColor()
                 );
+                logger.writeln("[" + to_string((long long)context) + "][" + to_string(contextAsLabelStyle->getBorderColor()) + "]");
 
                 switch (shape)
                 {
@@ -634,7 +637,7 @@ namespace madlib::graph {
                     default:
                         throw ERROR("invalid shape type: " + to_string((int)shape));
                         break;
-                    }
+                }
                 at++;
             }
         }

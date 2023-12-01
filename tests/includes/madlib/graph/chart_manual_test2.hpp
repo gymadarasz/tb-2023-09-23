@@ -30,7 +30,7 @@ int chart_manual_test2()
     chart.createScale(zoom, LINE, &green);
     chart_manual_test2_chartPtr = &chart;
     gui.addDrawHandler(chart_manual_test2_draw);
-    chart.createScale(zoom, LABEL, &black);
+    chart.createScale(zoom, LABEL);
 
 
     Button closeOkBtn(gfx, zoom, 10, 10, 100, 30, "Ok");

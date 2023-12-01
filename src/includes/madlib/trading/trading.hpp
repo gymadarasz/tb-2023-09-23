@@ -175,11 +175,11 @@ namespace madlib::trading {
             period(period)
         {}
 
-        virtual vector<Trade> getTrades() const {
+        virtual vector<Trade> getTrades() const final {
             return trades;
         }
 
-        virtual vector<Candle> getCandles() const {
+        virtual vector<Candle> getCandles() const final {
             return candles;
         }
         
@@ -833,7 +833,7 @@ namespace madlib::trading {
 
         virtual ~TradeHistoryChart() {}
 
-        void project() override {
+        void project() override final {
             destroyScales();
             Scale* candlesScale = NULL;
             if (showCandles) {

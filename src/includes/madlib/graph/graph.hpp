@@ -1117,7 +1117,7 @@ namespace madlib::graph {
             return viewport;
         }
 
-        void brush(Color color) const override {
+        void brush(Color color) const override final {
             gfx.setColor(color);
         }
 
@@ -1128,28 +1128,28 @@ namespace madlib::graph {
             gfx.drawPoint(x, y);
         }
 
-        void rect(int x1, int y1, int x2, int y2) override {
+        void rect(int x1, int y1, int x2, int y2) override final {
             setScrollXY12MinMax(x1, y1, x2, y2);
             if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawRectangle(x1, y1, x2, y2);
         }
 
-        void fRect(int x1, int y1, int x2, int y2) override {
+        void fRect(int x1, int y1, int x2, int y2) override final {
             setScrollXY12MinMax(x1, y1, x2, y2);
             if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.fillRectangle(x1, y1, x2, y2);
         }
 
-        void line(int x1, int y1, int x2, int y2) override {
+        void line(int x1, int y1, int x2, int y2) override final {
             setScrollXY12MinMax(x1, y1, x2, y2);
             if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawLine(x1, y1, x2, y2);
         }
 
-        void hLine(int x1, int y1, int x2) override {
+        void hLine(int x1, int y1, int x2) override final {
             int y2 = y1;
             setScrollXY12MinMax(x1, y1, x2, y2);
             if (calcScrollOnly) return;
@@ -1157,7 +1157,7 @@ namespace madlib::graph {
             gfx.drawHorizontalLine(x1, y1, x2);
         }
 
-        void vLine(int x1, int y1, int y2) override {
+        void vLine(int x1, int y1, int y2) override final {
             int x2 = x1;
             setScrollXY12MinMax(x1, y1, x2, y2);
             if (calcScrollOnly) return;
@@ -1957,7 +1957,7 @@ namespace madlib::graph {
 
         class Container;
 
-        class Toggler: public Button {
+        class Toggler final: public Button {
         protected:
             
             static void toggleHandler(void* context, unsigned int, int, int) {
