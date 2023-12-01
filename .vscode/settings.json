@@ -62,7 +62,11 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "cassert": "cpp",
-        "climits": "cpp"
+        "climits": "cpp",
+        "set": "cpp",
+        "unordered_set": "cpp",
+        "optional": "cpp",
+        "cinttypes": "cpp"
     },
     "cmake.configureOnOpen": false
 }

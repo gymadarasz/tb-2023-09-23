@@ -230,8 +230,11 @@ namespace madlib::graph {
                 return projectedPoints;
             }
 
-            void project(const vector<RealPoint>& realPoints, const vector<string> &texts, bool adapt = true) {
+            void project(const vector<RealPoint>& realPoints, const vector<string>& texts, bool adapt = true) {
                 project(realPoints, adapt);
+                // Make sure 'texts' vector has enough capacity before the assignment
+                if ((signed)texts.size() < 0) throw ERROR("Invalid or too large text vector");
+                this->texts.resize(texts.size());
                 this->texts = texts;
             }
 

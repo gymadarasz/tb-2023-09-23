@@ -418,8 +418,9 @@ namespace madlib::trading {
 
         Exchange() {}
 
-        map<string, Pair>& getPairs() {
-            return pairs;
+        Pair& getPairAt(const string& symbol) {
+            if (pairs.count(symbol) == 1) return pairs.at(symbol);
+            throw ERROR("No symbol: " + symbol);
         }
 
         const map<string, Balance>& getBalances() const {
@@ -427,7 +428,7 @@ namespace madlib::trading {
         }
 
         double getBalanceBase(const string& symbol) {
-            return getBalances().at(getPairs().at(symbol).getBaseCurrency()).getAmount();
+            return getBalances().at(getPairAt(symbol).getBaseCurrency()).getAmount();
         }
 
         double getBalanceBase(const Pair& pair) {
@@ -435,7 +436,7 @@ namespace madlib::trading {
         }
 
         double getBalanceQuoted(const string& symbol) {
-            return getBalances().at(getPairs().at(symbol).getQuotedCurrency()).getAmount();
+            return getBalances().at(getPairAt(symbol).getQuotedCurrency()).getAmount();
         }
 
         double getBalanceQuoted(const Pair& pair) {
@@ -443,7 +444,7 @@ namespace madlib::trading {
         }
 
         double getBalanceQuotedFull(const string& symbol) {
-            const Pair& pair = getPairs().at(symbol);
+            const Pair& pair = getPairAt(symbol);
             return getBalanceQuoted(symbol) + getBalanceBase(symbol) * pair.getPrice();
         }
 
@@ -452,7 +453,7 @@ namespace madlib::trading {
         }
 
         double getBalanceBaseFull(const string& symbol) {
-            const Pair& pair = getPairs().at(symbol);
+            const Pair& pair = getPairAt(symbol);
             return getBalanceQuoted(symbol) / pair.getPrice() + getBalanceBase(symbol);
         }
 
@@ -554,21 +555,21 @@ namespace madlib::trading {
     class TradeTexts {
     protected:
 
-        vector<RealPoint> buyTextRealChoords = {};
-        vector<string> buyTexts = {};
-        vector<RealPoint> sellTextRealChoords = {};
-        vector<string> sellTexts = {};
-        vector<RealPoint> errorTextRealChoords = {};
-        vector<string> errorTexts = {};
+        vector<RealPoint> buyTextRealChoords;
+        vector<string> buyTexts;
+        vector<RealPoint> sellTextRealChoords;
+        vector<string> sellTexts;
+        vector<RealPoint> errorTextRealChoords;
+        vector<string> errorTexts;
 
     public:
         TradeTexts(
-            const vector<RealPoint> buyTextRealChoords = {},
-            const vector<string> buyTexts = {},
-            const vector<RealPoint> sellTextRealChoords = {},
-            const vector<string> sellTexts = {},
-            const vector<RealPoint> errorTextRealChoords = {},
-            const vector<string> errorTexts = {}
+            const vector<RealPoint> buyTextRealChoords,
+            const vector<string> buyTexts,
+            const vector<RealPoint> sellTextRealChoords,
+            const vector<string> sellTexts,
+            const vector<RealPoint> errorTextRealChoords,
+            const vector<string> errorTexts
 
         ):
             buyTextRealChoords(buyTextRealChoords),
@@ -578,33 +579,41 @@ namespace madlib::trading {
             errorTextRealChoords(errorTextRealChoords),
             errorTexts(errorTexts) 
         {}
+        TradeTexts():
+            buyTextRealChoords({}),
+            buyTexts({}),
+            sellTextRealChoords({}),
+            sellTexts({}),
+            errorTextRealChoords({}),
+            errorTexts({}) 
+        {}
 
-        const vector<RealPoint>& getBuyTextRealChoords() const {
+        vector<RealPoint>& getBuyTextRealChoords() {
             return buyTextRealChoords;
         }
 
-        const vector<string>& getBuyTexts() const {
+        vector<string>& getBuyTexts() {
             return buyTexts;
         }
 
-        const vector<RealPoint>& getSellTextRealChoords() const {
+        vector<RealPoint>& getSellTextRealChoords() {
             return sellTextRealChoords;
         }
 
-        const vector<string>& getSellTexts() const {
+        vector<string>& getSellTexts() {
             return sellTexts;
         }
 
-        const vector<RealPoint>& getErrorTextRealChoords() const {
+        vector<RealPoint>& getErrorTextRealChoords() {
             return errorTextRealChoords;
         }
 
-        const vector<string>& getErrorTexts() const {
+        vector<string>& getErrorTexts() {
             return errorTexts;
         }
     };
 
-    class Strategy: public TradeTexts {
+    class Strategy {
     public:
 
         template<typename T>
@@ -691,38 +700,43 @@ namespace madlib::trading {
 
         Exchange& exchange;
         map<string, Parameter> parameters;
+        TradeTexts& tradeTexts;
     public:
         Strategy(
             Exchange& exchange,
             map<string, Parameter> parameters,
-            const TradeTexts& texts = TradeTexts()
+            TradeTexts& tradeTexts
         ):
-            TradeTexts(texts),
             exchange(exchange),
-            parameters(parameters)
+            parameters(parameters),
+            tradeTexts(tradeTexts)
         {}
+
+        TradeTexts& getTradeTexts() {
+            return tradeTexts;
+        }
 
         void addBuyText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY") {
             if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairs().at(symbol).getPrice();
-            addText(buyTextRealChoords, buyTexts, currentTime, currentPrice, text);
+            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            addText(tradeTexts.getBuyTextRealChoords(), tradeTexts.getBuyTexts(), currentTime, currentPrice, text);
         }
 
         void addSellText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL") {
             if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairs().at(symbol).getPrice();
-            addText(sellTextRealChoords, sellTexts, currentTime, currentPrice, text);
+            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            addText(tradeTexts.getSellTextRealChoords(), tradeTexts.getSellTexts(), currentTime, currentPrice, text);
         }
 
         void addErrorText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR") {
             if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairs().at(symbol).getPrice();
-            addText(errorTextRealChoords, errorTexts, currentTime, currentPrice, text);
+            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            addText(tradeTexts.getErrorTextRealChoords(), tradeTexts.getErrorTexts(), currentTime, currentPrice, text);
         }
 
         bool marketBuy(const string& symbol, double amount) {
             ms_t currentTime = exchange.getCurrentTime();
-            double currentPrice = exchange.getPairs().at(symbol).getPrice();
+            double currentPrice = exchange.getPairAt(symbol).getPrice();
             if (exchange.marketBuy(symbol, amount, false)) {
                 addBuyText(symbol, currentTime, currentPrice);
                 return true;
@@ -737,7 +751,7 @@ namespace madlib::trading {
 
         bool marketSell(const string& symbol, double amount) {
             ms_t currentTime = exchange.getCurrentTime();
-            double currentPrice = exchange.getPairs().at(symbol).getPrice();
+            double currentPrice = exchange.getPairAt(symbol).getPrice();
             if (exchange.marketSell(symbol, amount, false)) {
                 addSellText(symbol, currentTime, currentPrice);
                 return true;
@@ -765,7 +779,7 @@ namespace madlib::trading {
     protected:
 
         const TradeHistory& history;
-        const TradeTexts& tradeTexts;
+        TradeTexts& tradeTexts;
         // const Zoom& zoom;
         const bool 
             showCandles, 
@@ -784,7 +798,7 @@ namespace madlib::trading {
         TradeHistoryChart(
             GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
             const TradeHistory& history,
-            const TradeTexts& tradeTexts = TradeTexts(),
+            TradeTexts& tradeTexts,
             const bool showCandles = true, // TODO
             const bool showPrices = true, // TODO
             const bool showVolumes = true, // TODO
@@ -888,7 +902,7 @@ namespace madlib::trading {
         TradeHistoryChart& tradeHistoryChart;
         TestExchange& testExchange;
         CandleStrategy& candleStrategy;
-        const string& symbol = "MONTECARLO"; // TODO
+        const string& symbol;
         const int multiChartAccordionFramesHeight = 340; // TODO
         const bool showBalanceQuotedScale = true; // TODO
     public:
@@ -900,7 +914,7 @@ namespace madlib::trading {
             TradeHistoryChart& tradeHistoryChart,
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
-            const string& symbol = "MONTECARLO", // TODO
+            const string& symbol,
             const int multiChartAccordionFramesHeight = 340, // TODO
             const bool showBalanceQuotedScale = true // TODO
         ):
@@ -935,7 +949,7 @@ namespace madlib::trading {
             vector<RealPoint> balanceQuotedFullAtCloses;
             vector<RealPoint> balanceBaseAtCloses;
             vector<RealPoint> balanceBaseFullAtCloses;
-            Pair& pair = testExchange.getPairs().at(symbol);
+            Pair& pair = testExchange.getPairAt(symbol);
             for (const Candle& candle: candles) {
                 testExchange.setCurrentTime(candle.getEnd());
                 pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency

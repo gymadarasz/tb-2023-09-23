@@ -34,7 +34,7 @@ namespace madlib::trading::strategy {
                     balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
                     orderAmount = buyAmount > balanceBase09 ? balanceBase09 : buyAmount;
                     balanceQuoted09 = exchange.getBalanceQuoted(symbol) * 0.9;
-                    orderAmountPrice = orderAmount * exchange.getPairs().at(symbol).getPrice();
+                    orderAmountPrice = orderAmount * exchange.getPairAt(symbol).getPrice();
                     if (orderAmountPrice < balanceQuoted09) {
                         marketBuy(symbol, orderAmount);
                     }

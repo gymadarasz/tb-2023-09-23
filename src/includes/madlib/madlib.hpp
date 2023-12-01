@@ -70,6 +70,10 @@ namespace madlib {
         return result;
     }
 
+    bool str_start_with(const std::string& needle, const std::string& haystack) {
+        return (haystack.length() >= needle.length()) && (haystack.compare(0, needle.length(), needle) == 0);
+    }
+
 
     string trim(const string& str) {
         // Find the first non-whitespace character from the beginning
@@ -605,82 +609,82 @@ namespace madlib {
 
     #define LOG(...) logger.date().writeln(__VA_ARGS__)
 
-    class CommandLineApplication {
-    public:
-        typedef vector<string> CommandArguments;
-        typedef int (*CommandFunction)(CommandLineApplication*, CommandArguments);
+    // class CommandLineApplication {
+    // public:
+    //     typedef vector<string> CommandArguments;
+    //     typedef int (*CommandFunction)(CommandLineApplication*, CommandArguments);
         
-        class Command {
-        protected:
-            CommandFunction function;
-            string description = "";
-        public:
-            Command(
-                CommandFunction function, string description = ""
-            ):
-                function(function), description(description) 
-            {}
+    //     class Command {
+    //     protected:
+    //         CommandFunction function;
+    //         string description = "";
+    //     public:
+    //         Command(
+    //             CommandFunction function, string description = ""
+    //         ):
+    //             function(function), description(description) 
+    //         {}
 
-            CommandFunction getFunction() const {
-                return function;
-            }
+    //         CommandFunction getFunction() const {
+    //             return function;
+    //         }
 
-            const string& getDescription() const {
-                return description;
-            }
-        };
+    //         const string& getDescription() const {
+    //             return description;
+    //         }
+    //     };
 
-        typedef map<string, Command> CommandMap;
+    //     typedef map<string, Command> CommandMap;
 
-        const Command DefaultHelpCommand = Command(
-            help, "Default command that shows this screen");
+    //     const Command DefaultHelpCommand = Command(
+    //         help, "Default command that shows this screen");
 
-    protected:
-        string execName;
-        CommandMap cmds;
-        CommandArguments args = {};
-        int result = 1;
-    public:
-        CommandLineApplication(
-            int argc, char* argv[], CommandMap cmds
-        ): 
-            cmds(cmds) 
-        {
-            if (!map_key_exists(this->cmds, "help"))
-                this->cmds.insert(make_pair("help", DefaultHelpCommand));
-            execName = argv[0];
-            for (int i = 1; i < argc; i++) args.push_back(argv[i]);
-            Command cmd = vector_has(args, 0) && map_has(this->cmds, args.at(0))
-                ? this->cmds.at(args.at(0)) : DefaultHelpCommand;
-            try {
-                CommandFunction cmdf = cmd.getFunction();
-                result = cmdf(this, args);
-            } catch (exception& e) {
-                logger.date().writeln("Command error: " + string(e.what()));
-                exit(1);
-            }
-        }
+    // protected:
+    //     string execName;
+    //     CommandMap cmds;
+    //     CommandArguments args = {};
+    //     int result = 1;
+    // public:
+    //     CommandLineApplication(
+    //         int argc, char* argv[], CommandMap cmds
+    //     ): 
+    //         cmds(cmds) 
+    //     {
+    //         if (!map_key_exists(this->cmds, "help"))
+    //             this->cmds.insert(make_pair("help", DefaultHelpCommand));
+    //         execName = argv[0];
+    //         for (int i = 1; i < argc; i++) args.push_back(argv[i]);
+    //         Command cmd = vector_has(args, 0) && map_has(this->cmds, args.at(0))
+    //             ? this->cmds.at(args.at(0)) : DefaultHelpCommand;
+    //         try {
+    //             CommandFunction cmdf = cmd.getFunction();
+    //             result = cmdf(this, args);
+    //         } catch (exception& e) {
+    //             logger.date().writeln("Command error: " + string(e.what()));
+    //             exit(1);
+    //         }
+    //     }
 
-        static int help(CommandLineApplication* that, CommandArguments) {
-            string help = str_replace(
-                "Usages:\n"
-                "\t  $ {execName} command [...arguments]\n"
-                "Commands:\n",
-                "{execName}", that->execName
-            );
-            for (const auto& cmd: that->cmds) {
-                help += 
-                    "\n - " + cmd.first + 
-                    "\n\t" + str_replace(cmd.second.getDescription(), "\n", "\n\t") + "\n";
-            }
-            cout << help;
-            return 0;
-        }
+    //     static int help(CommandLineApplication* that, CommandArguments) {
+    //         string help = str_replace(
+    //             "Usages:\n"
+    //             "\t  $ {execName} command [...arguments]\n"
+    //             "Commands:\n",
+    //             "{execName}", that->execName
+    //         );
+    //         for (const auto& cmd: that->cmds) {
+    //             help += 
+    //                 "\n - " + cmd.first + 
+    //                 "\n\t" + str_replace(cmd.second.getDescription(), "\n", "\n\t") + "\n";
+    //         }
+    //         cout << help;
+    //         return 0;
+    //     }
 
-        int getResult() const {
-            return result;
-        }
-    };
+    //     int getResult() const {
+    //         return result;
+    //     }
+    // };
 
     template <typename T>
     class Factory {
@@ -726,4 +730,59 @@ namespace madlib {
 
     };
 
+    inline int reg_match(const string& pattern, const string& str, vector<string>* matches = nullptr) {
+        regex r(pattern);
+        smatch m;
+        if (regex_search(str, m, r)) {
+            if (matches != nullptr) {
+                // Clear the vector before adding new matches
+                matches->clear();
+                for (unsigned int i = 0; i < m.size(); i++) {
+                    matches->push_back(m[i].str());
+                }
+            }
+            return 1;
+        }
+        return 0;
+    }
+
+    typedef map<const string, string> args_t;
+    typedef map<const char, string> args_shortcuts_t;
+
+    args_t args_parse(int argc, const char* argv[], const args_shortcuts_t* shorts = NULL) {
+        args_t args;
+        for (int i = 1; i < argc; i++) {
+            if (argv[i][0] == '-') {
+                string key = string(argv[i]).substr(argv[i][1] == '-' ? 2 : 1);
+                if (key.empty()) throw ERROR("Empty argument key");
+                if (argv[i][1] != '-') {
+                    if (key.length() != 1) throw ERROR("Invalid argument key: " + string(argv[i]));
+                    if (key.length() == 1 && shorts && shorts->count(key[0])) key = shorts->at(key[0]);
+                }
+                string value = i < argc - 1 && argv[i + 1][0] != '-' ? argv[i + 1] : "";
+                args[key] = value;
+            }
+        }
+        return args;
+    }
+
+    bool args_has(const args_t& args, const string& key) {
+        return args.count(key);
+    }
+
+    const string args_get(const args_t& args, const string& key, const string* defval = NULL) {
+        if (args.count(key)) return args.at(key);
+        if (defval) return *defval;
+        throw ERROR("Missing argument: " + key);
+    }
+
+    const string args_get(const args_t& args, const string& key, const string& defval) {
+        const string defstr = string(defval);
+        return args_get(args, key, &defstr);
+    }
+
+    const string args_get(const args_t& args, const string& key, const char* defval) {
+        const string defstr = string(defval);
+        return args_get(args, key, &defstr);
+    }
 }

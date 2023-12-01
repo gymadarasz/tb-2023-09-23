@@ -36,6 +36,24 @@ int main() {
 
     cout << "Testing in progress: ";
 
+    Tester::run(MadlibTest::test_str_start_with_positive);
+    Tester::run(MadlibTest::test_str_start_with_negative);
+
+    Tester::run(MadlibTest::test_args_parse_without_shortcuts);
+    Tester::run(MadlibTest::test_args_parse_with_shortcuts);
+    Tester::run(MadlibTest::test_args_parse_empty_key);
+    Tester::run(MadlibTest::test_args_parse_duplicate_arguments);
+    Tester::run(MadlibTest::test_args_parse_missing_values);
+    Tester::run(MadlibTest::test_args_parse_unrecognized_arguments);
+    Tester::run(MadlibTest::test_args_parse_mix_short_and_long);
+    Tester::run(MadlibTest::test_args_parse_no_arguments);
+    Tester::run(MadlibTest::test_args_parse_complex_values);
+    Tester::run(MadlibTest::test_args_parse_no_value_for_last_argument);
+    Tester::run(MadlibTest::test_args_parse_long_arguments_with_shortcuts);
+    Tester::run(MadlibTest::test_args_parse_short_arguments_without_values);
+    Tester::run(MadlibTest::test_args_parse_short_arguments_with_values_starting_with_dash);
+    Tester::run(MadlibTest::test_lib_reg_match);
+    Tester::run(MadlibTest::test_lib_reg_match_alphabets);
     Tester::run(MadlibTest::test_str_to_lower);
     Tester::run(MadlibTest::test_parse_bool);
     Tester::run(MadlibTest::test_FactoryWithParams_Int);
@@ -72,9 +90,9 @@ int main() {
 
     cout << "Manual tests: ";
     
-    // delete (new LabelManualTest1)->run();
-    // delete (new ChartManualTest7Zoom)->run();
-    // delete (new MonteCarloChartsTest1)->run();
+    delete (new LabelManualTest1)->run();
+    delete (new ChartManualTest7Zoom)->run();
+    delete (new MonteCarloChartsTest1)->run();
     delete (new MultiChartAccordionManualTest1)->run();
     delete (new AccordionManualTest1)->run();
     delete (new ChartManualTest6)->run();

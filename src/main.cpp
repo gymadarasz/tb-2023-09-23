@@ -22,15 +22,6 @@ protected:
     BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
 
     Zoom zoom;
-    
-    const bool showCandles = true;
-    const bool showPrices = true;
-    const bool showVolumes = true;
-    const Color priceColor = orange;
-    const Color volumeColor = darkGray;
-    TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-        gfx, zoom, 0, 0, 600, 300, history
-    );
 
     const double feeMarketPc = 0.04; //0.4;
     const double feeLimitPc = 0.03;
@@ -46,7 +37,20 @@ protected:
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
     };
-    ACandleStrategy aCandleStrategy = ACandleStrategy(testExchange, strategyParameters);
+    TradeTexts tradeTexts;
+    ACandleStrategy strategy = ACandleStrategy(
+        testExchange, strategyParameters, tradeTexts
+    );
+
+    
+    const bool showCandles = true;
+    const bool showPrices = true;
+    const bool showVolumes = true;
+    const Color priceColor = orange;
+    const Color volumeColor = darkGray;
+    TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
+        gfx, zoom, 0, 0, 600, 300, history, strategy.getTradeTexts()
+    );
 
     const int multiChartAccordionLeft = 10;
     const int multiChartAccordionTop = 50;
@@ -62,7 +66,7 @@ protected:
     CandleStrategyBacktester tester = CandleStrategyBacktester(
         multiChartAccordion, zoom,  
         history, tradeHistoryChart,
-        testExchange, aCandleStrategy
+        testExchange, strategy, symbol
     );
 public:
     void init() override {
@@ -77,54 +81,77 @@ public:
     }
 };
 
+int help(int, const char* argv[]) {
+    cout <<
+        "Usages: $ " << argv[0] << " [COMMAND] [OPTIONS...]\n"
+        "Commands:\n\n"
 
-class TradingApplication: public CommandLineApplication {
-public:
-    TradingApplication(int argc, char* argv[]):
-        CommandLineApplication(argc, argv, {
-            {"test-command", {
-                TradingApplication::testCommand, 
-                "Test command"
-            }},
-            {"download-bitstamp-csv", {
-                TradingApplication::downloadBitstampCsv, 
-                "Download Bitstamp candle history csv\n"
-                "Parameters:\n"
-                "\tdownload-bitstamp-csv {symbol} {from-year(optional, default=[actual year])} {to-year(optional, default=[actual year])} {period(optional, default=minute)} {override(optional, default=false or true if no year given so override the actual year data)}\n"
-                "see more at https://www.cryptodatadownload.com/data/bitstamp/"
-            }},
-            {"bitstamp-history", {
-                TradingApplication::backtestBitstamp,
-                "In progress..."
-            }}
-        })
-    {}
+        "   test-command\n\n"
 
-    static int testCommand(CommandLineApplication*, CommandArguments args) {
-        cout << "Hello Test!" << endl;
-        cout << "Your argument(s): " << vector_concat(args, ", ") << endl;
-        return 0;
+        "   download-bitstamp-csv\n\n"
+
+        "       Download Bitstamp candle history csv\n"
+        "       Parameters:\n"
+        "           download-bitstamp-csv {symbol} {from-year(optional, default=[actual year])} {to-year(optional, default=[actual year])} {period(optional, default=minute)} {override(optional, default=false or true if no year given so override the actual year data)}\n"
+        "       see more at https://www.cryptodatadownload.com/data/bitstamp/\n\n"
+
+        "   bitstamp-history\n\n" // TODO...
+        << endl;
+    return 0;
+}
+
+int test(int argc, const char* argv[]) {
+    const args_t args = args_parse(argc, argv);
+    cout << "Hello Test!" << endl;
+    cout << "Your argument(s): " << endl;
+    for (const auto& arg : args) {
+        cout << "   [" << arg.first << "] => \"" << arg.second << "\"" << endl;
     }
+    return 0;
+}
 
-    static int downloadBitstampCsv(CommandLineApplication*, CommandArguments args) {
-        const string symbol = args.at(1);
-        const int yearFrom = parse<int>(vector_has(args, 2) ? args.at(2) : ms_to_datetime(now(), "%Y", false));
-        const int yearTo = parse<int>(vector_has(args, 3) ? args.at(3) : ms_to_datetime(now(), "%Y", false));
-        const string period = vector_has(args, 4) ? args.at(4) : "minute";
-        const bool overwrite = vector_has(args, 5) ? parse_bool(args.at(3)) : !(vector_has(args, 2) || vector_has(args, 3));
-        bitstamp_download_candle_history_csv_all(symbol, yearFrom, yearTo, period, overwrite);
-        bitstamp_parse_candle_history_csv_all(symbol, yearFrom, yearTo, period);
-        return 0;
-    }
+int download_bitstamp_csv(int argc, const char* argv[]) {
 
-    static int backtestBitstamp(CommandLineApplication*, CommandArguments) {
-        // TODO: pass arguments
-        (new BitstampHistoryApplication)->run();
-        return 0;
-    }
-};
+    const args_shortcuts_t shortcuts = {
+        {'s', "symbol"},
+        {'f', "year-from"},
+        {'t', "year-to"},
+        {'p', "period"},
+        {'o', "overwrite"},
+    };
+    const args_t args = args_parse(argc, argv, &shortcuts);
 
-int main(int argc, char* argv[])
+    const string symbol = args_get(args, "symbol");
+    const string nowstr = ms_to_datetime(now(), "%Y", false);
+    const int yearFrom = parse<int>(args_get(args, "year-from", &nowstr));
+    const int yearTo = parse<int>(args_get(args, "year-to", &nowstr));
+    const string period = args_get(args, "period", "minute");
+    const bool overwrite = args_has(args, "overwrite") 
+        ? args_has(args, "year-to") 
+        : !(args_has(args, "year-from") || args_has(args, "year-to"));
+    // const bool overwrite = vector_has(args, 5) ? parse_bool(args.at(3)) : !(vector_has(args, 2) || vector_has(args, 3));
+    bitstamp_download_candle_history_csv_all(symbol, yearFrom, yearTo, period, overwrite);
+    bitstamp_parse_candle_history_csv_all(symbol, yearFrom, yearTo, period);
+    return 0;
+}
+
+int bitstamp_history(int, const char* []) {
+    // TODO: pass arguments
+    (new BitstampHistoryApplication)->run();
+    return 0;
+}
+
+int main(int argc, const char* argv[])
 {
-    return (TradingApplication(argc, argv)).getResult();
+    // return (TradingApplication(argc, argv)).getResult();
+    try {
+        if (argv[1] && !strcmp(argv[1], "test-command")) return test(argc, argv);
+        if (argv[1] && !strcmp(argv[1], "download-bitstamp-csv")) return download_bitstamp_csv(argc, argv);
+        if (argv[1] && !strcmp(argv[1], "bitstamp-history")) return bitstamp_history(argc, argv);
+    } catch (exception &e) {
+        cout << "Error: " << e.what() << endl;
+        cout << "Use '$ " << argv[0] << " help' for more info..." << endl;
+        return 1;
+    }
+    return help(argc, argv);
 }

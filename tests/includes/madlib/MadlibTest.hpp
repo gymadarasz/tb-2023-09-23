@@ -96,4 +96,198 @@ public:
         // After destroying, attempting to access the instance should fail.
         assert(noParamInstance->value != 999);
     }
+    
+    static void test_str_start_with_positive() {
+        assert(str_start_with("Hello", "Hello, World!"));
+        assert(str_start_with("abc", "abcdef"));
+        assert(str_start_with("", "Anything")); // An empty needle should match any haystack
+        assert(str_start_with("", "")); // Empty needle and haystack should match
+        assert(str_start_with("a", "a")); // Single character needle and haystack match
+    }
+
+    static void test_str_start_with_negative() {
+        assert(!str_start_with("World", "Hello, World!"));
+        assert(!str_start_with("abc", "ABCDEF")); // Case-sensitive check
+        assert(!str_start_with("Something", "")); // Needle is longer than haystack
+        assert(!str_start_with("abc", "ab")); // Needle is longer than haystack
+    }
+
+    static void test_lib_reg_match() {
+        string str = "This is a test string with some numbers 123 and some special characters !@#$%^&*";
+        vector<string> matches;
+        
+        // Test for matching pattern that exists in the string
+        assert(reg_match("[0-9]+", str, &matches) == 1);
+        assert(matches.size() == 1);
+        assert(matches[0] == string("123"));
+        
+        // Test for matching pattern that does not exist in the string
+        assert(reg_match("[a-z]+", str, &matches) == 1);
+        assert(matches.size() == 1);
+        
+        // Test for matching pattern that captures multiple groups
+        assert(reg_match("([a-zA-Z]+)\\s([a-z]+)", str, &matches) == 1);
+        assert(matches.size() == 3);
+        assert(matches[0] == string("This is"));
+        assert(matches[1] == string("This"));
+        assert(matches[2] == string("is"));
+    }
+
+    static void test_lib_reg_match_alphabets() {
+        string str = "Thisisateststringwithsomenumbersandallsorts of special characters!@#$%^&*()_+";
+        vector<string> matches;
+
+        // Test for matching pattern that does not exist in the string
+        assert(reg_match("[0-9]+", str, &matches) == 0);
+        assert(matches.size() == 0);
+
+        // Test for matching pattern that exists in the string
+        assert(reg_match("test", str, &matches) == 1);
+        assert(matches.size() == 1);
+        assert(matches[0] == string("test"));
+
+        // Test for matching pattern that appears multiple times in the string
+        assert(reg_match("[a-z]+", str, &matches) == 1);
+        assert(matches.size() == 1);
+    }
+
+    static void test_args_parse_without_shortcuts() {
+        const char* argv[] = { "program", "-a", "valueA", "-b", "valueB", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"] == "valueA");
+        assert(result["b"] == "valueB");
+    }
+
+    static void test_args_parse_with_shortcuts() {
+        const char* argv[] = { "program", "-x", "valueX", "--long", "valueLong", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        const map<const char, string> shorts = { { 'x', "short" } };
+        map<const string, string> result = args_parse(argc, argv, &shorts);
+
+        assert(result["short"] == "valueX");
+        assert(result["long"] == "valueLong");
+    }
+
+    static void test_args_parse_empty_key() {
+        const char* argv[] = { "program", "-", "value", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        try {
+            args_parse(argc, argv);
+            assert(false);  // Should not reach here, an exception is expected
+        } catch (const exception& e) {
+            assert(str_start_with("Empty argument key", string(e.what())));
+        }
+    }
+
+    static void test_args_parse_duplicate_arguments() {
+        const char* argv[] = { "program", "-a", "valueA", "-a", "valueB", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"] == "valueB");
+    }
+
+    static void test_args_parse_missing_values() {
+        const char* argv[] = { "program", "-a", "-b", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"].empty());
+        assert(result["b"].empty());
+    }
+
+    static void test_args_parse_unrecognized_arguments() {
+        const char* argv[] = { "program", "-a", "valueA", "--unknown", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"] == "valueA");
+        assert(result.find("unknown") != result.end());
+        assert(result["unknown"] == ""); // Ensure that "--unknown" has an empty string value
+    }
+
+
+    static void test_args_parse_mix_short_and_long() {
+        const char* argv[] = { "program", "-a", "valueA", "--long", "valueLong", "-b", "valueB", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"] == "valueA");
+        assert(result["long"] == "valueLong");
+        assert(result["b"] == "valueB");
+    }
+
+    static void test_args_parse_no_arguments() {
+        const char* argv[] = { "program", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result.empty());
+    }
+
+    static void test_args_parse_complex_values() {
+        const char* argv[] = { "program", "-a", "value with spaces", "--long", "value\"with\"quotes", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"] == "value with spaces");
+        assert(result["long"] == "value\"with\"quotes");
+    }
+
+    static void test_args_parse_no_value_for_last_argument() {
+        const char* argv[] = { "program", "-a", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"].empty());
+    }
+
+    static void test_args_parse_long_arguments_with_shortcuts() {
+        const char* argv[] = { "program", "--longA", "valueA", "-b", "valueB", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        const map<const char, string> shorts = { { 'b', "shortB" } };
+        map<const string, string> result = args_parse(argc, argv, &shorts);
+
+        assert(result["longA"] == "valueA");
+        assert(result["shortB"] == "valueB");
+    }
+
+    static void test_args_parse_short_arguments_without_values() {
+        const char* argv[] = { "program", "-a", "-b", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        map<const string, string> result = args_parse(argc, argv);
+
+        assert(result["a"].empty());
+        assert(result["b"].empty());
+    }
+
+    static void test_args_parse_short_arguments_with_values_starting_with_dash() {
+        const char* argv[] = { "program", "-a", "-valueA", "-b", "--valueB", nullptr };
+        int argc = sizeof(argv) / sizeof(argv[0]) - 1;
+
+        try {
+            map<const string, string> result = args_parse(argc, argv);
+        } catch (const exception& e) {
+            // Exception expected for invalid key "-valueA"
+            cout << "Exception: " << e.what() << endl;
+            return;
+        }
+
+        // If no exception is thrown, the test has failed
+        assert(false);
+    }
 };
