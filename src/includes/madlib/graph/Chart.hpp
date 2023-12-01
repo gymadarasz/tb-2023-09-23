@@ -125,6 +125,8 @@ namespace madlib::graph {
             const void* context = NULL;
 
             vector<ProjectedPoint> projectedPoints;
+
+            vector<RealPoint> realPoints;
             vector<string> texts;
 
             int projectX(double x, bool adapt = true) {
@@ -214,31 +216,51 @@ namespace madlib::graph {
                 for (const RealPoint realPoint: realPoints) adaptXY(realPoint);
             }
 
-            vector<ProjectedPoint>& project(const vector<RealPoint>& realPoints, bool adapt = true) {
+            void setRealPoints(const vector<RealPoint> realPoints) {
+                this->realPoints = realPoints;
+            }
+
+            void project(const vector<RealPoint> realPoints, bool adapt = true) {
+                setRealPoints(realPoints);
+                project(adapt);
+            }
+
+            void project(bool adapt = true) {
                 projectedPoints.clear();
                 if (adapt) adaptXY(realPoints);
                 ProjectedPoint projectedPoint;
-                // for (const RealPoint& realPoint: realPoints) 
-                //     projectedPoints.push_back(
-                //         project(realPoint.getX(), realPoint.getY(), projectedPoint, false)
-                //     );
-                transform(realPoints.begin(), realPoints.end(), back_inserter(projectedPoints),
-                    [&](const RealPoint& realPoint) {
-                        return project(realPoint.getX(), realPoint.getY(), projectedPoint, false);
-                    }
-                );
-                return projectedPoints;
+                for (const RealPoint& realPoint: realPoints) { // NOTE: it may can be sped up by projecting only those points that inside the chart view (just calculate where are the chart edges converted to real-coordinates)
+                    projectedPoints.push_back(
+                        project(realPoint.getX(), realPoint.getY(), projectedPoint, false)
+                    );
+                }
+                // transform(realPoints.begin(), realPoints.end(), back_inserter(projectedPoints),
+                //     [&](const RealPoint& realPoint) {
+                //         return project(realPoint.getX(), realPoint.getY(), projectedPoint, false);
+                //     }
+                // );
+                //return projectedPoints;
             }
 
-            void project(const vector<RealPoint>& realPoints, const vector<string>& texts, bool adapt = true) {
-                project(realPoints, adapt);
-
-                // Make sure 'texts' vector has enough capacity before the assignment
-                if ((signed)texts.size() < 0) throw ERROR("Invalid or too large text vector");
-                this->texts.resize(texts.size());
-
+            void setTexts(const vector<string> texts) {
                 this->texts = texts;
             }
+
+            void project(const vector<RealPoint> realPoints, const vector<string> texts, bool adapt = true) {
+                setRealPoints(realPoints);
+                setTexts(texts);
+                project(adapt);
+            }
+
+            // void projectTexts(bool adapt = true) {
+            //     projectRealPoints(adapt);
+
+            //     // // Make sure 'texts' vector has enough capacity before the assignment
+            //     // if ((signed)texts.size() < 0) throw ERROR("Invalid or too large text vector");
+            //     // this->texts.resize(texts.size());
+
+            //     // this->texts = texts;
+            // }
 
             static void alignX(Scale& scale1, Scale& scale2) {
                 double xmin = scale1.xmin < scale2.xmin ? scale1.xmin : scale2.xmin;
@@ -362,6 +384,7 @@ namespace madlib::graph {
             // if (onDrawHandlers.empty()) {
             //     throw ERROR("Chart does not show anything because projection is not implemented nor drawHandler added");
             // }
+            for (Scale* scale: scales) scale->project(false);
         };
 
         const vector<Scale*> getScales() const {
