@@ -25,16 +25,15 @@ void chart_manual_test3_close(void*, unsigned int, int, int) {
 int chart_manual_test3_candles()
 {
     GFX gfx;
-    Zoom zoom;
     chart_manual_test3_gfxPtr = &gfx;
-    GUI gui(gfx, zoom, 800, 600, "chart_manual_test3_candles");
-    Chart chart(gfx, zoom, 10, 10, 780, 580, PUSHED, black);
+    GUI gui(gfx, 800, 600, "chart_manual_test3_candles");
+    Chart chart(gfx, 10, 10, 780, 580, PUSHED, black);
     gui.child(chart);
     chart_manual_test3_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test3_draw);
 
 
-    Button closeOkBtn(gfx, zoom, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
     chart_manual_test3_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
@@ -68,10 +67,10 @@ int chart_manual_test3_candles()
         candlesRealPoints.push_back(RealPoint((double)middle, low));
         candlesRealPoints.push_back(RealPoint((double)middle, high));
     }
-    chart.createScale(zoom);
+    chart.createScale(LINE, true);
     chart.getScaleAt(0)->setShape(CANDLE);
     chart.getScaleAt(0)->project(candlesRealPoints);
-    chart.createScale(zoom, LINE, &orange);
+    chart.createScale(LINE, true, &orange);
     chart.getScaleAt(1)->project(pricesRealPoints);
 
     gui.loop();

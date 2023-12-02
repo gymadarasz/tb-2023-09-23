@@ -12,7 +12,7 @@ using namespace madlib::trading;
 class LabelManualTest1: public ManualTestApplication {
 protected:
         
-    Label label1 = Label(gfx, zoom, 10, 50, 200, 30, "Hello World!");
+    Label label1 = Label(gfx, 10, 50, 200, 30, "Hello World!");
 
 public:
 

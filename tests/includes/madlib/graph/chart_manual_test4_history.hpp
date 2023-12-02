@@ -26,12 +26,11 @@ void chart_manual_test4_close(void*, unsigned int, int, int) {
 int chart_manual_test4_history()
 {
     GFX gfx;
-    Zoom zoom;
     chart_manual_test4_gfxPtr = &gfx;
-    GUI gui(gfx, zoom, 800, 600, "chart_manual_test4_history");
+    GUI gui(gfx, 800, 600, "chart_manual_test4_history");
 
 
-    Button closeOkBtn(gfx, zoom, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
     chart_manual_test4_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
@@ -62,11 +61,11 @@ int chart_manual_test4_history()
 
     // Zoom zoom;
     TradeTexts tradeTexts;
-    TradeHistoryChart chart(gfx, zoom, 10, 10, 780, 580, history, tradeTexts);
+    TradeHistoryChart chart(gfx, 10, 10, 780, 580, history, tradeTexts);
     gui.child(chart);
     chart_manual_test4_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test4_draw);
-    chart.project();
+    chart.projectScales();
 
     gui.loop();
     

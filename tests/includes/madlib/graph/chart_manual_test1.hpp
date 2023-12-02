@@ -34,19 +34,17 @@ void chart_manual_test1_close(void*, unsigned int, int, int) {
 int chart_manual_test1()
 {
     GFX gfx;
-    Zoom zoom;
     chart_manual_test1_gfxPtr = &gfx;
-    GUI gui(gfx, zoom, 800, 600, "chart_manual_test1");
-    Chart chart(gfx, zoom, 50, 50, 700, 500);
+    GUI gui(gfx, 800, 600, "chart_manual_test1");
+    Chart chart(gfx, 50, 50, 700, 500);
 
-    Button closeOkBtn(gfx, zoom, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(chart_manual_test1_close);
     gui.child(closeOkBtn);
 
     // set up UI
-    chart.fixed = false;
     chart.setBackgroundColor(black);
     gui.child(chart);
     
@@ -54,9 +52,9 @@ int chart_manual_test1()
     vector<RealPoint> realPoints;
     chart_manual_test1_generateRealPoints(realPoints);
 
-    chart.createScale(zoom, LINE, &lightGreen)->project(realPoints);
-    Chart::Scale* secondScale = chart.createScale(zoom, LINE, &lightCyan);
-    secondScale->setZoom(Zoom(2.0, 1.5));
+    chart.createScale(LINE, true, &lightGreen)->project(realPoints);
+    Chart::Scale* secondScale = chart.createScale(LINE, true, &lightCyan);
+    secondScale->setZoomRatio(2.0, 1.5);
     secondScale->project(realPoints);
     
 

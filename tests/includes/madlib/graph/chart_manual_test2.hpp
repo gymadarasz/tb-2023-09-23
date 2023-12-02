@@ -23,17 +23,16 @@ void chart_manual_test2_close(void*, unsigned int, int, int) {
 int chart_manual_test2()
 {
     GFX gfx;
-    Zoom zoom;
     chart_manual_test2_gfxPtr = &gfx;
-    GUI gui(gfx, zoom, 800, 600, "chart_manual_test2", black);
-    Chart chart(gfx, zoom, 5, 5, 790, 590);
-    chart.createScale(zoom, LINE, &green);
+    GUI gui(gfx, 800, 600, "chart_manual_test2", black);
+    Chart chart(gfx, 5, 5, 790, 590);
+    chart.createScale(LINE, true, &green);
     chart_manual_test2_chartPtr = &chart;
     gui.addDrawHandler(chart_manual_test2_draw);
-    chart.createScale(zoom, LABEL);
+    chart.createScale(LABEL, true);
 
 
-    Button closeOkBtn(gfx, zoom, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
     chart_manual_test2_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);

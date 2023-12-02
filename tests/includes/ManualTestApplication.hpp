@@ -14,7 +14,7 @@ public:
 
 protected:
 
-    Button closeBtn = Button(gfx, zoom, 10, 10, 100, 30, "OK");
+    Button closeBtn = Button(gfx, 10, 10, 100, 30, "OK");
 
 public:
 

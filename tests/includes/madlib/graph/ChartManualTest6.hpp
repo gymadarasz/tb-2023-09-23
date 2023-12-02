@@ -35,7 +35,7 @@ protected:
 
     TradeTexts tradeTexts;
     TradeHistoryChart chart = TradeHistoryChart(
-        gfx, zoom, 10, 60, 1580, 780, history, tradeTexts
+        gfx, 10, 60, 1580, 780, history, tradeTexts
     );
 public:
 
@@ -45,6 +45,6 @@ public:
 
         mainFrame.child(chart);
 
-        chart.project();
+        chart.projectScales();
     }
 };

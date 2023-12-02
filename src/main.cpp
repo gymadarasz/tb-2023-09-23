@@ -21,8 +21,6 @@ protected:
     const ms_t period = period_to_ms("1m");
     BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
 
-    Zoom zoom;
-
     const double feeMarketPc = 0.04; //0.4;
     const double feeLimitPc = 0.03;
     const Fees fees = Fees(feeMarketPc, feeMarketPc, feeLimitPc, feeLimitPc);
@@ -49,14 +47,14 @@ protected:
     const Color priceColor = orange;
     const Color volumeColor = darkGray;
     TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-        gfx, zoom, 0, 0, 600, 300, history, strategy.getTradeTexts()
+        gfx, 0, 0, 600, 300, history, strategy.getTradeTexts()
     );
 
     const int multiChartAccordionLeft = 10;
     const int multiChartAccordionTop = 50;
     const int multiChartAccordionWidth = 1000;
     MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-        gfx, zoom, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
+        gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
 
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
@@ -64,7 +62,7 @@ protected:
     const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
     const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
     CandleStrategyBacktester tester = CandleStrategyBacktester(
-        multiChartAccordion, zoom,  
+        multiChartAccordion,
         history, tradeHistoryChart,
         testExchange, strategy, symbol
     );

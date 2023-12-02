@@ -671,6 +671,7 @@ namespace madlib {
     } logger;
 
     #define LOG(...) logger.date().writeln(__VA_ARGS__)
+    #define DBG(...) logger.date().writeln(__FILE__, ":", __LINE__, " ", __VA_ARGS__)
 
     template <typename T>
     class Factory {
@@ -702,7 +703,7 @@ namespace madlib {
             vector_destroy<T>(instances);
         }
 
-        ~Factory() {
+        virtual ~Factory() {
             // for (T* instance : instances) {
             //     delete instance;
             // }
@@ -755,7 +756,7 @@ namespace madlib {
             return instances.at(instances.size() - 1).library;
         }
 
-        ~SharedFactory() {
+        virtual ~SharedFactory() {
             for (const SharedInstance& instance: instances) {
                 if (instance.destroyer) instance.destroyer(instance.library);
                 if (instance.handle) dlclose(instance.handle);

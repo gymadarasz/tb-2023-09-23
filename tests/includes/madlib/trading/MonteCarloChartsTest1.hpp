@@ -12,16 +12,16 @@ using namespace madlib::trading::strategy;
 class MonteCarloChartsTest1: public ManualTestApplication {
 protected:
 
-    const int multiChartAccordionLeft = 10;
-    const int multiChartAccordionTop = 50;
-    const int multiChartAccordionWidth = 1000;
+    // const int multiChartAccordionLeft = 10;
+    // const int multiChartAccordionTop = 50;
+    // const int multiChartAccordionWidth = 1000;
 
-    MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-        gfx, zoom, 
-        multiChartAccordionLeft, 
-        multiChartAccordionTop, 
-        multiChartAccordionWidth
-    );
+    // MultiChartAccordion multiChartAccordion = MultiChartAccordion(
+    //     gfx,
+    //     multiChartAccordionLeft, 
+    //     multiChartAccordionTop, 
+    //     multiChartAccordionWidth
+    // );
 
     const string symbol = "MONTECARLO";
     const ms_t startTime = datetime_to_ms("2020-01-01 00:00:00.000");
@@ -60,30 +60,14 @@ protected:
         testExchange, strategyParameters, tradeTexts
     );
     
-    const bool showCandles = true;
-    const bool showPrices = true;
-    const bool showVolumes = true;
-    const bool showTexts = true;
-    const Color priceColor = orange;
-    const Color volumeColor = darkGray;
-    const Chart::CandleStyle candleStyle;
-    const Chart::LabelStyle buyTextStyle = Chart::LabelStyle(red);
-    const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
-    const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
-    TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-        gfx, zoom, 10, 10, 300, 150, history, aCandleStrategy.getTradeTexts(), 
-        showCandles, showPrices, showVolumes, showTexts, 
-        priceColor, volumeColor, candleStyle,
-        buyTextStyle, sellTextStyle, errorTextStyle
-    );
-    
-    const int multiChartAccordionFramesHeight = 300;
+    // const int multiChartAccordionFramesHeight = 300;
     const bool showBalanceQuotedScale = true;
     CandleStrategyBacktester backtester = CandleStrategyBacktester(
-        multiChartAccordion, zoom,
-        history, tradeHistoryChart,
+        gfx, 10, 50, 1000, 340,
+        // multiChartAccordion,
+        history, // tradeHistoryChart,
         testExchange, aCandleStrategy, symbol, 
-        multiChartAccordionFramesHeight,
+        // multiChartAccordionFramesHeight,
         showBalanceQuotedScale
     );
 
@@ -91,10 +75,13 @@ public:
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("MonteCarloChartsTest1");
+
         backtester.backtest();
+        backtester.projectCharts();
+        backtester.draw();
 
         // ----------------
 
-        mainFrame.child(multiChartAccordion);
+        mainFrame.child(backtester);
     }
 };

@@ -212,9 +212,6 @@ namespace madlib::graph {
         static const Color defaultAreaBorderColor = gray;
         static const Color defaultAreaTextColor = black;
 
-        // static const Color frameBackgroundColor = darkGray;
-        // static const int frameMargin = 10;
-        // static const int textPadding = 10;
         static const Border defaultFrameBorder = PUSHED;
         static const Color defaultFrameBackgroundColor = gray;
 
@@ -263,8 +260,6 @@ namespace madlib::graph {
         typedef void (*onMoveHandler)(void*, int, int);
         typedef void (*onLoopHandler)(void*);
         typedef void (*onDrawHandler)(void*);
-        // typedef void (*onScrollHandler)(const void*, unsigned int);
-        // typedef void (*onZoomHandler)(const void*, unsigned int);
 
     protected:
 
@@ -278,12 +273,12 @@ namespace madlib::graph {
         vector<onMoveHandler> onMoveHandlers;
         vector<onLoopHandler> onLoopHandlers;
         vector<onDrawHandler> onDrawHandlers;
-        // vector<onScrollHandler> onScrollHandlers;
-        // vector<onZoomHandler> onZoomHandlers;
 
     public:
 
         EventHandler(void* eventContext = NULL): eventContext(eventContext) {}
+
+        virtual ~EventHandler() {}
 
         void setEventContext(void* eventContext) {
             this->eventContext = eventContext;
@@ -356,22 +351,6 @@ namespace madlib::graph {
         void addDrawHandler(onDrawHandler handler) {
             onDrawHandlers.push_back(handler);
         }
-
-        // vector<onScrollHandler> getScrollHandlers() {
-        //     return onScrollHandlers;
-        // }
-
-        // void addScrollHandler(onScrollHandler handler) {
-        //     onScrollHandlers.push_back(handler);
-        // }
-
-        // vector<onZoomHandler> getZoomHandlers() {
-        //     return onZoomHandlers;
-        // }
-
-        // void addZoomHandler(onZoomHandler handler) {
-        //     onZoomHandlers.push_back(handler);
-        // }
 
     };
 
@@ -753,134 +732,148 @@ namespace madlib::graph {
     Display* GFX::display = NULL;
 
 
-    class Zoom {
+    class Zoomable {
     public:
 
-        const int defaultCenterX = 0, defaultCenterY = 0; // TODO
-        const double defaultRatioX = 1.0, defaultRatioY = 1.0;
+        const int defaultZoomCenterX = 0, defaultZoomCenterY = 0; // TODO
+        const double defaultZoomRatioX = 1.0, defaultZoomRatioY = 1.0;
+
     protected:
-        ProjectedPoint center = ProjectedPoint(defaultCenterX, defaultCenterY);
-        RealPoint ratio = RealPoint(defaultRatioX, defaultRatioY);
+
+        ProjectedPoint zoomCenter = ProjectedPoint(defaultZoomCenterX, defaultZoomCenterY);
+        RealPoint zoomRatio = RealPoint(defaultZoomRatioX, defaultZoomRatioY);
 
     public:
 
-        Zoom(): center(defaultCenterX, defaultCenterY), ratio(defaultRatioX, defaultRatioY) {}
-        Zoom(int centerX, int centerY): center(centerX, centerY), ratio(defaultRatioX, defaultRatioY) {}
-        explicit Zoom(const ProjectedPoint& center): center(center), ratio(defaultRatioX, defaultRatioY) {}
-        Zoom(double ratioX, double ratioY): center(defaultCenterX, defaultCenterY), ratio(ratioX, ratioY) {}
-        explicit Zoom(const RealPoint& ratio): center(defaultCenterX, defaultCenterY), ratio(ratio) {}
-        Zoom(int centerX, int centerY, double ratioX, double ratioY): center(centerX, centerY), ratio(ratioX, ratioY) {}
-        Zoom(const ProjectedPoint& center, const RealPoint& ratio): center(center), ratio(ratio) {}
-        Zoom(double ratioX, double ratioY, int centerX, int centerY): center(centerX, centerY), ratio(ratioX, ratioY) {}
-        Zoom(const RealPoint& ratio, const ProjectedPoint& center): center(center), ratio(ratio) {}
+        Zoomable(): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY) {}
+        Zoomable(int centerX, int centerY): zoomCenter(centerX, centerY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY) {}
+        Zoomable(const ProjectedPoint& center): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY) {}
+        Zoomable(double ratioX, double ratioY): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratioX, ratioY) {}
+        Zoomable(const RealPoint& ratio): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio) {}
+        Zoomable(int centerX, int centerY, double ratioX, double ratioY): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY) {}
+        Zoomable(const ProjectedPoint& center, const RealPoint& ratio): zoomCenter(center), zoomRatio(ratio) {}
+        Zoomable(double ratioX, double ratioY, int centerX, int centerY): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY) {}
+        Zoomable(const RealPoint& ratio, const ProjectedPoint& center): zoomCenter(center), zoomRatio(ratio) {}
         
-        Zoom& operator=(const Zoom& other) {
-            if (this != &other) { // Check for self-assignment
-                this->center = other.center;
-                this->ratio = other.ratio;
+        virtual ~Zoomable() {}
+
+        // Zoom& operator=(const Zoom& other) {
+        //     if (this != &other) { // Check for self-assignment
+        //         this->center = other.center;
+        //         this->ratio = other.ratio;
+        //     }
+        //     return *this;
+        // }
+
+        Zoomable& setZoomFrom(const Zoomable& other) {
+            if (this != &other) {
+                this->zoomCenter = other.zoomCenter;
+                this->zoomRatio = other.zoomRatio;
             }
             return *this;
         }
 
-        ProjectedPoint getCenter() const {
-            return center;
+        ProjectedPoint getZoomCenter() const {
+            return zoomCenter;
         }
 
-        void setCenter(const ProjectedPoint& center) {
-            this->center = center;
+        void setZoomCenter(const ProjectedPoint& zoomCenter) {
+            this->zoomCenter = zoomCenter;
         }
 
-        void setCenter(int x = 0, int y = 0) {
-            setCenter(ProjectedPoint(x, y));
+        void setZoomCenter(int x = 0, int y = 0) {
+            setZoomCenter(ProjectedPoint(x, y));
         }
 
-        RealPoint getRatio() const {
-            return ratio;
+        RealPoint getZoomRatio() const {
+            return zoomRatio;
         }
 
-        void setRatio(const RealPoint& ratio) {
-            this->ratio = ratio;
+        void setZoomRatio(const RealPoint& zoomRatio) {
+            this->zoomRatio = zoomRatio;
         }
 
-        void setRatio(double x = 1.0, double y = 1.0) {
-            setRatio(RealPoint(x, y));
+        void setZoomRatio(double x = 1.0, double y = 1.0) {
+            setZoomRatio(RealPoint(x, y));
         }
 
-        void setRatioX(double ratioX) {
-            this->ratio.setX(ratioX);
+        void setZoomRatioX(double ratioX) {
+            this->zoomRatio.setX(ratioX);
         }
 
-        void setRatioY(double ratioY) {
-            this->ratio.setY(ratioY);
+        void setZoomRatioY(double ratioY) {
+            this->zoomRatio.setY(ratioY);
         }
 
-        int applyX(int origoX, int pointX) const {
-            int origoXAddCenterX = origoX + center.getX();
+        int applyZoomX(int origoX, int pointX) const {
+            int origoXAddCenterX = origoX + zoomCenter.getX();
             int pointXSubCenterX = pointX - origoXAddCenterX;
-            double pointXSubCenterXMulRatioX = pointXSubCenterX * ratio.getX();
+            double pointXSubCenterXMulRatioX = pointXSubCenterX * zoomRatio.getX();
             return origoXAddCenterX + (int)pointXSubCenterXMulRatioX;
         }
 
-        int applyY(int origoY, int pointY) const {
-            int origoYAddCenterY = origoY + center.getY();
+        int applyZoomY(int origoY, int pointY) const {
+            int origoYAddCenterY = origoY + zoomCenter.getY();
             int pointYSubCenterY = pointY - origoYAddCenterY;
-            double pointYSubCenterYMulRatioY = pointYSubCenterY * ratio.getY();
+            double pointYSubCenterYMulRatioY = pointYSubCenterY * zoomRatio.getY();
             return origoYAddCenterY + (int)pointYSubCenterYMulRatioY;
         }
 
-        ProjectedPoint apply(int origoX, int origoY, int pointX, int pointY) const {
+        ProjectedPoint applyZoom(int origoX, int origoY, int pointX, int pointY) const {
             ProjectedPoint result(
-                applyX(origoX, pointX),
-                applyY(origoY, pointY)
+                applyZoomX(origoX, pointX),
+                applyZoomY(origoY, pointY)
             );
 
             return result;
         }
         
-        ProjectedPoint apply(const ProjectedPoint& origo, const ProjectedPoint& point) const {
-            return apply(origo.getX(), origo.getY(), point.getX(), point.getY());
+        ProjectedPoint applyZoom(const ProjectedPoint& origo, const ProjectedPoint& point) const {
+            return applyZoom(origo.getX(), origo.getY(), point.getX(), point.getY());
         }
     };
 
-    class Zoomable {
-    protected:
+    // class Zoomable {
+    // protected:
     
-        Zoom& zoom;
+    //     Zoom& zoom;
 
-    public:
+    // public:
 
-        Zoomable(Zoom& zoom): zoom(zoom) {}
+    //     Zoomable(Zoom& zoom): zoom(zoom) {}
 
-        void setZoom(const Zoom& zoom) {
-            this->zoom = zoom;
-        }
+    //     // void setZoom(const Zoom& zoom) {
+    //     //     this->zoom = zoom;
+    //     // }
 
-        Zoom& getZoom() {
-            return zoom;
-        }
-    };
+    //     Zoom& getZoom() {
+    //         return zoom;
+    //     }
+    // };
 
     class Scrollable {
     protected:
-
-        bool fixed = false;
-
-        int width, height;
 
         int scrollX = 0, scrollY = 0,
             scrollXMin = 0, scrollYMin = 0,
             scrollXMax = 0, scrollYMax = 0;
 
+
+        int width, height;
+        bool scrollFixed;
+
     public:
 
-        Scrollable(int width, int height): width(width), height(height) {}
+        Scrollable(int width, int height, bool scrollFixed): width(width), height(height), scrollFixed(scrollFixed) {}
 
-        void setFixed(bool fixed) {
-            this->fixed = fixed;
+        virtual ~Scrollable() {}
+
+        void setScrollFixed(bool scrollFixed) {
+            this->scrollFixed = scrollFixed;
         }
 
-        bool isFixed() const {
-            return fixed;
+        bool isScrollFixed() const {
+            return scrollFixed;
         }
 
         int getScrollX() const {
@@ -912,7 +905,7 @@ namespace madlib::graph {
             scrollYMax = 0;
         }
 
-        void setWidth(int width) {
+        virtual void setWidth(int width) {
             this->width = width;
         }
 
@@ -920,7 +913,7 @@ namespace madlib::graph {
             return width;
         }
 
-        void setHeight(int height) {
+        virtual void setHeight(int height) {
             this->height = height;
         }
 
@@ -937,13 +930,16 @@ namespace madlib::graph {
                 scrollX = scrollXMax;
             if (scrollY > scrollYMax) 
                 scrollY = scrollYMax;
+            // DBG(scrollX, " ", scrollXMin, ", ", scrollXMax);
         }
 
         void setScrollXYMin(int x, int y, bool forceInRange = true) {
             int xMin = x;
             int yMin = y;
-            if (xMin < scrollXMin) scrollXMin = xMin;
-            if (yMin < scrollYMin) scrollYMin = yMin;
+            if (xMin < scrollXMin) 
+                scrollXMin = xMin;
+            if (yMin < scrollYMin) 
+                scrollYMin = yMin;
             if (forceInRange) forceScrollInRange();
         }
         
@@ -970,14 +966,14 @@ namespace madlib::graph {
         }
         
         void setScrollXY(int x, int y) {
-            if (fixed) return;
+            if (scrollFixed) return;
             scrollX = x;
             scrollY = y;
             forceScrollInRange();
         }
 
         void moveScrollXY(int x, int y) {
-            if (fixed) return;
+            if (scrollFixed) return;
             scrollX += x;
             scrollY += y;
             forceScrollInRange();
@@ -993,11 +989,15 @@ namespace madlib::graph {
 
         typedef struct { int width = 0, height = 0; } TextSize;
 
-        Painter(int width, int height, Zoom& zoom, void* eventContext = NULL): 
-            Scrollable(width, height),
-            Zoomable(zoom),
+        Painter(
+            int width, int height, bool scrollFixed,
+            void* eventContext = NULL): 
+            Scrollable(width, height, scrollFixed),
+            Zoomable(),
             EventHandler(eventContext)
         {}
+
+        virtual ~Painter() {}
 
         virtual void brush(Color) const { throw ERR_UNIMP; }
         virtual void point(int, int) { throw ERR_UNIMP; }
@@ -1073,9 +1073,9 @@ namespace madlib::graph {
     public:
 
         Area(
-            GFX& gfx, Zoom& zoom, 
+            GFX& gfx, 
             int left, int top, 
-            int width, int height,
+            int width, int height, bool scrollFixed,
             const string &text = "", 
             const Align textAlign = Theme::defaultAreaTextAlign,
             const Border border = Theme::defaultAreaBorder,
@@ -1086,7 +1086,7 @@ namespace madlib::graph {
             const Color textColor = Theme::defaultAreaTextColor,
             void* eventContext = NULL
         ): 
-            Painter(width, height, zoom, eventContext),
+            Painter(width, height, scrollFixed, eventContext),
             gfx(gfx),
             left(left), 
             top(top),
@@ -1506,14 +1506,14 @@ namespace madlib::graph {
 
     public:
         GUI(
-            GFX& gfx, Zoom& zoom, 
-            int width, int height, 
+            GFX& gfx, 
+            int width, int height,
             const char* title = Theme::defaultWindowTitle, 
             Color color = Theme::defaultWindowColor,
             void* eventContext = NULL
         ):
             Area(
-                gfx, zoom, 0, 0, width, height, "",
+                gfx, 0, 0, width, height, false, "",
                 Theme::defaultAreaTextAlign,
                 Theme::defaultAreaBorder,
                 Theme::defaultAreaBackgroundColor,
@@ -1543,6 +1543,13 @@ namespace madlib::graph {
     class Frame: public Area {
     protected:
 
+        static const int zoomInScrollButton = 4; // TODO
+        static const int zoomOutScrollButton = 5; // TODO
+        static constexpr double zoomInRatio = 1.25; // TODO
+        static constexpr double zoomOutRatio = .8; // TODO
+        static constexpr double zoomRatioMax = INFINITY; // TODO
+        static constexpr double zoomRatioMin = 1; // TODO
+
         bool drag = false;
         int dragStartedX = 0, dragStartedY = 0, dragScrollStartedX = 0, dragScrollStartedY = 0;
 
@@ -1567,7 +1574,7 @@ namespace madlib::graph {
         
         static void moveHandler(void* context, int x, int y) {
             Frame* that = (Frame*)(context);
-            if (!that->fixed && that->drag) {
+            if (!that->scrollFixed && that->drag) {
                 that->setScrollXY(
                     that->dragScrollStartedX + (that->dragStartedX - x), 
                     that->dragScrollStartedY + (that->dragStartedY - y)
@@ -1576,22 +1583,50 @@ namespace madlib::graph {
             }
         }
 
+        static void zoomHandler(void* context, unsigned int button, int, int) {
+            Frame* that = (Frame*)context;
+
+            // change zoom ratio
+
+            double ratioX;
+            double ratioY;
+            switch (button) {
+                case zoomInScrollButton:
+                    ratioX = that->getZoomRatio().getX() * zoomInRatio;
+                    ratioY = that->getZoomRatio().getY() * zoomInRatio;
+                    if (ratioX > zoomRatioMax) ratioX = zoomRatioMax;
+                    if (ratioY > zoomRatioMax) ratioY = zoomRatioMax;
+                    break;
+                case zoomOutScrollButton:
+                    ratioX = that->getZoomRatio().getX() * zoomOutRatio;
+                    ratioY = that->getZoomRatio().getY() * zoomOutRatio;
+                    if (ratioX < zoomRatioMin) ratioX = zoomRatioMin;
+                    if (ratioY < zoomRatioMin) ratioY = zoomRatioMin;
+                    break;
+                default:
+                    return; // no scroll zoom
+            }
+            that->setZoomRatioX(ratioX);
+            that->setZoomRatioY(ratioY);
+            that->draw(); // redraw
+        }
+
     public:
 
-        bool fixed = false;
+        // bool scrollFixed = false;
 
         Frame(
-            GFX& gfx, Zoom& zoom, 
+            GFX& gfx, 
             int left, int top, 
-            int width, int height,
+            int width, int height, bool scrollFixed = false,
             Border border = Theme::defaultFrameBorder,
             Color backgroundColor = Theme::defaultFrameBackgroundColor,
             void* eventContext = NULL
         ):
             Area(
-                gfx, zoom, 
+                gfx, 
                 left, top, 
-                width, height, 
+                width, height, scrollFixed,
                 "", CENTER, 
                 border, backgroundColor,
                 Theme::defaultAreaMargin,
@@ -1604,6 +1639,7 @@ namespace madlib::graph {
             addTouchHandler(touchHandler);
             addReleaseHandler(releaseHandler);
             addMoveHandler(moveHandler);
+            addTouchHandler(zoomHandler);
         }
     };
 
@@ -1636,16 +1672,16 @@ namespace madlib::graph {
     public:
 
         Button(
-            GFX& gfx, Zoom& zoom, 
+            GFX& gfx, 
             int left, int top, 
-            int width, int height, 
+            int width, int height,
             const string &text = "", 
             const Align textAlign = Theme::defaultButtonTextAlign,
             const Border buttonBorder = Theme::defaultButtonBorder,
             void* eventContext = NULL
         ): Area(
-            gfx, zoom, left, top, width, height, text, 
-            textAlign, buttonBorder,
+            gfx, left, top, width, height, false,
+            text, textAlign, buttonBorder,
             Theme::defaultAreaBackgroundColor,
             Theme::defaultAreaMargin,
             Theme::defaultAreaTextMargin,
@@ -1690,13 +1726,13 @@ namespace madlib::graph {
 
     class Label: public Area {
     public:
-        Label(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
+        Label(GFX& gfx, int left, int top, int width, int height,
             const string &text, 
             const Align textAlign = Theme::defaultLabelTextAlign,
             const Border border = Theme::defaultLabelBorder,
             void* eventContext = NULL
         ): Area(
-            gfx, zoom, left, top, width, height, text, textAlign, border, 
+            gfx, left, top, width, height, false, text, textAlign, border, 
             Theme::defaultAreaBackgroundColor,
             Theme::defaultAreaMargin,
             Theme::defaultAreaTextMargin,
@@ -1779,15 +1815,15 @@ namespace madlib::graph {
 
     public:
         SlideBar(
-            GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
+            GFX& gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, double value = 0,
             int thickness = Theme::defaultBarThickness,
             void* eventContext = NULL
         ): Area(
-            gfx, zoom, left, top, 
+            gfx, left, top, 
             direction == HORIZONTAL ? length : thickness,
             direction == VERTICAL ? length : thickness, 
-            "", CENTER, PUSHED, 
+            false, "", CENTER, PUSHED, 
             Theme::defaultAreaBackgroundColor,
             Theme::defaultAreaMargin,
             Theme::defaultAreaTextMargin,
@@ -1802,15 +1838,15 @@ namespace madlib::graph {
             position(calcPosition())
         {
             handler = direction == HORIZONTAL ?
-                new Button(gfx, zoom, position, 1, thickness - 2, thickness - 2):
-                new Button(gfx, zoom, 1, position, thickness - 2, thickness - 2);
+                new Button(gfx, position, 1, thickness - 2, thickness - 2):
+                new Button(gfx, 1, position, thickness - 2, thickness - 2);
             this->child(*handler);
             addTouchHandler(handlerTouch);
             addReleaseHandler(handlerRelease);
             addMoveHandler(handlerMove);
         }
 
-        ~SlideBar() {
+        virtual ~SlideBar() {
             delete handler;
         }
 
@@ -1839,13 +1875,13 @@ namespace madlib::graph {
 
     public:
         ScrollBar(
-            GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
+            GFX& gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::defaultBarThickness,
             void* eventContext = NULL
         ): SlideBar(
-            gfx, zoom, left, top, length, direction, 
+            gfx, left, top, length, direction, 
             minValue, maxValue, value, thickness, 
             eventContext
         ), valueSize(valueSize)
@@ -1958,21 +1994,21 @@ namespace madlib::graph {
         Button* handlerMax = NULL;
     public:
         IntervalBar(
-            GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
+            GFX& gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::defaultBarThickness
         ): ScrollBar(
-            gfx, zoom, left, top, length, direction,
+            gfx, left, top, length, direction,
             minValue, maxValue, value, valueSize, thickness
         ) 
         {
             handlerMin = direction == HORIZONTAL ?
-                new Button(gfx, zoom, 0, 0, thickness / 3, thickness):
-                new Button(gfx, zoom, 0, 0, thickness, thickness / 3);
+                new Button(gfx, 0, 0, thickness / 3, thickness):
+                new Button(gfx, 0, 0, thickness, thickness / 3);
             handlerMax = direction == HORIZONTAL ?
-                new Button(gfx, zoom, size - thickness / 3, 0, thickness / 3, thickness):
-                new Button(gfx, zoom, 0, size - thickness / 3, thickness, thickness / 3);
+                new Button(gfx, size - thickness / 3, 0, thickness / 3, thickness):
+                new Button(gfx, 0, size - thickness / 3, thickness, thickness / 3);
             handler->child(*handlerMin);
             handler->child(*handlerMax);
             handlerMin->addTouchHandler(handlerMinTouch);
@@ -1981,7 +2017,7 @@ namespace madlib::graph {
             addMoveHandler(handlerMove);
         }
 
-        ~IntervalBar() {
+        virtual ~IntervalBar() {
             delete handlerMin;
             delete handlerMax;
         }
@@ -2000,36 +2036,44 @@ namespace madlib::graph {
                 Toggler* that = (Toggler*)context;
                 Accordion& accordion = that->container.getAccordion(); 
                 
-                if (accordion.isSingle()) accordion.closeAllExcept(that->containerIndex);
-
-                if (that->sticky) {
-                    accordion.toggleAt(that->containerIndex);
+                if (accordion.isSingle()) {
+                    accordion.closeAllExcept(that->containerIndex, true);
                     return;
                 }
+
+                // if (that->sticky) {
+                //     accordion.toggleAt(that->containerIndex);
+                //     return;
+                // }
                 
                 Container* container = accordion.getContainers().at(that->containerIndex);
                 if (container->isOpened()) {
-                    if (accordion.isOne()) accordion.closeAt(that->containerIndex);
-                } else accordion.openAt(that->containerIndex);
+                    // if (accordion.isOne()) 
+                        accordion.closeAt(that->containerIndex, true);
+                } else {
+                    accordion.openAt(that->containerIndex, true);
+                }
             }
 
             Container& container;
             size_t containerIndex;
         public:
             Toggler(
-                Container& container, GFX& gfx, Zoom& zoom, 
+                Container& container, GFX& gfx,
                 size_t containerIndex, 
                 int left, int top, int width, int height, 
                 const string &text, 
                 const Align textAlign = Theme::defaultAccordionTogglerTextAlign
             ): 
-                Button(gfx, zoom, left, top, width, height, text, textAlign),
+                Button(gfx, left, top, width, height, text, textAlign),
                 container(container),
                 containerIndex(containerIndex)
             {
-                sticky = container.getAccordion().isSticky();
+                // sticky = container.getAccordion().isSticky();
                 addTouchHandler(toggleHandler);
             }
+
+            virtual ~Toggler() {}
 
             Container& getContainer() const {
                 return container;
@@ -2053,7 +2097,7 @@ namespace madlib::graph {
             bool opened = false;
         public:
             Container(
-                Accordion& accordion, Zoom& zoom,
+                Accordion& accordion,
                 const string& title, const Align textAlign, 
                 int frameHeight
             ): 
@@ -2064,22 +2108,22 @@ namespace madlib::graph {
                 size_t accordionContainerAt = accordion.getContainers().size();
                 const int togglerTop = accordion.height + innerBorderSize;
 
-                toggler = new Toggler(*this, gfx, zoom, accordionContainerAt,
+                toggler = new Toggler(*this, gfx, accordionContainerAt,
                     innerBorderSize, togglerTop, 
                     width - innerBorderSize*2, 
                     togglerHeight - innerBorderSize*2, 
                     title, textAlign);
 
-                frame = new Frame(gfx, zoom, 
+                frame = new Frame(gfx, 
                     innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
-                    width, 0, NONE, accordion.getBackgroundColor());
+                    width, 0, false, NONE, accordion.getBackgroundColor());
             
                 accordion.child(*toggler);
                 accordion.child(*frame);
                 accordion.height = togglerHeight * ((int)accordionContainerAt + 1);
             }
 
-            ~Container() {
+            virtual ~Container() final {
                 if (toggler) delete toggler;
                 toggler = NULL;
                 if (frame) delete frame;
@@ -2097,14 +2141,14 @@ namespace madlib::graph {
 
             void open() { 
                 if (opened) return;
-                toggler->push();
-                if (!toggler->isSticky()) toggler->release();
+                // toggler->push();
+                // if (!toggler->isSticky()) toggler->release();
                 opened = true;
             }
 
             void close() {
                 if (!opened) return;
-                toggler->release();
+                // toggler->release();
                 opened = false;
             }
 
@@ -2127,19 +2171,20 @@ namespace madlib::graph {
 
     protected:
         vector<Container*> containers;
-        bool sticky;
+        // bool sticky;
         bool single;
-        bool one; // TODO: keep "only one" or "at least one" open?
+        // bool one; // TODO: keep "only one" or "at least one" open?
 
     public:
-        Accordion(GFX& gfx, Zoom& zoom, int left, int top, int width,
-            bool sticky = false, bool single = false, bool one = true, // TODO
+        Accordion(GFX& gfx, int left, int top, int width,
+            // bool sticky = false, 
+            bool single = false, //bool one = true, // TODO
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
             void* eventContext = NULL
         ): 
             Area(
-                gfx, zoom, left, top, width, 0, "", CENTER,
+                gfx, left, top, width, 0, false, "", CENTER,
                 border, backgroundColor,
                 Theme::defaultAreaMargin,
                 Theme::defaultAreaTextMargin,
@@ -2147,33 +2192,33 @@ namespace madlib::graph {
                 Theme::defaultAreaTextColor,
                 eventContext
             ),
-            sticky(sticky),
-            single(single),
-            one(one)
+            // sticky(sticky),
+            single(single)//,
+            // one(one)
         {}
 
-        ~Accordion() {
+        virtual ~Accordion() {
             vector_destroy<Container>(containers);
         }
 
-        bool isSticky() const {
-            return sticky;
-        }
+        // bool isSticky() const {
+        //     return sticky;
+        // }
 
-        void setSticky(bool sticky) {
-            this->sticky = sticky;
-            for (const Container* container: containers) {
-                Toggler& toggler = container->getToggler();
-                toggler.setSticky(sticky);
-                if (sticky && container->isOpened()) toggler.push();
-            }
-        }
+        // void setSticky(bool sticky) {
+        //     this->sticky = sticky;
+        //     for (const Container* container: containers) {
+        //         Toggler& toggler = container->getToggler();
+        //         toggler.setSticky(sticky);
+        //         if (sticky && container->isOpened()) toggler.push();
+        //     }
+        // }
 
         bool isSingle() const {
             return single;
         }
 
-        void setSingle(bool single) {
+        void setSingle(bool single, bool redraw) {
             this->single = single;
 
             // if single collapse the rest 
@@ -2184,46 +2229,49 @@ namespace madlib::graph {
                 size_t containersSize = containers.size();
                 for (size_t i = 0; i < containersSize; i++) {
                     if (isOpenedAt(i)) {
-                        if (closing) closeAt(i);
+                        if (closing) closeAt(i, false);
                         else closing = true;
                     }
                 }
             }
-            getParentOrSelf()->draw();
+            if (redraw) getParentOrSelf()->draw();
         }
 
-        bool isOne() const {
-            return one;
-        }
+        // bool isOne() const {
+        //     return one;
+        // }
 
-        void setOne(bool one) {
-            if (one) setSingle(true);
-            this->one = one;
-        }
+        // void setOne(bool one) {
+        //     if (one) setSingle(true);
+        //     this->one = one;
+        // }
 
-        void closeAllExcept(size_t exceptIndex) {
+        void closeAllExcept(size_t exceptIndex, bool redraw) {
             size_t containersSize = containers.size();
             for (size_t i = 0; i < containersSize; i++) {
-                if (i != exceptIndex) closeAt(i);
+                if (i != exceptIndex) closeAt(i, false);
+                else openAt(i, false);
             }
+            if (redraw) getParentOrSelf()->draw();
         }
 
-        void openAll() {
+        void openAll(bool redraw) {
             const size_t containersSize = containers.size();
-            for (size_t ii = 0; ii < containersSize; ii++) {
-                openAt(ii);
+            for (size_t i = 0; i < containersSize; i++) {
+                openAt(i, false);
             }
+            if (redraw) getParentOrSelf()->draw();
         }
 
-        Container& createContainer(Zoom& zoom, const string& title, int frameHeight) {
-            return *vector_create(containers, *this, zoom, title, textAlign, frameHeight);
+        Container& createContainer(const string& title, int frameHeight) {
+            return *vector_create(containers, *this, title, textAlign, frameHeight);
         }
 
         vector<Container*>& getContainers() {
             return containers;
         }
 
-        void openAt(size_t containerIndex) {
+        void openAt(size_t containerIndex, bool redraw) {
             size_t containersSize = containers.size();
             Container* container = containers.at(containerIndex);
             if (container->isOpened()) return;
@@ -2238,10 +2286,10 @@ namespace madlib::graph {
                 frame.setTop(frame.getTop(false) + frameHeight);
             }
             height += frameHeight;
-            getParentOrSelf()->draw();
+            if (redraw) getParentOrSelf()->draw();
         }
 
-        void closeAt(size_t containerIndex) {
+        void closeAt(size_t containerIndex, bool redraw) {
             size_t containersSize = containers.size();
             Container* container = containers.at(containerIndex);
             if (!container->isOpened()) return;
@@ -2256,12 +2304,14 @@ namespace madlib::graph {
                 frame.setTop(frame.getTop(false) - frameHeight);
             }
             height -= frameHeight;
-            getParentOrSelf()->draw();
+            if (redraw) getParentOrSelf()->draw();
         }
 
-        void toggleAt(size_t containerIndex) {
-            isOpenedAt(containerIndex) ? closeAt(containerIndex) : openAt(containerIndex);
-        }
+        // void toggleAt(size_t containerIndex) {
+        //     isOpenedAt(containerIndex) 
+        //         ? closeAt(containerIndex, true) 
+        //         : openAt(containerIndex, true);
+        // }
 
         bool isOpenedAt(size_t containerIndex) {
             return containers.at(containerIndex)->isOpened();
@@ -2277,8 +2327,7 @@ namespace madlib::graph {
     protected:
 
         GFX gfx = GFX(this);
-        Zoom zoom;
-        GUI gui = GUI(gfx, zoom, 1600, 900, "Application");
+        GUI gui = GUI(gfx, 1600, 900, "Application");
 
     public:
 
@@ -2303,9 +2352,9 @@ namespace madlib::graph {
     class FrameApplication: public Application {
     protected:
         Frame mainFrame = Frame(
-            gfx, zoom, 0, 0, 
+            gfx, 0, 0, 
             gui.getWidth(), gui.getHeight(), 
-            NONE, Theme::defaultWindowColor
+            false, NONE, Theme::defaultWindowColor
         );
     public:
         virtual void init() override {

@@ -92,7 +92,7 @@ int main() {
     
     delete (new LabelManualTest1)->run();
     delete (new ChartManualTest7Zoom)->run();
-    delete (new MonteCarloChartsTest1)->run();
+    delete (new MonteCarloChartsTest1)->run(); // TODO: chart scroll and zoom bad
     delete (new MultiChartAccordionManualTest1)->run();
     delete (new AccordionManualTest1)->run();
     delete (new ChartManualTest6)->run();
@@ -102,7 +102,7 @@ int main() {
     chart_manual_test3_candles();
     chart_manual_test2();
     chart_manual_test1();
-    graph_manual_test1();
+    graph_manual_test1(); // TODO: drag-scroll doesnt work if I click below the big willi button somewhere
 
     cout << " [OK]" << endl 
         << "\033[92mAll tests are passed\033[39m" << endl;

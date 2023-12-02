@@ -35,19 +35,19 @@ protected:
 
     TradeTexts tradeTexts;
     TradeHistoryChart chart = TradeHistoryChart(
-        gfx, zoom, 300, 300, 1000, 300, history, tradeTexts
+        gfx, 300, 300, 1000, 300, history, tradeTexts
     );
 
 
     // test sliders...
 
-    SlideBar slideBarHorizontal = SlideBar(gfx, zoom, 10, 60, 200, HORIZONTAL);
-    ScrollBar scrollBarHorizontal = ScrollBar(gfx, zoom, 10, 90, 200, HORIZONTAL);
-    IntervalBar intervalBarHorizontal = IntervalBar(gfx, zoom, 10, 120, 200, HORIZONTAL);
+    SlideBar slideBarHorizontal = SlideBar(gfx, 10, 60, 200, HORIZONTAL);
+    ScrollBar scrollBarHorizontal = ScrollBar(gfx, 10, 90, 200, HORIZONTAL);
+    IntervalBar intervalBarHorizontal = IntervalBar(gfx, 10, 120, 200, HORIZONTAL);
 
-    SlideBar slideBarVertical = SlideBar(gfx, zoom, 260, 60, 200, VERTICAL);
-    ScrollBar scrollBarVertical = ScrollBar(gfx, zoom, 290, 60, 200, VERTICAL);
-    IntervalBar intervalBarVertical = IntervalBar(gfx, zoom, 320, 60, 200, VERTICAL);
+    SlideBar slideBarVertical = SlideBar(gfx, 260, 60, 200, VERTICAL);
+    ScrollBar scrollBarVertical = ScrollBar(gfx, 290, 60, 200, VERTICAL);
+    IntervalBar intervalBarVertical = IntervalBar(gfx, 320, 60, 200, VERTICAL);
 
 public:
 
@@ -64,6 +64,6 @@ public:
 
         mainFrame.child(chart);
 
-        chart.project();
+        chart.projectScales();
     }
 };
