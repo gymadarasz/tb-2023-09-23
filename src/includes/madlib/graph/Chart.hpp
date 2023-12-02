@@ -367,11 +367,12 @@ namespace madlib::graph {
             GFX& gfx, Zoom& zoom, 
             const int left, const int top, 
             const int width, const int height,
-            const Border border = Theme::chartBorder,
-            const Color backgroundColor = Theme::chartBackgroundColor
+            const Border border = Theme::defaultChartBorder,
+            const Color backgroundColor = Theme::defaultChartBackgroundColor,
+            void* eventContext = NULL
         ): Frame(
             gfx, zoom, left, top, width, height,
-            border, backgroundColor
+            border, backgroundColor, eventContext
         ) {
             addTouchHandler(zoomHandler);
         }

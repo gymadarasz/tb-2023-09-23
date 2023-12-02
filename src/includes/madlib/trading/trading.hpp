@@ -805,16 +805,17 @@ namespace madlib::trading {
             const bool showTexts = true, // TODO
             const Color& priceColor = orange, // TODO
             const Color& volumeColor = darkGray, // TODO
-            const Border border = Theme::chartBorder,
-            const Color backgroundColor = Theme::chartBackgroundColor,
             const CandleStyle& candleStyle = Scale::defaultCandleStyle,
             const LabelStyle& buyTextStyle = LabelStyle(red), // TODO
             const LabelStyle& sellTextStyle = LabelStyle(green), // TODO
-            const LabelStyle& errorTextStyle = LabelStyle(gray) // TODO
+            const LabelStyle& errorTextStyle = LabelStyle(gray), // TODO
+            void* eventContext = NULL
         ):  
             Chart(
                 gfx, zoom, left, top, width, height,
-                border, backgroundColor
+                Theme::defaultChartBorder,
+                Theme::defaultChartBackgroundColor,
+                eventContext
             ),
             history(history),
             tradeTexts(tradeTexts),

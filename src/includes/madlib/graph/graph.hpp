@@ -212,9 +212,9 @@ namespace madlib::graph {
         static const Color defaultAreaBorderColor = gray;
         static const Color defaultAreaTextColor = black;
 
-        static const Color frameBackgroundColor = darkGray;
-        static const int frameMargin = 10;
-        static const int textPadding = 10;
+        // static const Color frameBackgroundColor = darkGray;
+        // static const int frameMargin = 10;
+        // static const int textPadding = 10;
         static const Border defaultFrameBorder = PUSHED;
         static const Color defaultFrameBackgroundColor = gray;
 
@@ -225,10 +225,14 @@ namespace madlib::graph {
         static const Color defaultAccordionBackgroundColor = darkGray;
         static const Align defaultAccordionTogglerTextAlign = CENTER;
 
-        static const Align labelTextAlign = LEFT;
-        static const int barThickness = 20;
-        static const Border chartBorder = PUSHED;
-        static const Color chartBackgroundColor = black;
+        static const Align defaultLabelTextAlign = LEFT;
+        static const Border defaultLabelBorder = NONE;
+
+        static const int defaultBarThickness = 20;
+
+        static const Border defaultChartBorder = PUSHED;
+        static const Color defaultChartBackgroundColor = black;
+
         static const Color defaultCandleColorUp = green;
         static const Color defaultCandleColorDown = red;
         static const Color defaultChartLabelColor = white;
@@ -989,9 +993,10 @@ namespace madlib::graph {
 
         typedef struct { int width = 0, height = 0; } TextSize;
 
-        Painter(int width, int height, Zoom& zoom): 
+        Painter(int width, int height, Zoom& zoom, void* eventContext = NULL): 
             Scrollable(width, height),
-            Zoomable(zoom)
+            Zoomable(zoom),
+            EventHandler(eventContext)
         {}
 
         virtual void brush(Color) const { throw ERR_UNIMP; }
@@ -1021,7 +1026,7 @@ namespace madlib::graph {
         Border border;
         Color backgroundColor;
         int areaMargin;
-        int textPadding;
+        int textMargin;
         Color borderColor;
         Color textColor;
 
@@ -1076,11 +1081,12 @@ namespace madlib::graph {
             const Border border = Theme::defaultAreaBorder,
             const Color backgroundColor = Theme::defaultAreaBackgroundColor,
             const int areaMargin = Theme::defaultAreaMargin,
-            const int textPadding = Theme::defaultAreaTextMargin,
+            const int textMargin = Theme::defaultAreaTextMargin,
             const Color borderColor = Theme::defaultAreaBorderColor,
-            const Color textColor = Theme::defaultAreaTextColor
+            const Color textColor = Theme::defaultAreaTextColor,
+            void* eventContext = NULL
         ): 
-            Painter(width, height, zoom),
+            Painter(width, height, zoom, eventContext),
             gfx(gfx),
             left(left), 
             top(top),
@@ -1089,7 +1095,7 @@ namespace madlib::graph {
             border(border), 
             backgroundColor(backgroundColor), 
             areaMargin(areaMargin),
-            textPadding(textPadding),
+            textMargin(textMargin),
             borderColor(borderColor),
             textColor(textColor)
         {
@@ -1434,11 +1440,11 @@ namespace madlib::graph {
                         break;
 
                     case LEFT:
-                        txtLeft = l + textPadding;
+                        txtLeft = l + textMargin;
                         break;
 
                     case RIGHT:
-                        txtLeft = l + w - textPadding - txtWidth;
+                        txtLeft = l + w - textMargin - txtWidth;
                         break;
                     
                     default:
@@ -1503,9 +1509,20 @@ namespace madlib::graph {
             GFX& gfx, Zoom& zoom, 
             int width, int height, 
             const char* title = Theme::defaultWindowTitle, 
-            Color color = Theme::defaultWindowColor
+            Color color = Theme::defaultWindowColor,
+            void* eventContext = NULL
         ):
-            Area(gfx, zoom, 0, 0, width, height, "")
+            Area(
+                gfx, zoom, 0, 0, width, height, "",
+                Theme::defaultAreaTextAlign,
+                Theme::defaultAreaBorder,
+                Theme::defaultAreaBackgroundColor,
+                Theme::defaultAreaMargin,
+                Theme::defaultAreaTextMargin,
+                Theme::defaultAreaBorderColor,
+                Theme::defaultAreaTextColor,
+                eventContext
+            )
         {
             init(width, height, title, color);
         }
@@ -1524,11 +1541,6 @@ namespace madlib::graph {
     };
 
     class Frame: public Area {
-    public:
-
-        static const Border defaultFrameBorder = PUSHED; // TODO: to theme
-        static const Color defaultFrameBackgroundColor = Theme::frameBackgroundColor;
-
     protected:
 
         bool drag = false;
@@ -1573,14 +1585,20 @@ namespace madlib::graph {
             int left, int top, 
             int width, int height,
             Border border = Theme::defaultFrameBorder,
-            Color backgroundColor = Theme::defaultFrameBackgroundColor
+            Color backgroundColor = Theme::defaultFrameBackgroundColor,
+            void* eventContext = NULL
         ):
             Area(
                 gfx, zoom, 
                 left, top, 
                 width, height, 
                 "", CENTER, 
-                border, backgroundColor
+                border, backgroundColor,
+                Theme::defaultAreaMargin,
+                Theme::defaultAreaTextMargin,
+                Theme::defaultAreaBorderColor,
+                Theme::defaultAreaTextColor,
+                eventContext
             )
         {
             addTouchHandler(touchHandler);
@@ -1623,10 +1641,17 @@ namespace madlib::graph {
             int width, int height, 
             const string &text = "", 
             const Align textAlign = Theme::defaultButtonTextAlign,
-            const Border buttonBorder = Theme::defaultButtonBorder
+            const Border buttonBorder = Theme::defaultButtonBorder,
+            void* eventContext = NULL
         ): Area(
             gfx, zoom, left, top, width, height, text, 
-            textAlign, buttonBorder
+            textAlign, buttonBorder,
+            Theme::defaultAreaBackgroundColor,
+            Theme::defaultAreaMargin,
+            Theme::defaultAreaTextMargin,
+            Theme::defaultAreaBorderColor,
+            Theme::defaultAreaTextColor,
+            eventContext
         ) {
             addTouchHandler(touchHandler);
             addReleaseHandler(releaseHandler);
@@ -1665,13 +1690,20 @@ namespace madlib::graph {
 
     class Label: public Area {
     public:
-
-        static const Align defaultLabelTextAlign = Theme::labelTextAlign;
-
-    public:
         Label(GFX& gfx, Zoom& zoom, int left, int top, int width, int height,
-            const string &text, const Align textAlign = defaultLabelTextAlign
-        ): Area(gfx, zoom, left, top, width, height, text, textAlign, NONE) // TODO: border = NONE to theme
+            const string &text, 
+            const Align textAlign = Theme::defaultLabelTextAlign,
+            const Border border = Theme::defaultLabelBorder,
+            void* eventContext = NULL
+        ): Area(
+            gfx, zoom, left, top, width, height, text, textAlign, border, 
+            Theme::defaultAreaBackgroundColor,
+            Theme::defaultAreaMargin,
+            Theme::defaultAreaTextMargin,
+            Theme::defaultAreaBorderColor,
+            Theme::defaultAreaTextColor,
+            eventContext
+        )
         {}
     };
 
@@ -1749,12 +1781,19 @@ namespace madlib::graph {
         SlideBar(
             GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, double value = 0,
-            int thickness = Theme::barThickness
+            int thickness = Theme::defaultBarThickness,
+            void* eventContext = NULL
         ): Area(
             gfx, zoom, left, top, 
             direction == HORIZONTAL ? length : thickness,
             direction == VERTICAL ? length : thickness, 
-            "", CENTER, PUSHED
+            "", CENTER, PUSHED, 
+            Theme::defaultAreaBackgroundColor,
+            Theme::defaultAreaMargin,
+            Theme::defaultAreaTextMargin,
+            Theme::defaultAreaBorderColor,
+            Theme::defaultAreaTextColor,
+            eventContext
         ),  
             direction(direction), thickness(thickness),
             minValue(minValue), maxValue(maxValue), value(value),
@@ -1803,10 +1842,12 @@ namespace madlib::graph {
             GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
-            int thickness = Theme::barThickness
+            int thickness = Theme::defaultBarThickness,
+            void* eventContext = NULL
         ): SlideBar(
             gfx, zoom, left, top, length, direction, 
-            minValue, maxValue, value, thickness
+            minValue, maxValue, value, thickness, 
+            eventContext
         ), valueSize(valueSize)
         {
             this->size = calcSize();
@@ -1920,7 +1961,7 @@ namespace madlib::graph {
             GFX& gfx, Zoom& zoom, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
-            int thickness = Theme::barThickness
+            int thickness = Theme::defaultBarThickness
         ): ScrollBar(
             gfx, zoom, left, top, length, direction,
             minValue, maxValue, value, valueSize, thickness
@@ -2094,11 +2135,17 @@ namespace madlib::graph {
         Accordion(GFX& gfx, Zoom& zoom, int left, int top, int width,
             bool sticky = false, bool single = false, bool one = true, // TODO
             const Border border = Theme::defaultAccordionBorder,
-            const Color backgroundColor = Theme::defaultAccordionBackgroundColor
+            const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
+            void* eventContext = NULL
         ): 
             Area(
                 gfx, zoom, left, top, width, 0, "", CENTER,
-                border, backgroundColor
+                border, backgroundColor,
+                Theme::defaultAreaMargin,
+                Theme::defaultAreaTextMargin,
+                Theme::defaultAreaBorderColor,
+                Theme::defaultAreaTextColor,
+                eventContext
             ),
             sticky(sticky),
             single(single),

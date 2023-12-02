@@ -66,8 +66,6 @@ protected:
     const bool showTexts = true;
     const Color priceColor = orange;
     const Color volumeColor = darkGray;
-    const Border border = Theme::chartBorder;
-    const Color backgroundColor = Theme::chartBackgroundColor;
     const Chart::CandleStyle candleStyle;
     const Chart::LabelStyle buyTextStyle = Chart::LabelStyle(red);
     const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
@@ -75,11 +73,9 @@ protected:
     TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
         gfx, zoom, 10, 10, 300, 150, history, aCandleStrategy.getTradeTexts(), 
         showCandles, showPrices, showVolumes, showTexts, 
-        priceColor, volumeColor, border, backgroundColor, 
-        candleStyle, buyTextStyle, sellTextStyle, errorTextStyle
+        priceColor, volumeColor, candleStyle,
+        buyTextStyle, sellTextStyle, errorTextStyle
     );
-
-
     
     const int multiChartAccordionFramesHeight = 300;
     const bool showBalanceQuotedScale = true;
