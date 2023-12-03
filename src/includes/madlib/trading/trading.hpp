@@ -991,6 +991,7 @@ namespace madlib::trading {
             //     gfx, 10, 10, 300, 150, history, candleStrategy.getTradeTexts()
             // );
 
+            // TODO: BUG: after zoom(out then in..) the charts drag-scroll top limit doesnt stops - lines (shapes) can scrolled out totally at the bottom
             // TODO: BUG: the chart labels color seems wrong
             /*multiChartAccordion.*/addChart( // TODO: BUG: the chart drag-scroll left (min) limit is not stops at the egde of the view area
                 "History", tradeHistoryChart, multiChartAccordionFramesHeight

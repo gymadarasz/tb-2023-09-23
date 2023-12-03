@@ -1583,6 +1583,7 @@ namespace madlib::graph {
             }
         }
 
+        // TODO: !@# can it be bubbled up to the abstract Zoomable class?
         static void zoomHandler(void* context, unsigned int button, int, int) {
             Frame* that = (Frame*)context;
 
@@ -1591,7 +1592,7 @@ namespace madlib::graph {
             double ratioX;
             double ratioY;
             switch (button) {
-                case zoomInScrollButton:
+                case zoomInScrollButton: // TODO: disable X and/or Y direction of zoom
                     ratioX = that->getZoomRatio().getX() * zoomInRatio;
                     ratioY = that->getZoomRatio().getY() * zoomInRatio;
                     if (ratioX > zoomRatioMax) ratioX = zoomRatioMax;

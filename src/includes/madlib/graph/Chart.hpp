@@ -25,6 +25,7 @@ namespace madlib::graph {
         }
     };
 
+    // TODO: Add margin and show value labels to chart (at first / last and pointed place), also add legend
     class Chart: public Frame {
     public:
 
