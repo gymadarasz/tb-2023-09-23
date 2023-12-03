@@ -506,6 +506,7 @@ namespace madlib {
     vector<T>& vector_load(const string &filename, vector<T>& data) {
         ifstream file(filename, ios::binary);
         if (!file.is_open()) throw ERROR("Error opening file for reading: " + filename);
+        data.clear();
         T item;
         while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
         file.close();

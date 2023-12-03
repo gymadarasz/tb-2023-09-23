@@ -44,7 +44,7 @@ namespace madlib::trading::strategy {
 
                 case 1: // sell
                     
-                    if (tick > 150000 /*|| exitAt > exchange.getBalanceQuotedFull(symbol)*/) {
+                    if (tick > 50 /*|| exitAt > exchange.getBalanceQuotedFull(symbol)*/) {
                         balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
                         marketSell(symbol, buyAmount > balanceBase09 ? balanceBase09 : buyAmount);
                         stage = 2;

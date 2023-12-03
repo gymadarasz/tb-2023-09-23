@@ -83,7 +83,7 @@ int graph_manual_test1()
     frame.child(button4);
     frame.child(button5);
     frame.child(button6);
-    // frame.child(label1);
+    frame.child(label1);
     gui.child(frame);
 
     frame2.child(lbtn);

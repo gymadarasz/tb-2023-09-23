@@ -73,7 +73,7 @@ int main() {
     Tester::run(ToolsTest::test_map_key_exists);
     Tester::run(VectorTest::testVector_concat);
     Tester::run(VectorTest::testVector_save_and_load);
-    // Tester::run(VectorTest::testVector_load_and_load_with_reference);
+    Tester::run(VectorTest::testVector_load_and_load_with_reference);
     Tester::run(FilesTest::testFiles_findByExtension);
     Tester::run(FilesTest::testFiles_findByExtensions);
     Tester::run(FilesTest::testFiles_replaceExtension);
@@ -102,7 +102,7 @@ int main() {
     chart_manual_test3_candles();
     chart_manual_test2();
     chart_manual_test1();
-    graph_manual_test1(); // TODO: drag-scroll doesnt work if I click below the big willi button somewhere
+    graph_manual_test1(); // TODO: BUG: drag-scroll doesnt work if I click below the big willi button somewhere
 
     cout << " [OK]" << endl 
         << "\033[92mAll tests are passed\033[39m" << endl;

@@ -229,9 +229,8 @@ namespace madlib::graph {
 
         static const Border defaultChartBorder = PUSHED;
         static const Color defaultChartBackgroundColor = black;
-
-        static const Color defaultCandleColorUp = green;
-        static const Color defaultCandleColorDown = red;
+        static const Color defaultChartCandleColorUp = green;
+        static const Color defaultChartCandleColorDown = red;
         static const Color defaultChartLabelColor = white;
         static const bool defaultChartLabelHasBackground = true;
         static const Color defaultChartLabelBackgroundColor = black;
@@ -241,6 +240,15 @@ namespace madlib::graph {
         static const Color defaultChartLineScaleContext;
         static const Color defaultChartBoxScaleContext;
         static const Color defaultChartFilledScaleContext;
+
+        static const int defaultMultiChartAccordionInnerBorderSize = 2;
+
+        static const int zoomInScrollButton = Button4;
+        static const int zoomOutScrollButton = Button5;
+        static constexpr double zoomInRatio = 1.25;
+        static constexpr double zoomOutRatio = .8;
+        static constexpr double zoomRatioMax = INFINITY;
+        static constexpr double zoomRatioMin = 1;
     };
     const char* Theme::defaultWindowTitle = "graph";
     const char* Theme::defaultWindowFont = "10x20";
@@ -864,7 +872,13 @@ namespace madlib::graph {
 
     public:
 
-        Scrollable(int width, int height, bool scrollFixed): width(width), height(height), scrollFixed(scrollFixed) {}
+        Scrollable(
+            int width, int height, 
+            bool scrollFixed = true
+        ):
+            width(width), height(height), 
+            scrollFixed(scrollFixed)
+        {}
 
         virtual ~Scrollable() {}
 
@@ -930,7 +944,6 @@ namespace madlib::graph {
                 scrollX = scrollXMax;
             if (scrollY > scrollYMax) 
                 scrollY = scrollYMax;
-            // DBG(scrollX, " ", scrollXMin, ", ", scrollXMax);
         }
 
         void setScrollXYMin(int x, int y, bool forceInRange = true) {
@@ -984,13 +997,45 @@ namespace madlib::graph {
         }
     };
 
+    // TODO: add Resizable class
     class Painter: public Scrollable, public Zoomable, public EventHandler {
+    protected:
+
+        static void zoomHandler(void* context, unsigned int button, int, int) {
+            Painter* that = (Painter*)context;
+
+            // change zoom ratio
+
+            double ratioX;
+            double ratioY;
+            switch (button) {
+                case Theme::zoomInScrollButton: // TODO: disable X and/or Y direction of zoom
+                    ratioX = that->getZoomRatio().getX() * Theme::zoomInRatio;
+                    ratioY = that->getZoomRatio().getY() * Theme::zoomInRatio;
+                    if (ratioX > Theme::zoomRatioMax) ratioX = Theme::zoomRatioMax;
+                    if (ratioY > Theme::zoomRatioMax) ratioY = Theme::zoomRatioMax;
+                    break;
+                case Theme::zoomOutScrollButton:
+                    ratioX = that->getZoomRatio().getX() * Theme::zoomOutRatio;
+                    ratioY = that->getZoomRatio().getY() * Theme::zoomOutRatio;
+                    if (ratioX < Theme::zoomRatioMin) ratioX = Theme::zoomRatioMin;
+                    if (ratioY < Theme::zoomRatioMin) ratioY = Theme::zoomRatioMin;
+                    break;
+                default:
+                    return; // no scroll zoom
+            }
+            that->setZoomRatioX(ratioX);
+            that->setZoomRatioY(ratioY);
+            that->draw(); // redraw
+        }
+
     public:
 
         typedef struct { int width = 0, height = 0; } TextSize;
 
+
         Painter(
-            int width, int height, bool scrollFixed,
+            int width, int height, bool scrollFixed = true,
             void* eventContext = NULL): 
             Scrollable(width, height, scrollFixed),
             Zoomable(),
@@ -1018,6 +1063,42 @@ namespace madlib::graph {
 
     class Area: public Painter {
     protected:
+
+        bool drag = false;
+        int dragStartedX = 0, dragStartedY = 0, dragScrollStartedX = 0, dragScrollStartedY = 0;
+
+        static void touchHandler(void* context, unsigned int, int x, int y) {
+            Area* that = (Area*)(context);
+            if (that->scrollFixed) return;
+
+            // drag & scroll only if no child in the event focus
+            for (Area* area: that->areas)
+                if (area->contains(x, y)) return; // cppcheck-suppress useStlAlgorithm
+
+            that->drag = true;
+            that->dragStartedX = x;
+            that->dragStartedY = y;
+            that->dragScrollStartedX = that->scrollX;
+            that->dragScrollStartedY = that->scrollY;
+        }
+        
+        static void releaseHandler(void* context, unsigned int, int, int) {
+            Area* that = (Area*)(context);
+            that->drag = false;
+        }
+        
+        static void moveHandler(void* context, int x, int y) {
+            Area* that = (Area*)(context);
+            if (!that->scrollFixed && that->drag) {
+                that->setScrollXY(
+                    that->dragScrollStartedX + (that->dragStartedX - x), 
+                    that->dragScrollStartedY + (that->dragStartedY - y)
+                );
+                that->draw();
+            }
+        }
+
+
         GFX& gfx;
 
         int left, top;
@@ -1075,7 +1156,7 @@ namespace madlib::graph {
         Area(
             GFX& gfx, 
             int left, int top, 
-            int width, int height, bool scrollFixed,
+            int width, int height, bool scrollFixed = true,
             const string &text = "", 
             const Align textAlign = Theme::defaultAreaTextAlign,
             const Border border = Theme::defaultAreaBorder,
@@ -1103,7 +1184,7 @@ namespace madlib::graph {
         }
 
         virtual ~Area() {
-            // TODO: manage area pointers: vector_destroy<Area>(areas);
+            // managing this->areas pointers is in a caller scope, no need vector_destroy<Area>(areas) 
         }
 
         bool isCalcScrollOnly() const {
@@ -1541,77 +1622,6 @@ namespace madlib::graph {
     };
 
     class Frame: public Area {
-    protected:
-
-        static const int zoomInScrollButton = 4; // TODO
-        static const int zoomOutScrollButton = 5; // TODO
-        static constexpr double zoomInRatio = 1.25; // TODO
-        static constexpr double zoomOutRatio = .8; // TODO
-        static constexpr double zoomRatioMax = INFINITY; // TODO
-        static constexpr double zoomRatioMin = 1; // TODO
-
-        bool drag = false;
-        int dragStartedX = 0, dragStartedY = 0, dragScrollStartedX = 0, dragScrollStartedY = 0;
-
-        static void touchHandler(void* context, unsigned int, int x, int y) {
-            Frame* that = (Frame*)(context);
-
-            // drag & scroll only if no child in the event focus
-            for (Area* area: that->areas)
-                if (area->contains(x, y)) return; // cppcheck-suppress useStlAlgorithm
-
-            that->drag = true;
-            that->dragStartedX = x;
-            that->dragStartedY = y;
-            that->dragScrollStartedX = that->scrollX;
-            that->dragScrollStartedY = that->scrollY;
-        }
-        
-        static void releaseHandler(void* context, unsigned int, int, int) {
-            Frame* that = (Frame*)(context);
-            that->drag = false;
-        }
-        
-        static void moveHandler(void* context, int x, int y) {
-            Frame* that = (Frame*)(context);
-            if (!that->scrollFixed && that->drag) {
-                that->setScrollXY(
-                    that->dragScrollStartedX + (that->dragStartedX - x), 
-                    that->dragScrollStartedY + (that->dragStartedY - y)
-                );
-                that->draw();
-            }
-        }
-
-        // TODO: !@# can it be bubbled up to the abstract Zoomable class?
-        static void zoomHandler(void* context, unsigned int button, int, int) {
-            Frame* that = (Frame*)context;
-
-            // change zoom ratio
-
-            double ratioX;
-            double ratioY;
-            switch (button) {
-                case zoomInScrollButton: // TODO: disable X and/or Y direction of zoom
-                    ratioX = that->getZoomRatio().getX() * zoomInRatio;
-                    ratioY = that->getZoomRatio().getY() * zoomInRatio;
-                    if (ratioX > zoomRatioMax) ratioX = zoomRatioMax;
-                    if (ratioY > zoomRatioMax) ratioY = zoomRatioMax;
-                    break;
-                case zoomOutScrollButton:
-                    ratioX = that->getZoomRatio().getX() * zoomOutRatio;
-                    ratioY = that->getZoomRatio().getY() * zoomOutRatio;
-                    if (ratioX < zoomRatioMin) ratioX = zoomRatioMin;
-                    if (ratioY < zoomRatioMin) ratioY = zoomRatioMin;
-                    break;
-                default:
-                    return; // no scroll zoom
-            }
-            that->setZoomRatioX(ratioX);
-            that->setZoomRatioY(ratioY);
-            that->draw(); // redraw
-        }
-
     public:
 
         // bool scrollFixed = false;
@@ -1637,10 +1647,10 @@ namespace madlib::graph {
                 eventContext
             )
         {
-            addTouchHandler(touchHandler);
-            addReleaseHandler(releaseHandler);
-            addMoveHandler(moveHandler);
-            addTouchHandler(zoomHandler);
+            addTouchHandler(Area::touchHandler);
+            addReleaseHandler(Area::releaseHandler);
+            addMoveHandler(Area::moveHandler);
+            addTouchHandler(Painter::zoomHandler);
         }
     };
 

@@ -78,8 +78,8 @@ namespace madlib::graph {
             const Color colorDown;
         public:
             CandleStyle(
-                const Color colorUp = Theme::defaultCandleColorUp,
-                const Color colorDown = Theme::defaultCandleColorDown
+                const Color colorUp = Theme::defaultChartCandleColorUp,
+                const Color colorDown = Theme::defaultChartCandleColorDown
             ):
                 colorUp(colorUp),
                 colorDown(colorDown)
@@ -94,11 +94,11 @@ namespace madlib::graph {
             }
         };
 
-        static const Shape defaultChartShape = LINE; // TODO??
-
-
         class Scale: public Zoomable {
         public:
+
+            const static CandleStyle defaultChartCandleStyle;
+            const static LabelStyle defaultChartLabelStyle;
 
             static const void* getDefaultScaleContext(Shape shape) {
                 switch (shape)
@@ -107,20 +107,17 @@ namespace madlib::graph {
                     case LINE: return &Theme::defaultChartLineScaleContext;
                     case BOX: return &Theme::defaultChartBoxScaleContext;
                     case FILLED: return &Theme::defaultChartFilledScaleContext;
-                    case CANDLE: return &defaultCandleStyle; // TODO;
-                    case LABEL: return &defaultLabelStyle; // TODO;
+                    case CANDLE: return &defaultChartCandleStyle;
+                    case LABEL: return &defaultChartLabelStyle;
                     default: throw ERROR("Invalid shape");
                 }
                 return NULL;
             }
 
-            const static CandleStyle defaultCandleStyle;
-            const static LabelStyle defaultLabelStyle;
 
         protected:
 
             double xmin, ymin, xmax, ymax;
-            // int width, height;
             const Chart& chart;
             Shape shape;
             bool adapt;
@@ -143,8 +140,6 @@ namespace madlib::graph {
             
             ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
                 if (adapt) adaptXY(x, y);
-                // result.setX(projectX(x, adapt));
-                // result.setY(projectY(y, adapt));
                 result = applyZoom(
                     projectX(xmin, false), projectY(ymin, false), 
                     projectX(x, adapt), projectY(y, adapt)
@@ -156,12 +151,10 @@ namespace madlib::graph {
 
             Scale(
                 const Chart& chart,
-                // int width, int height,
                 Shape shape = LINE, bool adapt = true, const void* context = NULL
             ):
                 Zoomable(),
                 chart(chart),
-                // width(width), height(height), 
                 shape(shape), adapt(adapt),
                 context(context ? context : getDefaultScaleContext(shape))
             {
@@ -169,14 +162,6 @@ namespace madlib::graph {
             }
 
             virtual ~Scale() final {}
-
-            // void setWidth(int width) {
-            //     this->width = width;
-            // }
-
-            // void setHeight(int height) {
-            //     this->height = height;
-            // }
 
             Scale& setAdapt(bool adapt) {
                 this->adapt = adapt;
@@ -257,12 +242,6 @@ namespace madlib::graph {
                     );
                 }
                 adapt = _adapt;
-                // transform(realPoints.begin(), realPoints.end(), back_inserter(projectedPoints),
-                //     [&](const RealPoint& realPoint) {
-                //         return project(realPoint.getX(), realPoint.getY(), projectedPoint, false);
-                //     }
-                // );
-                //return projectedPoints;
             }
 
             void setTexts(const vector<string>& texts) {
@@ -274,16 +253,6 @@ namespace madlib::graph {
                 setTexts(texts);
                 project();
             }
-
-            // void projectTexts(bool adapt = true) {
-            //     projectRealPoints(adapt);
-
-            //     // // Make sure 'texts' vector has enough capacity before the assignment
-            //     // if ((signed)texts.size() < 0) throw ERROR("Invalid or too large text vector");
-            //     // this->texts.resize(texts.size());
-
-            //     // this->texts = texts;
-            // }
 
             static void alignX(Scale& scale1, Scale& scale2) {
                 double xmin = scale1.xmin < scale2.xmin ? scale1.xmin : scale2.xmin;
@@ -334,34 +303,11 @@ namespace madlib::graph {
     
         static void zoomHandler(void* context, unsigned int /*button*/, int, int) {
             Chart* that = (Chart*)context;
-
-            // change zoom ratio
-
-            // double ratioX;
-            // switch (button) {
-            //     case zoomInScrollButton:
-            //         ratioX = that->getZoom().getRatio().getX() * zoomInRatio;
-            //         if (ratioX > zoomRatioMax) ratioX = zoomRatioMax;
-            //         break;
-            //     case zoomOutScrollButton:
-            //         ratioX = that->getZoom().getRatio().getX() * zoomOutRatio;
-            //         if (ratioX < zoomRatioMin) ratioX = zoomRatioMin;
-            //         break;
-            //     default:
-            //         return; // no scroll
-            // }
-            // that->getZoom().setRatioX(ratioX);
-            
-            // redraw
-
             that->projectScales();
             that->redraw();
         }
-
-        Color borderColor = white; // TODO
         
         vector<Scale*> scales;
-        // Factory<Scale> scales;
 
         typedef void (*DrawPairFunction)(Chart*, int, int, int, int);
 
@@ -397,20 +343,7 @@ namespace madlib::graph {
             vector_destroy<Scale>(scales);
         }
 
-        // void setWidth(int width) override {
-        //     Frame::setWidth(width);
-        //     for (Scale* scale: scales) scale->setWidth(width);
-        // }
-
-        // void setHeight(int height) override {
-        //     Frame::setHeight(height);
-        //     for (Scale* scale: scales) scale->setHeight(height);
-        // }
-
         virtual void projectScales() {
-            // if (onDrawHandlers.empty()) {
-            //     throw ERROR("Chart does not show anything because projection is not implemented nor drawHandler added");
-            // }
             for (Scale* scale: scales) {
                 scale->setZoomFrom(*this);
                 scale->project();
@@ -428,10 +361,6 @@ namespace madlib::graph {
 
         Scale& createScale(Shape shape/* = LINE*/, bool adapt, const void* context = NULL) {
             return *vector_create(scales, *this, shape, adapt, context ? context : Scale::getDefaultScaleContext(shape));
-        }
-
-        void destroyScales() {
-            vector_destroy(scales);
         }
         
         void drawPoint(int x, int y) {
@@ -534,7 +463,7 @@ namespace madlib::graph {
         }
 
         void drawCandle(
-            // FlawFinder: ignore
+            // TODO: FlawFinder: ignore
             ProjectedPoint open,
             ProjectedPoint close,
             ProjectedPoint low,
@@ -695,14 +624,13 @@ namespace madlib::graph {
 
     };
 
-
-    const Chart::CandleStyle Chart::Scale::defaultCandleStyle = CandleStyle();
-    const Chart::LabelStyle Chart::Scale::defaultLabelStyle = LabelStyle();
+    const Chart::CandleStyle Chart::Scale::defaultChartCandleStyle = CandleStyle();
+    const Chart::LabelStyle Chart::Scale::defaultChartLabelStyle = LabelStyle();
 
     class MultiChartAccordion: public Accordion {
     protected:
 
-        const int innerBorderSize = 2; // TODO
+        const int innerBorderSize = Theme::defaultMultiChartAccordionInnerBorderSize;
         vector<Chart*> charts;
 
         void setupChart(Chart& chart, int frameWidth, int frameHeight) {

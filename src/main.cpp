@@ -17,7 +17,7 @@ protected:
 
     const string symbol = "BTCUSD";
     const ms_t startTime = datetime_to_ms("2023-10-25 00:50:00");
-    const ms_t endTime = datetime_to_ms("2023-10-28 01:00:00");
+    const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
     const ms_t period = period_to_ms("1m");
     BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
 
@@ -53,8 +53,8 @@ protected:
     const int multiChartAccordionLeft = 10;
     const int multiChartAccordionTop = 50;
     const int multiChartAccordionWidth = 1000;
-    MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-        gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
+    // MultiChartAccordion multiChartAccordion = MultiChartAccordion(
+    //     gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
 
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
@@ -62,10 +62,14 @@ protected:
     const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
     const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
     CandleStrategyBacktester tester = CandleStrategyBacktester(
-        multiChartAccordion,
-        history, tradeHistoryChart,
-        testExchange, strategy, symbol
+        gfx, 
+        multiChartAccordionLeft, 
+        multiChartAccordionTop, 
+        multiChartAccordionWidth, 
+        multiChartAccordionFramesHeight,
+        history, testExchange, strategy, symbol
     );
+
 public:
     void init() override {
         FrameApplication::init();
@@ -75,7 +79,7 @@ public:
 
         // ----------------
 
-        mainFrame.child(multiChartAccordion);
+        mainFrame.child(tester);
     }
 };
 

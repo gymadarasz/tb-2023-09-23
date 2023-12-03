@@ -31,6 +31,7 @@ public:
         "-Wdisabled-optimization -Werror=return-type -Werror=main "
         "-Wsuggest-final-methods -std=c++17";
     const string flagsLibs = "-lX11 -ldl";
+    const string optimizationFlag = " -O3";
     // const string flagsShared = "-shared -fPIC";
     const string cppExtension = ".cpp";
     bool executeMain = true;
@@ -59,7 +60,7 @@ public:
                 cout << "TESTS";
                 sourcePaths.push_back("./tests/includes");
                 sharedPaths.push_back("./tests/shared");
-                flags += " -O3";
+                flags += optimizationFlag;
                 mainPath = "./tests";
                 main = "test";
                 break;
@@ -75,7 +76,7 @@ public:
             
             default:
                 cout << "RELEASE";
-                flags += " -O3";
+                flags += optimizationFlag;
                 break;
         }
         cout << endl;

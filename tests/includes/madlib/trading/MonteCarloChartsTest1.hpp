@@ -77,8 +77,6 @@ public:
         gui.setTitle("MonteCarloChartsTest1");
 
         backtester.backtest();
-        backtester.projectCharts();
-        backtester.draw();
 
         // ----------------
 

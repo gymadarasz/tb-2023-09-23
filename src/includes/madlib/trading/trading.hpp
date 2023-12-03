@@ -47,20 +47,6 @@ namespace madlib::trading {
             open(open), close(close), low(low), high(high), volume(volume), 
             start(start), end(end) {}
 
-        // // Overloading the assignment operator
-        // Candle& operator=(const Candle& other) {
-        //     if (this != &other) { // Avoid self-assignment
-        //         open = other.open;
-        //         close = other.close;
-        //         low = other.low;
-        //         high = other.high;
-        //         volume = other.volume;
-        //         start = other.start;
-        //         end = other.end;
-        //     }
-        //     return *this;
-        // }
-
         double getOpen() const {
             return open;
         }
@@ -122,15 +108,15 @@ namespace madlib::trading {
     struct Trade {
         double volume;
         double price;
-        ms_t timestamp; // ms
+        ms_t timestamp;
     };
 
     class TradeHistory {
     protected:
 
         const string& symbol;
-        const ms_t startTime; // ms
-        const ms_t endTime; // ms
+        const ms_t startTime;
+        const ms_t endTime;
         const ms_t period;
         vector<Trade> trades;
         vector<Candle> candles;
@@ -270,7 +256,7 @@ namespace madlib::trading {
             double volumeMean, double volumeStdDeviation, 
             double priceMean, double priceStdDeviation,
             double timeLambda,
-            unsigned int seed = random_device()() // Add a seed parameter with a default value
+            unsigned int seed = random_device()() // TODO: Add a seed parameter with a default value
         ):
             TradeHistory(
             symbol, 
@@ -790,12 +776,17 @@ namespace madlib::trading {
         }
     };
 
+
     class TradeHistoryChart: public Chart {
     protected:
 
+        static const CandleStyle defaultCandleStyle;
+        static const LabelStyle defaultBuyLabelStyle;
+        static const LabelStyle defaultSellLabelStyle;
+        static const LabelStyle defaultErrorLabelStyle;
+
         const TradeHistory& history;
         TradeTexts& tradeTexts;
-        // const Zoom& zoom;
         const bool 
             showCandles, 
             showPrices, 
@@ -804,9 +795,9 @@ namespace madlib::trading {
         const Color& priceColor; // TODO
         const Color& volumeColor; // TODO
         const CandleStyle& candleStyle;
-        const LabelStyle& buyTextStyle; // TODO
-        const LabelStyle& sellTextStyle; // TODO
-        const LabelStyle& errorTextStyle; // TODO
+        const LabelStyle& buyTextStyle;
+        const LabelStyle& sellTextStyle;
+        const LabelStyle& errorTextStyle;
         
         Scale& candlesScale = createScale(CANDLE, true, &candleStyle);
         Scale& priceScale = createScale(LINE, true, &priceColor);
@@ -827,10 +818,10 @@ namespace madlib::trading {
             const bool showTexts = true, // TODO
             const Color& priceColor = orange, // TODO
             const Color& volumeColor = darkGray, // TODO
-            const CandleStyle& candleStyle = Scale::defaultCandleStyle,
-            const LabelStyle& buyTextStyle = LabelStyle(red), // TODO
-            const LabelStyle& sellTextStyle = LabelStyle(green), // TODO
-            const LabelStyle& errorTextStyle = LabelStyle(gray), // TODO
+            const CandleStyle& candleStyle = defaultCandleStyle,
+            const LabelStyle& buyTextStyle = defaultBuyLabelStyle,
+            const LabelStyle& sellTextStyle = defaultSellLabelStyle,
+            const LabelStyle& errorTextStyle = defaultErrorLabelStyle,
             void* eventContext = NULL
         ):  
             Chart(
@@ -841,7 +832,6 @@ namespace madlib::trading {
             ),
             history(history),
             tradeTexts(tradeTexts),
-            // zoom(zoom),
             showCandles(showCandles),
             showPrices(showPrices),
             showVolumes(showVolumes),
@@ -857,8 +847,6 @@ namespace madlib::trading {
         virtual ~TradeHistoryChart() {}
 
         void projectScales() override final {
-            // destroyScales();
-            // Scale* candlesScale = createScale(CANDLE, true, &candleStyle);
             if (showCandles) {
                 vector<Candle> candles = history.getCandles();
                 vector<RealPoint> candlesRealPoints;
@@ -875,7 +863,6 @@ namespace madlib::trading {
                     candlesRealPoints.push_back(RealPoint(middle, low));
                     candlesRealPoints.push_back(RealPoint(middle, high));
                 }
-                // candlesScale = createScale(CANDLE, true, &candleStyle);
                 candlesScale.setRealPoints(candlesRealPoints);
             }
 
@@ -891,29 +878,28 @@ namespace madlib::trading {
                 }
                 
                 if (showPrices) {
-                    // Scale* priceScale = createScale(LINE, true, &priceColor);
                     priceScale.setRealPoints(pricesRealPoints);
-                    if (showCandles) Scale::alignXY(priceScale, candlesScale);
+                    if (showCandles) {
+                        candlesScale.project();
+                        Scale::alignXY(priceScale, candlesScale);
+                    }
                 }
                 if (showVolumes) 
                     volumeScale.setRealPoints(volumesRealPoints);
             }
 
-            Scale* scale0 = NULL; // getScaleAt(0);
+            Scale* scale0 = NULL;
             if (showPrices) scale0 = &priceScale;
             else if (showCandles) scale0 = &candlesScale;
             if (scale0 && showTexts) {
-                // Scale* buyTextScale = createScale(LABEL, false, &buyTextStyle);
                 buyTextScale.setRealPoints(tradeTexts.getBuyTextRealChoords());
                 buyTextScale.setTexts(tradeTexts.getBuyTexts());
                 Scale::alignXY(*scale0, buyTextScale);
 
-                // Scale* sellTextScale = createScale(LABEL, false, &sellTextStyle);
                 sellTextScale.setRealPoints(tradeTexts.getSellTextRealChoords());
                 sellTextScale.setTexts(tradeTexts.getSellTexts());
                 Scale::alignXY(*scale0, sellTextScale);
 
-                // Scale* errorTextScale = createScale(LABEL, false, &errorTextStyle);
                 errorTextScale.setRealPoints(tradeTexts.getErrorTextRealChoords());
                 errorTextScale.setTexts(tradeTexts.getErrorTexts());
                 Scale::alignXY(*scale0, errorTextScale);
@@ -922,16 +908,19 @@ namespace madlib::trading {
             Chart::projectScales();
         }
     };
+    const Chart::CandleStyle TradeHistoryChart::defaultCandleStyle = Chart::CandleStyle(
+        Theme::defaultChartCandleColorUp, Theme::defaultChartCandleColorDown
+    );
+    const Chart::LabelStyle TradeHistoryChart::defaultBuyLabelStyle = Chart::LabelStyle(red);
+    const Chart::LabelStyle TradeHistoryChart::defaultSellLabelStyle = Chart::LabelStyle(green);
+    const Chart::LabelStyle TradeHistoryChart::defaultErrorLabelStyle = Chart::LabelStyle(gray);
 
     class CandleStrategyBacktester: public MultiChartAccordion {
     protected:
-        // MultiChartAccordion& multiChartAccordion;
         const TradeHistory& history;
-        // TradeHistoryChart& tradeHistoryChart;
         TestExchange& testExchange;
         CandleStrategy& candleStrategy;
         const string& symbol;
-        // const int multiChartAccordionFramesHeight = 340; // TODO
         const bool showBalanceQuotedScale = true; // TODO
 
         // **** tradeHistoryChart ****
@@ -956,68 +945,51 @@ namespace madlib::trading {
 
         CandleStrategyBacktester(
             GFX& gfx, int left, int top, int width,
-            const int multiChartAccordionFramesHeight, // = 340, // TODO
-            // MultiChartAccordion& multiChartAccordion,
+            const int multiChartAccordionFramesHeight,
             const TradeHistory& history,
-            // TradeHistoryChart& tradeHistoryChart,
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
             const string& symbol,
-            const bool showBalanceQuotedScale = true, // TODO
+            const bool showBalanceQuotedScale = true,
 
-            //bool sticky = false, 
-            bool single = false, //bool one = true, // TODO
+            bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
             void* eventContext = NULL
         ):
             MultiChartAccordion(
                 gfx, left, top, width, 
-                /*sticky,*/ single, /*one,*/ border, backgroundColor, 
+                single, border, backgroundColor, 
                 eventContext
             ),
-            // multiChartAccordion(multiChartAccordion),
             history(history),
-            // tradeHistoryChart(tradeHistoryChart),
             testExchange(testExchange),
             candleStrategy(candleStrategy),
             symbol(symbol),
-            // multiChartAccordionFramesHeight(multiChartAccordionFramesHeight),
             showBalanceQuotedScale(showBalanceQuotedScale)
         {
             // **** tradeHistoryChart ****
-            
-            // tradeHistoryChart = new TradeHistoryChart(
-            //     gfx, 10, 10, 300, 150, history, candleStrategy.getTradeTexts()
-            // );
 
             // TODO: BUG: after zoom(out then in..) the charts drag-scroll top limit doesnt stops - lines (shapes) can scrolled out totally at the bottom
-            // TODO: BUG: the chart labels color seems wrong
-            /*multiChartAccordion.*/addChart( // TODO: BUG: the chart drag-scroll left (min) limit is not stops at the egde of the view area
+            addChart(
                 "History", tradeHistoryChart, multiChartAccordionFramesHeight
             );
 
             // **** balanceQuotedChart ****
 
-            balanceQuotedChart =
-                &/*multiChartAccordion.*/createChart(
-                    "Balance (quoted)", multiChartAccordionFramesHeight
-                );
-            balanceQuotedFullScale = 
-                &balanceQuotedChart->createScale(LINE, false, &lightGreen);
-            balanceQuotedScale = 
-                &balanceQuotedChart->createScale(LINE, false, &green);
+            balanceQuotedChart = &createChart(
+                "Balance (quoted)", multiChartAccordionFramesHeight
+            );
+            balanceQuotedFullScale = &balanceQuotedChart->createScale(LINE, false, &lightGreen);
+            balanceQuotedScale = &balanceQuotedChart->createScale(LINE, false, &green);
 
             // **** balanceBaseChart ****
 
-            balanceBaseChart =
-                &/*multiChartAccordion.*/createChart(
-                    "Balance (base)", multiChartAccordionFramesHeight
-                );
-            balanceBaseFullScale = 
-                &balanceBaseChart->createScale(LINE, false, &yellow);
-            balanceBaseScale = 
-                &balanceBaseChart->createScale(LINE, false, &orange);
+            balanceBaseChart = &createChart(
+                "Balance (base)", multiChartAccordionFramesHeight
+            );
+            balanceBaseFullScale = &balanceBaseChart->createScale(LINE, false, &yellow);
+            balanceBaseScale = &balanceBaseChart->createScale(LINE, false, &orange);
 
             openAll(false);
         }
@@ -1062,26 +1034,11 @@ namespace madlib::trading {
 
                 candleStrategy.onCandleClose(candle);
             }
-            
-
-            // **** tradeHistoryChart ****
-
-            // multiChartAccordion.addChart(
-            //     "History", tradeHistoryChart, multiChartAccordionFramesHeight
-            // );
 
             // **** balanceQuotedChart ****
 
-            // Chart& balanceQuotedChart =
-            //     multiChartAccordion.createChart(
-            //         "Balance (quoted)", multiChartAccordionFramesHeight
-            //     );
-            // Chart::Scale* balanceQuotedFullScale = 
-            //     balanceQuotedChart.createScale(LINE, false, &lightGreen);
             balanceQuotedFullScale->adaptXY(balanceQuotedFullAtCloses);
             if (showBalanceQuotedScale) {
-                // Chart::Scale* balanceQuotedScale = 
-                //     balanceQuotedChart.createScale(LINE, false, &green);
                 balanceQuotedScale->adaptXY(balanceQuotedAtCloses);
                 Chart::Scale::alignXY(*balanceQuotedScale, *balanceQuotedFullScale);
                 balanceQuotedScale->setRealPoints(balanceQuotedAtCloses);
@@ -1090,25 +1047,16 @@ namespace madlib::trading {
 
             // **** balanceBaseChart ****
 
-            // Chart& balanceBaseChart =
-            //     multiChartAccordion.createChart(
-            //         "Balance (base)", multiChartAccordionFramesHeight
-            //     );
-            // Chart::Scale* balanceBaseFullScale = 
-            //     balanceBaseChart.createScale(LINE, false, &yellow);
             balanceBaseFullScale->adaptXY(balanceBaseFullAtCloses);
-            // Chart::Scale* balanceBaseScale = 
-            //     balanceBaseChart.createScale(LINE, false, &orange);
             balanceBaseScale->adaptXY(balanceBaseAtCloses);
             Chart::Scale::alignXY(*balanceBaseScale, *balanceBaseFullScale);
             balanceBaseScale->setRealPoints(balanceBaseAtCloses);
             balanceBaseFullScale->setRealPoints(balanceBaseFullAtCloses);
+
+            projectCharts();
         }
 
-        void projectCharts() override {
-            // **** projections ****
-
-            /*multiChartAccordion.*///openAll(); // TODO??
+        void projectCharts() override final {
             tradeHistoryChart.projectScales();
             MultiChartAccordion::projectCharts();
         };
