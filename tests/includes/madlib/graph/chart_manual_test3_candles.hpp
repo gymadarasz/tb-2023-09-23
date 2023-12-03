@@ -11,10 +11,7 @@ GFX* chart_manual_test3_gfxPtr;
 Chart* chart_manual_test3_chartPtr;
 Button* chart_manual_test3_closeOkBtnPtr;
 
-void chart_manual_test3_draw(void* /*context*/) {
-    // Painter* painter = (Painter*)context;
-    // chart_manual_test3_chartPtr->draw();
-    // chart_manual_test3_chartPtr->drawCandle(10, 10, 20, 20, 15, 25, 15, 5);
+void chart_manual_test3_draw(void*) {
     chart_manual_test3_closeOkBtnPtr->draw();
 }
 

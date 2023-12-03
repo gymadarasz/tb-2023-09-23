@@ -153,7 +153,7 @@ namespace madlib::graph {
                 const Chart& chart,
                 Shape shape = LINE, bool adapt = true, const void* context = NULL
             ):
-                Zoomable(),
+                Zoomable(false),
                 chart(chart),
                 shape(shape), adapt(adapt),
                 context(context ? context : getDefaultScaleContext(shape))
@@ -333,9 +333,11 @@ namespace madlib::graph {
             const Color backgroundColor = Theme::defaultChartBackgroundColor,
             void* eventContext = NULL
         ): Frame(
-            gfx, left, top, width, height, false,
+            gfx, left, top, width, height, false, false,
             border, backgroundColor, eventContext
         ) {
+            scrollFixedY = true;
+            zoomFixedY = true;
             addTouchHandler(zoomHandler);
         }
 
@@ -633,15 +635,6 @@ namespace madlib::graph {
         const int innerBorderSize = Theme::defaultMultiChartAccordionInnerBorderSize;
         vector<Chart*> charts;
 
-        void setupChart(Chart& chart, int frameWidth, int frameHeight) {
-            chart.setTop(innerBorderSize);
-            chart.setLeft(innerBorderSize);
-            chart.setWidth(frameWidth - innerBorderSize * 2);
-            chart.setHeight(frameHeight - innerBorderSize * 2);
-            chart.setBorder(PUSHED);
-            chart.setBackgroundColor(black);
-        }
-
     public:
         using Accordion::Accordion;
 
@@ -650,24 +643,20 @@ namespace madlib::graph {
         }
 
         Chart& createChart(const string& title, int frameHeight) { // TODO bubble up params default
-            const Accordion::Container& container = 
-                createContainer(title, frameHeight);
-            Frame& cntrFrame = container.getFrame();
-            cntrFrame.setScrollFixed(true);
-            Chart* chart = vector_create(
-                charts, gfx, 0, 0, 0, 0
-            );
-            setupChart(*chart, cntrFrame.getWidth(), frameHeight);
-            cntrFrame.child(*chart);
-            return *chart;
+            Chart& chart = *vector_create(charts, gfx, 0, 0, 0, 0);
+            return addChart(title, chart, frameHeight);
         }
 
         Chart& addChart(const string& title, Chart& chart, int frameHeight) {
-            const Accordion::Container& container = 
-                createContainer(title, frameHeight);
-            Frame& cntrFrame = container.getFrame();
+            Frame& cntrFrame = createContainer(title, frameHeight).getFrame();
             cntrFrame.setScrollFixed(true);
-            setupChart(chart, cntrFrame.getWidth(), frameHeight);
+            int frameWidth = cntrFrame.getWidth();
+            chart.setTop(innerBorderSize);
+            chart.setLeft(innerBorderSize);
+            chart.setWidth(frameWidth - innerBorderSize * 2);
+            chart.setHeight(frameHeight - innerBorderSize * 2);
+            chart.setBorder(PUSHED);
+            chart.setBackgroundColor(black);
             cntrFrame.child(chart);
             return chart;
         }

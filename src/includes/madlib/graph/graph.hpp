@@ -741,42 +741,54 @@ namespace madlib::graph {
 
 
     class Zoomable {
-    public:
-
+    protected:
         const int defaultZoomCenterX = 0, defaultZoomCenterY = 0; // TODO
         const double defaultZoomRatioX = 1.0, defaultZoomRatioY = 1.0;
-
-    protected:
 
         ProjectedPoint zoomCenter = ProjectedPoint(defaultZoomCenterX, defaultZoomCenterY);
         RealPoint zoomRatio = RealPoint(defaultZoomRatioX, defaultZoomRatioY);
 
+        bool zoomFixedX;
+        bool zoomFixedY;
     public:
 
-        Zoomable(): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY) {}
-        Zoomable(int centerX, int centerY): zoomCenter(centerX, centerY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY) {}
-        Zoomable(const ProjectedPoint& center): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY) {}
-        Zoomable(double ratioX, double ratioY): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratioX, ratioY) {}
-        Zoomable(const RealPoint& ratio): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio) {}
-        Zoomable(int centerX, int centerY, double ratioX, double ratioY): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY) {}
-        Zoomable(const ProjectedPoint& center, const RealPoint& ratio): zoomCenter(center), zoomRatio(ratio) {}
-        Zoomable(double ratioX, double ratioY, int centerX, int centerY): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY) {}
-        Zoomable(const RealPoint& ratio, const ProjectedPoint& center): zoomCenter(center), zoomRatio(ratio) {}
+        Zoomable(bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(int centerX, int centerY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const ProjectedPoint& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(double ratioX, double ratioY, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const RealPoint& ratio, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(int centerX, int centerY, double ratioX, double ratioY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const ProjectedPoint& center, const RealPoint& ratio, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(double ratioX, double ratioY, int centerX, int centerY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const RealPoint& ratio, const ProjectedPoint& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         
         virtual ~Zoomable() {}
 
-        // Zoom& operator=(const Zoom& other) {
-        //     if (this != &other) { // Check for self-assignment
-        //         this->center = other.center;
-        //         this->ratio = other.ratio;
-        //     }
-        //     return *this;
-        // }
+        void setZoomFixedX(bool zoomFixedX) {
+            this->zoomFixedX = zoomFixedX;
+        }
+
+        bool isZoomFixedX() const {
+            return zoomFixedX;
+        }
+
+        void setZoomFixedY(bool zoomFixedY) {
+            this->zoomFixedY = zoomFixedY;
+        }
+
+        bool isZoomFixedY() const {
+            return zoomFixedY;
+        }
+
+        void setZoomFixed(bool zoomFixed) {
+            zoomFixedX = zoomFixed;
+            zoomFixedY = zoomFixed;
+        }
 
         Zoomable& setZoomFrom(const Zoomable& other) {
             if (this != &other) {
-                this->zoomCenter = other.zoomCenter;
-                this->zoomRatio = other.zoomRatio;
+                setZoomCenter(other.zoomCenter);
+                setZoomRatio(other.zoomRatio);
             }
             return *this;
         }
@@ -786,11 +798,21 @@ namespace madlib::graph {
         }
 
         void setZoomCenter(const ProjectedPoint& zoomCenter) {
-            this->zoomCenter = zoomCenter;
+            setZoomCenterX(zoomCenter.getX());
+            setZoomCenterY(zoomCenter.getY());
         }
 
         void setZoomCenter(int x = 0, int y = 0) {
-            setZoomCenter(ProjectedPoint(x, y));
+            setZoomCenterX(x);
+            setZoomCenterY(y);
+        }
+
+        void setZoomCenterX(int x = 0) {
+            if (!zoomFixedX) zoomCenter.setX(x);
+        }
+
+        void setZoomCenterY(int y = 0) {
+            if (!zoomFixedY) zoomCenter.setY(y);
         }
 
         RealPoint getZoomRatio() const {
@@ -798,19 +820,21 @@ namespace madlib::graph {
         }
 
         void setZoomRatio(const RealPoint& zoomRatio) {
-            this->zoomRatio = zoomRatio;
+            setZoomRatioX(zoomRatio.getX());
+            setZoomRatioY(zoomRatio.getY());
         }
 
         void setZoomRatio(double x = 1.0, double y = 1.0) {
-            setZoomRatio(RealPoint(x, y));
+            setZoomRatioX(x);
+            setZoomRatioY(y);
         }
 
-        void setZoomRatioX(double ratioX) {
-            this->zoomRatio.setX(ratioX);
+        void setZoomRatioX(double x) {
+            if (!zoomFixedX) zoomRatio.setX(x);
         }
 
-        void setZoomRatioY(double ratioY) {
-            this->zoomRatio.setY(ratioY);
+        void setZoomRatioY(double y) {
+            if (!zoomFixedY) zoomRatio.setY(y);
         }
 
         int applyZoomX(int origoX, int pointX) const {
@@ -841,24 +865,6 @@ namespace madlib::graph {
         }
     };
 
-    // class Zoomable {
-    // protected:
-    
-    //     Zoom& zoom;
-
-    // public:
-
-    //     Zoomable(Zoom& zoom): zoom(zoom) {}
-
-    //     // void setZoom(const Zoom& zoom) {
-    //     //     this->zoom = zoom;
-    //     // }
-
-    //     Zoom& getZoom() {
-    //         return zoom;
-    //     }
-    // };
-
     class Scrollable {
     protected:
 
@@ -868,7 +874,8 @@ namespace madlib::graph {
 
 
         int width, height;
-        bool scrollFixed;
+        bool scrollFixedX;
+        bool scrollFixedY;
 
     public:
 
@@ -877,17 +884,31 @@ namespace madlib::graph {
             bool scrollFixed = true
         ):
             width(width), height(height), 
-            scrollFixed(scrollFixed)
+            scrollFixedX(scrollFixed),
+            scrollFixedY(scrollFixed)
         {}
 
         virtual ~Scrollable() {}
 
-        void setScrollFixed(bool scrollFixed) {
-            this->scrollFixed = scrollFixed;
+        void setScrollFixedX(bool scrollFixedX) {
+            this->scrollFixedX = scrollFixedX;
         }
 
-        bool isScrollFixed() const {
-            return scrollFixed;
+        bool isScrollFixedX() const {
+            return scrollFixedX;
+        }
+
+        void setScrollFixedY(bool scrollFixedY) {
+            this->scrollFixedY = scrollFixedY;
+        }
+
+        bool isScrollFixedY() const {
+            return scrollFixedY;
+        }
+
+        void setScrollFixed(bool scrollFixed) {
+            scrollFixedX = scrollFixed;
+            scrollFixedY = scrollFixed;
         }
 
         int getScrollX() const {
@@ -979,16 +1000,14 @@ namespace madlib::graph {
         }
         
         void setScrollXY(int x, int y) {
-            if (scrollFixed) return;
-            scrollX = x;
-            scrollY = y;
+            if (!scrollFixedX) scrollX = x;
+            if (!scrollFixedY) scrollY = y;
             forceScrollInRange();
         }
 
         void moveScrollXY(int x, int y) {
-            if (scrollFixed) return;
-            scrollX += x;
-            scrollY += y;
+            if (!scrollFixedX) scrollX += x;
+            if (!scrollFixedY) scrollY += y;
             forceScrollInRange();
         }
 
@@ -1035,10 +1054,12 @@ namespace madlib::graph {
 
 
         Painter(
-            int width, int height, bool scrollFixed = true,
+            int width, int height, 
+            bool scrollFixed = true,
+            bool zoomFixed = true,
             void* eventContext = NULL): 
             Scrollable(width, height, scrollFixed),
-            Zoomable(),
+            Zoomable(zoomFixed),
             EventHandler(eventContext)
         {}
 
@@ -1069,7 +1090,7 @@ namespace madlib::graph {
 
         static void touchHandler(void* context, unsigned int, int x, int y) {
             Area* that = (Area*)(context);
-            if (that->scrollFixed) return;
+            if (that->scrollFixedX && that->scrollFixedY) return;
 
             // drag & scroll only if no child in the event focus
             for (Area* area: that->areas)
@@ -1089,7 +1110,9 @@ namespace madlib::graph {
         
         static void moveHandler(void* context, int x, int y) {
             Area* that = (Area*)(context);
-            if (!that->scrollFixed && that->drag) {
+            if (that->scrollFixedX && that->scrollFixedY) return;
+
+            if (that->drag) {
                 that->setScrollXY(
                     that->dragScrollStartedX + (that->dragStartedX - x), 
                     that->dragScrollStartedY + (that->dragStartedY - y)
@@ -1156,7 +1179,9 @@ namespace madlib::graph {
         Area(
             GFX& gfx, 
             int left, int top, 
-            int width, int height, bool scrollFixed = true,
+            int width, int height, 
+            bool scrollFixed = true,
+            bool zoomFixed = true,
             const string &text = "", 
             const Align textAlign = Theme::defaultAreaTextAlign,
             const Border border = Theme::defaultAreaBorder,
@@ -1167,7 +1192,11 @@ namespace madlib::graph {
             const Color textColor = Theme::defaultAreaTextColor,
             void* eventContext = NULL
         ): 
-            Painter(width, height, scrollFixed, eventContext),
+            Painter(
+                width, height, 
+                scrollFixed, zoomFixed,
+                eventContext
+            ),
             gfx(gfx),
             left(left), 
             top(top),
@@ -1594,7 +1623,7 @@ namespace madlib::graph {
             void* eventContext = NULL
         ):
             Area(
-                gfx, 0, 0, width, height, false, "",
+                gfx, 0, 0, width, height, false, false, "",
                 Theme::defaultAreaTextAlign,
                 Theme::defaultAreaBorder,
                 Theme::defaultAreaBackgroundColor,
@@ -1629,7 +1658,9 @@ namespace madlib::graph {
         Frame(
             GFX& gfx, 
             int left, int top, 
-            int width, int height, bool scrollFixed = false,
+            int width, int height, 
+            bool scrollFixed = false,
+            bool zoomFixed = false,
             Border border = Theme::defaultFrameBorder,
             Color backgroundColor = Theme::defaultFrameBackgroundColor,
             void* eventContext = NULL
@@ -1637,7 +1668,8 @@ namespace madlib::graph {
             Area(
                 gfx, 
                 left, top, 
-                width, height, scrollFixed,
+                width, height, 
+                scrollFixed, zoomFixed,
                 "", CENTER, 
                 border, backgroundColor,
                 Theme::defaultAreaMargin,
@@ -1691,7 +1723,7 @@ namespace madlib::graph {
             const Border buttonBorder = Theme::defaultButtonBorder,
             void* eventContext = NULL
         ): Area(
-            gfx, left, top, width, height, false,
+            gfx, left, top, width, height, false, false,
             text, textAlign, buttonBorder,
             Theme::defaultAreaBackgroundColor,
             Theme::defaultAreaMargin,
@@ -1743,7 +1775,7 @@ namespace madlib::graph {
             const Border border = Theme::defaultLabelBorder,
             void* eventContext = NULL
         ): Area(
-            gfx, left, top, width, height, false, text, textAlign, border, 
+            gfx, left, top, width, height, false, false, text, textAlign, border, 
             Theme::defaultAreaBackgroundColor,
             Theme::defaultAreaMargin,
             Theme::defaultAreaTextMargin,
@@ -1834,7 +1866,7 @@ namespace madlib::graph {
             gfx, left, top, 
             direction == HORIZONTAL ? length : thickness,
             direction == VERTICAL ? length : thickness, 
-            false, "", CENTER, PUSHED, 
+            false, false, "", CENTER, PUSHED, 
             Theme::defaultAreaBackgroundColor,
             Theme::defaultAreaMargin,
             Theme::defaultAreaTextMargin,
@@ -2127,7 +2159,7 @@ namespace madlib::graph {
 
                 frame = new Frame(gfx, 
                     innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
-                    width, 0, false, NONE, accordion.getBackgroundColor());
+                    width, 0, false, false, NONE, accordion.getBackgroundColor());
             
                 accordion.child(*toggler);
                 accordion.child(*frame);
@@ -2195,7 +2227,7 @@ namespace madlib::graph {
             void* eventContext = NULL
         ): 
             Area(
-                gfx, left, top, width, 0, false, "", CENTER,
+                gfx, left, top, width, 0, false, false, "", CENTER,
                 border, backgroundColor,
                 Theme::defaultAreaMargin,
                 Theme::defaultAreaTextMargin,
@@ -2365,7 +2397,7 @@ namespace madlib::graph {
         Frame mainFrame = Frame(
             gfx, 0, 0, 
             gui.getWidth(), gui.getHeight(), 
-            false, NONE, Theme::defaultWindowColor
+            false, false, NONE, Theme::defaultWindowColor
         );
     public:
         virtual void init() override {

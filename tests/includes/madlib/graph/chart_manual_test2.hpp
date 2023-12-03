@@ -11,7 +11,6 @@ Chart* chart_manual_test2_chartPtr;
 Button* chart_manual_test2_closeOkBtnPtr;
 
 void chart_manual_test2_draw(void* /*context*/) {
-    // Painter* painter = (Painter*)context;
     chart_manual_test2_chartPtr->draw();
     chart_manual_test2_closeOkBtnPtr->draw();
 }

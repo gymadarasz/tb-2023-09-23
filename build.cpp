@@ -31,7 +31,7 @@ public:
         "-Wdisabled-optimization -Werror=return-type -Werror=main "
         "-Wsuggest-final-methods -std=c++17";
     const string flagsLibs = "-lX11 -ldl";
-    const string optimizationFlag = " -O3";
+    const string optimizationFlag = " -O0";
     // const string flagsShared = "-shared -fPIC";
     const string cppExtension = ".cpp";
     bool executeMain = true;
@@ -157,6 +157,8 @@ public:
         executeMain(args.executeMain),
         mainArgs(mainArgs)
     {
+        ms_t startAt = now();
+        cout << "Build start at: " << ms_to_datetime(startAt) << endl;
         // build source files
         vector<string> files = collectFiles(sourcePaths, { cppExtension });
         files.push_back(mainPath + "/" + main + cppExtension);
@@ -180,6 +182,9 @@ public:
             osFiles.push_back(osFile);
         }
 
+        ms_t finishAt = now();
+        cout << "Build finish at: " << ms_to_datetime(finishAt) << endl;
+        cout << "Build in " << finishAt - startAt << " ms" << endl;
 
         if (executeMain) ::exec("./" + buildPath + main + " " + mainArgs);
     }
