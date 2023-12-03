@@ -57,8 +57,8 @@ int chart_manual_test2()
     }
     
 
-    chart.getScaleAt(0)->project(realPoints);
-    chart.getScaleAt(1)->project(textRealChoords, texts);
+    chart.getScaleAt(0).project(realPoints);
+    chart.getScaleAt(1).project(textRealChoords, texts);
     chart.draw();
 
 

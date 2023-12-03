@@ -52,10 +52,10 @@ int chart_manual_test1()
     vector<RealPoint> realPoints;
     chart_manual_test1_generateRealPoints(realPoints);
 
-    chart.createScale(LINE, true, &lightGreen)->project(realPoints);
-    Chart::Scale* secondScale = chart.createScale(LINE, true, &lightCyan);
-    secondScale->setZoomRatio(2.0, 1.5);
-    secondScale->project(realPoints);
+    chart.createScale(LINE, true, &lightGreen).project(realPoints);
+    Chart::Scale& secondScale = chart.createScale(LINE, true, &lightCyan);
+    secondScale.setZoomRatio(2.0, 1.5);
+    secondScale.project(realPoints);
     
 
     gui.loop();

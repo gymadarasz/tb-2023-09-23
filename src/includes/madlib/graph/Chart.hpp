@@ -120,7 +120,8 @@ namespace madlib::graph {
         protected:
 
             double xmin, ymin, xmax, ymax;
-            int width, height;
+            // int width, height;
+            const Chart& chart;
             Shape shape;
             bool adapt;
             const void* context = NULL;
@@ -132,12 +133,12 @@ namespace madlib::graph {
 
             int projectX(double x, bool adapt) {
                 if (adapt) adaptX(x);
-                return (int)(((x - xmin) * width) / (xmax - xmin));
+                return (int)(((x - xmin) * chart.getWidth()) / (xmax - xmin));
             }
 
             int projectY(double y, bool adapt) {
                 if (adapt) adaptY(y);
-                return (int)(((y - ymin) * height) / (ymax - ymin));
+                return (int)(((y - ymin) * chart.getHeight()) / (ymax - ymin));
             }
             
             ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
@@ -154,11 +155,14 @@ namespace madlib::graph {
         public:
 
             Scale(
-                int width, int height,
+                const Chart& chart,
+                // int width, int height,
                 Shape shape = LINE, bool adapt = true, const void* context = NULL
             ):
                 Zoomable(),
-                width(width), height(height), shape(shape), adapt(adapt),
+                chart(chart),
+                // width(width), height(height), 
+                shape(shape), adapt(adapt),
                 context(context ? context : getDefaultScaleContext(shape))
             {
                 reset();
@@ -166,13 +170,13 @@ namespace madlib::graph {
 
             virtual ~Scale() final {}
 
-            void setWidth(int width) {
-                this->width = width;
-            }
+            // void setWidth(int width) {
+            //     this->width = width;
+            // }
 
-            void setHeight(int height) {
-                this->height = height;
-            }
+            // void setHeight(int height) {
+            //     this->height = height;
+            // }
 
             Scale& setAdapt(bool adapt) {
                 this->adapt = adapt;
@@ -393,15 +397,15 @@ namespace madlib::graph {
             vector_destroy<Scale>(scales);
         }
 
-        void setWidth(int width) override {
-            Frame::setWidth(width);
-            for (Scale* scale: scales) scale->setWidth(width);
-        }
+        // void setWidth(int width) override {
+        //     Frame::setWidth(width);
+        //     for (Scale* scale: scales) scale->setWidth(width);
+        // }
 
-        void setHeight(int height) override {
-            Frame::setHeight(height);
-            for (Scale* scale: scales) scale->setHeight(height);
-        }
+        // void setHeight(int height) override {
+        //     Frame::setHeight(height);
+        //     for (Scale* scale: scales) scale->setHeight(height);
+        // }
 
         virtual void projectScales() {
             // if (onDrawHandlers.empty()) {
@@ -417,14 +421,13 @@ namespace madlib::graph {
             return scales;
         }
 
-        Scale* getScaleAt(size_t at) {
+        Scale& getScaleAt(size_t at) {
             if (scales.size() <= at) throw ERROR("Invalid scale index: " + to_string(at));
-            return scales.at(at);
+            return *scales.at(at);
         }
 
-        Scale* createScale(Shape shape/* = LINE*/, bool adapt, const void* context = NULL) {
-            Scale* scale = vector_create(scales, width, height, shape, adapt, context ? context : Scale::getDefaultScaleContext(shape));
-            return scale;
+        Scale& createScale(Shape shape/* = LINE*/, bool adapt, const void* context = NULL) {
+            return *vector_create(scales, *this, shape, adapt, context ? context : Scale::getDefaultScaleContext(shape));
         }
 
         void destroyScales() {

@@ -68,10 +68,10 @@ int chart_manual_test3_candles()
         candlesRealPoints.push_back(RealPoint((double)middle, high));
     }
     chart.createScale(LINE, true);
-    chart.getScaleAt(0)->setShape(CANDLE);
-    chart.getScaleAt(0)->project(candlesRealPoints);
+    chart.getScaleAt(0).setShape(CANDLE);
+    chart.getScaleAt(0).project(candlesRealPoints);
     chart.createScale(LINE, true, &orange);
-    chart.getScaleAt(1)->project(pricesRealPoints);
+    chart.getScaleAt(1).project(pricesRealPoints);
 
     gui.loop();
     

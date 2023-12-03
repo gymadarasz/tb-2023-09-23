@@ -905,7 +905,7 @@ namespace madlib::graph {
             scrollYMax = 0;
         }
 
-        virtual void setWidth(int width) {
+        void setWidth(int width) {
             this->width = width;
         }
 
@@ -913,7 +913,7 @@ namespace madlib::graph {
             return width;
         }
 
-        virtual void setHeight(int height) {
+        void setHeight(int height) {
             this->height = height;
         }
 

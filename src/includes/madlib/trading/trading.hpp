@@ -808,12 +808,12 @@ namespace madlib::trading {
         const LabelStyle& sellTextStyle; // TODO
         const LabelStyle& errorTextStyle; // TODO
         
-        Scale* candlesScale = createScale(CANDLE, true, &candleStyle);
-        Scale* priceScale = createScale(LINE, true, &priceColor);
-        Scale* volumeScale = createScale(LINE, true, &volumeColor);
-        Scale* buyTextScale = createScale(LABEL, false, &buyTextStyle);
-        Scale* sellTextScale = createScale(LABEL, false, &sellTextStyle);
-        Scale* errorTextScale = createScale(LABEL, false, &errorTextStyle);
+        Scale& candlesScale = createScale(CANDLE, true, &candleStyle);
+        Scale& priceScale = createScale(LINE, true, &priceColor);
+        Scale& volumeScale = createScale(LINE, true, &volumeColor);
+        Scale& buyTextScale = createScale(LABEL, false, &buyTextStyle);
+        Scale& sellTextScale = createScale(LABEL, false, &sellTextStyle);
+        Scale& errorTextScale = createScale(LABEL, false, &errorTextStyle);
 
     public:
 
@@ -876,7 +876,7 @@ namespace madlib::trading {
                     candlesRealPoints.push_back(RealPoint(middle, high));
                 }
                 // candlesScale = createScale(CANDLE, true, &candleStyle);
-                candlesScale->setRealPoints(candlesRealPoints);
+                candlesScale.setRealPoints(candlesRealPoints);
             }
 
             if (showPrices || showVolumes) {
@@ -892,31 +892,31 @@ namespace madlib::trading {
                 
                 if (showPrices) {
                     // Scale* priceScale = createScale(LINE, true, &priceColor);
-                    priceScale->setRealPoints(pricesRealPoints);
-                    if (showCandles) Scale::alignXY(*priceScale, *candlesScale);
+                    priceScale.setRealPoints(pricesRealPoints);
+                    if (showCandles) Scale::alignXY(priceScale, candlesScale);
                 }
                 if (showVolumes) 
-                    volumeScale->setRealPoints(volumesRealPoints);
+                    volumeScale.setRealPoints(volumesRealPoints);
             }
 
             Scale* scale0 = NULL; // getScaleAt(0);
-            if (showPrices) scale0 = priceScale;
-            else if (showCandles) scale0 = candlesScale;
+            if (showPrices) scale0 = &priceScale;
+            else if (showCandles) scale0 = &candlesScale;
             if (scale0 && showTexts) {
                 // Scale* buyTextScale = createScale(LABEL, false, &buyTextStyle);
-                buyTextScale->setRealPoints(tradeTexts.getBuyTextRealChoords());
-                buyTextScale->setTexts(tradeTexts.getBuyTexts());
-                Scale::alignXY(*scale0, *buyTextScale);
+                buyTextScale.setRealPoints(tradeTexts.getBuyTextRealChoords());
+                buyTextScale.setTexts(tradeTexts.getBuyTexts());
+                Scale::alignXY(*scale0, buyTextScale);
 
                 // Scale* sellTextScale = createScale(LABEL, false, &sellTextStyle);
-                sellTextScale->setRealPoints(tradeTexts.getSellTextRealChoords());
-                sellTextScale->setTexts(tradeTexts.getSellTexts());
-                Scale::alignXY(*scale0, *sellTextScale);
+                sellTextScale.setRealPoints(tradeTexts.getSellTextRealChoords());
+                sellTextScale.setTexts(tradeTexts.getSellTexts());
+                Scale::alignXY(*scale0, sellTextScale);
 
                 // Scale* errorTextScale = createScale(LABEL, false, &errorTextStyle);
-                errorTextScale->setRealPoints(tradeTexts.getErrorTextRealChoords());
-                errorTextScale->setTexts(tradeTexts.getErrorTexts());
-                Scale::alignXY(*scale0, *errorTextScale);
+                errorTextScale.setRealPoints(tradeTexts.getErrorTextRealChoords());
+                errorTextScale.setTexts(tradeTexts.getErrorTexts());
+                Scale::alignXY(*scale0, errorTextScale);
             }
 
             Chart::projectScales();
@@ -937,7 +937,7 @@ namespace madlib::trading {
         // **** tradeHistoryChart ****
         
         TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-            gfx, 10, 10, 300, 150, history, candleStrategy.getTradeTexts()
+            gfx, 0, 0, 0, 0, history, candleStrategy.getTradeTexts()
         );
 
         // **** balanceQuotedChart ****
@@ -1004,9 +1004,9 @@ namespace madlib::trading {
                     "Balance (quoted)", multiChartAccordionFramesHeight
                 );
             balanceQuotedFullScale = 
-                balanceQuotedChart->createScale(LINE, false, &lightGreen);
+                &balanceQuotedChart->createScale(LINE, false, &lightGreen);
             balanceQuotedScale = 
-                balanceQuotedChart->createScale(LINE, false, &green);
+                &balanceQuotedChart->createScale(LINE, false, &green);
 
             // **** balanceBaseChart ****
 
@@ -1015,9 +1015,9 @@ namespace madlib::trading {
                     "Balance (base)", multiChartAccordionFramesHeight
                 );
             balanceBaseFullScale = 
-                balanceBaseChart->createScale(LINE, false, &yellow);
+                &balanceBaseChart->createScale(LINE, false, &yellow);
             balanceBaseScale = 
-                balanceBaseChart->createScale(LINE, false, &orange);
+                &balanceBaseChart->createScale(LINE, false, &orange);
 
             openAll(false);
         }
