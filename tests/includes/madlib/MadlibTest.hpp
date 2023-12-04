@@ -64,7 +64,7 @@ public:
         class MyObject {
         public:
             int value;
-            MyObject(int val) : value(val) {}
+            explicit MyObject(int val) : value(val) {}
         };
 
         Factory<MyObject> objFactory;

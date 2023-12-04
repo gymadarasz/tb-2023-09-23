@@ -107,8 +107,8 @@ protected:
     const string mainArgs;
 
     static vector<string> collectFiles(
-        const vector<string> paths,
-        const vector<string> cppExtensions
+        const vector<string>& paths,
+        const vector<string>& cppExtensions
     ) {
         vector<string> files;
         for (const string& path : paths) {
@@ -119,11 +119,11 @@ protected:
     }
 
     static vector<string> buildFiles(
-        const vector<string> files,
-        const string buildPath,
-        const string flags,
-        const string main,
-        const string flagsLibs
+        const vector<string>& files,
+        const string& buildPath,
+        const string& flags,
+        const string& main,
+        const string& flagsLibs
     ) {
         vector<string> oFiles;
         for (const string& file : files) {
@@ -144,7 +144,7 @@ protected:
     }
 
 public:
-    Builder(BuildArguments& args, const string mainArgs):
+    Builder(BuildArguments& args, const string& mainArgs):
         sourcePaths(args.sourcePaths),
         sharedPaths(args.sharedPaths),
         buildPath(args.buildPath),
@@ -163,7 +163,8 @@ public:
         vector<string> files = collectFiles(sourcePaths, { cppExtension });
         files.push_back(mainPath + "/" + main + cppExtension);
 
-        vector<string> oFiles = buildFiles(files, buildPath, flags, main, flagsLibs);
+        // vector<string> oFiles = 
+        buildFiles(files, buildPath, flags, main, flagsLibs);
         
         // build shared files
         vector<string> sharedFiles = collectFiles(sharedPaths, { cppExtension });
@@ -221,6 +222,6 @@ int main(int argc, const char *argv[]) {
 
     BuildArguments args(mode);
     Builder builder(args, mainArgs);
-
+    static_cast<void>(builder); // hax to fix a cppcheck style warning
     return 0;
 }

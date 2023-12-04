@@ -14,7 +14,7 @@ namespace madlib::trading::strategy {
     public:
         using CandleStrategy::CandleStrategy;
 
-        void onCandleClose(const Candle candle) override {
+        void onCandleClose(const Candle& candle) override {
             const string symbol = parameters.at("symbol").getString();
             // LOG(
             //     ms_to_datetime(candle.getEnd()), 

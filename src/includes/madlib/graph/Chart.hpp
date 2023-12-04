@@ -149,7 +149,7 @@ namespace madlib::graph {
             
         public:
 
-            Scale(
+            explicit Scale(
                 const Chart& chart,
                 Shape shape = LINE, bool adapt = true, const void* context = NULL
             ):

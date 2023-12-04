@@ -743,9 +743,9 @@ namespace madlib::graph {
 
         Zoomable(bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(int centerX, int centerY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
-        Zoomable(const Pixel& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        explicit Zoomable(const Pixel& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(double ratioX, double ratioY, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
-        Zoomable(const Coord& ratio, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        explicit Zoomable(const Coord& ratio, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(int centerX, int centerY, double ratioX, double ratioY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(const Pixel& center, const Coord& ratio, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(double ratioX, double ratioY, int centerX, int centerY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
@@ -1320,7 +1320,6 @@ namespace madlib::graph {
 
         int getTop(bool withParent = true) const {
             if (!withParent) return top;
-            Area* parent = getParent();
             return top + (parent ? parent->getTop() - parent->scrollY : 0);
         }
 
@@ -1330,7 +1329,6 @@ namespace madlib::graph {
 
         int getLeft(bool withParent = true) const {
             if (!withParent) return left;
-            Area* parent = getParent();
             return left + (parent ? parent->getLeft() - parent->scrollX : 0);
         }
 

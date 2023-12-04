@@ -485,8 +485,8 @@ namespace madlib::trading {
     class TestExchange: public Exchange {
     protected:
 
-        ms_t currentTime;
-        double currentPrice;
+        ms_t currentTime = 0;
+        double currentPrice = 0;
 
         struct MarketOrderInfos {
             const double price;
@@ -564,12 +564,12 @@ namespace madlib::trading {
 
     public:
         TradeTexts(
-            const vector<Coord> buyTextRealChoords,
-            const vector<string> buyTexts,
-            const vector<Coord> sellTextRealChoords,
-            const vector<string> sellTexts,
-            const vector<Coord> errorTextRealChoords,
-            const vector<string> errorTexts
+            const vector<Coord>& buyTextRealChoords,
+            const vector<string>& buyTexts,
+            const vector<Coord>& sellTextRealChoords,
+            const vector<string>& sellTexts,
+            const vector<Coord>& errorTextRealChoords,
+            const vector<string>& errorTexts
 
         ):
             buyTextRealChoords(buyTextRealChoords),
@@ -662,13 +662,13 @@ namespace madlib::trading {
             Limited<double> _double = Limited<double>(0);
             Limited<long> _long = Limited<long>(0);
         public:
-            Parameter(const string& _string): 
+            explicit Parameter(const string& _string): 
                 type(STRING), _string(_string) {}
 
-            Parameter(double value, double min = -INFINITY, double max = INFINITY): 
+            explicit Parameter(double value, double min = -INFINITY, double max = INFINITY): 
                 type(DOUBLE), _double(Limited<double>(value, min, max)) {}
 
-            Parameter(long value, long min = LONG_MIN, long max = LONG_MAX):
+            explicit Parameter(long value, long min = LONG_MIN, long max = LONG_MAX):
                 type(LONG), _long(Limited<long>(value, min, max)) {}
 
             Type getType() const {
@@ -704,7 +704,7 @@ namespace madlib::trading {
     public:
         Strategy(
             Exchange& exchange,
-            map<string, Parameter> parameters,
+            const map<string, Parameter>& parameters,
             TradeTexts& tradeTexts
         ):
             exchange(exchange),
@@ -771,7 +771,7 @@ namespace madlib::trading {
     public:
         using Strategy::Strategy;
 
-        virtual void onCandleClose(const Candle) {
+        virtual void onCandleClose(const Candle&) {
             throw ERR_UNIMP;
         }
     };

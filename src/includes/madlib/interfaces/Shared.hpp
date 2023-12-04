@@ -10,5 +10,5 @@
 
 class Shared {
 public:
-    Shared(void* = nullptr) {}
+    explicit Shared(void* = nullptr) {}
 };

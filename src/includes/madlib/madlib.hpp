@@ -580,7 +580,6 @@ namespace madlib {
                 elem = NULL;
             }
         v.clear();
-        if (v.size() > 0) throw ERROR("EEJH??");
     }
 
     template<typename T>
@@ -637,7 +636,7 @@ namespace madlib {
                 if (argv[i][1] != '-') {
                     if (key.length() != 1) 
                         throw ERROR("Invalid argument key: " + string(argv[i]));
-                    if (key.length() == 1 && shorts && shorts->count(key[0])) key = shorts->at(key[0]);
+                    if (shorts && shorts->count(key[0])) key = shorts->at(key[0]);
                 }
                 string value = i < argc - 1 && argv[i + 1][0] != '-' ? argv[i + 1] : "";
                 args[key] = value;
@@ -763,7 +762,7 @@ namespace madlib {
         const string path;
     public:
 
-        SharedFactory(const string path): path(path) {} 
+        explicit SharedFactory(const string& path): path(path) {} 
 
         void* create(const string& libname, void* context = NULL) {
             const string soPath = path_normalize(path + "/" + libname + ".so");

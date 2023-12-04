@@ -166,7 +166,7 @@ namespace madlib::trading::bitstamp {
         ):
             TradeHistory(symbol, startTime, endTime, period) 
         {
-            initCandles();
+            BitstampHistory::initCandles();
         }
 
     };
