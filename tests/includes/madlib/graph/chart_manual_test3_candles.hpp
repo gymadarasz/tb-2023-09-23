@@ -38,8 +38,8 @@ int chart_manual_test3_candles()
     gui.child(closeOkBtn);
 
 
-    vector<RealPoint> candlesRealPoints;
-    vector<RealPoint> pricesRealPoints;
+    vector<Coord> candlesRealPoints;
+    vector<Coord> pricesRealPoints;
     double price = 1000;
     double time = 0;
     for (int i = 0; i < 30; i++) {
@@ -49,7 +49,7 @@ int chart_manual_test3_candles()
         for (size_t j = 0; j < rands.size(); j++) {
             price += rands[j];
             time++;
-            pricesRealPoints.push_back(RealPoint((double)time, price));
+            pricesRealPoints.push_back(Coord((double)time, price));
             candlePrices.push_back(price);
         }
         double end = time;
@@ -59,10 +59,10 @@ int chart_manual_test3_candles()
         double high = max(candlePrices);
         
         double middle = start + (end - start) / 2;
-        candlesRealPoints.push_back(RealPoint((double)start, open));
-        candlesRealPoints.push_back(RealPoint((double)end, close));
-        candlesRealPoints.push_back(RealPoint((double)middle, low));
-        candlesRealPoints.push_back(RealPoint((double)middle, high));
+        candlesRealPoints.push_back(Coord((double)start, open));
+        candlesRealPoints.push_back(Coord((double)end, close));
+        candlesRealPoints.push_back(Coord((double)middle, low));
+        candlesRealPoints.push_back(Coord((double)middle, high));
     }
     chart.createScale(LINE, true);
     chart.getScaleAt(0).setShape(CANDLE);

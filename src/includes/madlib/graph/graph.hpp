@@ -16,45 +16,110 @@ using namespace madlib;
 namespace madlib::graph {
 
     template<typename T>
-    class Point {
-    protected:
-
+    struct Point {
         T x, y;
-
-    public:
 
         Point(T x = 0, T y = 0): x(x), y(y) {}
 
-        void setX(T x) {
-            this->x = x; 
-        }
-
-        T getX() const {
-            return x;
-        }
-
-        void setY(T y) {
+        void set(T x, T y) {
+            this->x = x;
             this->y = y;
         }
 
-        T getY() const {
-            return y;
-        }
-
-        void setXY(T x, T y) {
-            setX(x);
-            setY(y);
-        }
-
     };
 
-    class RealPoint: public Point<double> {
-    public:
+    template<typename T>
+    struct Rect {
+        int x1, y1, x2, y2;
+
+        Rect(T x1 = 0, T y1 = 0, T x2 = 0, T y2 = 0):
+            x1(x1), y1(y1), x2(x2), y2(y2)
+        {
+            fix();
+        }
+
+        void set(T x1, T y1, T x2, T y2) {
+            this->x1 = x1;
+            this->y1 = y1;
+            this->x2 = x2;
+            this->y2 = y2;
+            fix();
+        }
+
+        void fix() {
+            if (this->x1 > this->x2) swap(this->x1, this->x2);
+            if (this->y1 > this->y2) swap(this->y1, this->y2);
+        }
+
+        bool intersect(T x1 = 0, T y1 = 0, T x2 = 0, T y2 = 0) {
+            // Calculate the intersection of the current viewport with the given viewport
+            if (this->x1 < x1) this->x1 = x1;
+            if (this->y1 < y1) this->y1 = y1;
+            if (this->x2 > x2) this->x2 = x2;
+            if (this->y2 > y2) this->y2 = y2;
+
+            // Check if the resulting viewport is still valid (non-empty)
+            if (this->x1 > this->x2 || this->y1 > this->y2) {
+                // The viewports do not intersect, so set them to an empty viewport
+                this->x1 = this->y1 = this->x2 = this->y2 = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        bool intersect(const Rect& other) {
+            return intersect(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool insideOf(T x1, T y1, T x2, T y2) const {
+            return (this->x1 >= x1 && this->y1 >= y1 && this->x2 <= x2 && this->y2 <= y2);
+        }
+
+        bool insideOf(const Rect& other) const {
+            return insideOf(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool containsCompletely(T x1, T y1, T x2, T y2) const {
+            // Check if 'other' rectangle is completely inside 'this' rectangle
+            return (x1 >= this->x1 && y1 >= this->y1 && x2 <= this->x2 && y2 <= this->y2);
+        }
+
+        bool containsCompletely(const Rect& other) const {
+            // Check if 'other' rectangle is completely inside 'this' rectangle
+            return containsCompletely(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool containsPartially(T x1, T y1, T x2, T y2) const {
+            // Check if 'other' rectangle partially overlaps with 'this' rectangle
+            return !(x2 < this->x1 || x1 > this->x2 || y2 < this->y1 || y1 > this->y2);
+        }
+
+        bool containsPartially(const Rect& other) const {
+            // Check if 'other' rectangle partially overlaps with 'this' rectangle
+            return containsPartially(other.x1, other.y1, other.x2, other.y2);
+        }
+
+        bool contains(T x, T y) {
+            return containsPartially(x, y, x, y);
+        }
+
+        bool contains(Point<T> point) {
+            T x = point.x;
+            T y = point.y;
+            return contains(x, y);
+        }
+    };
+
+    struct Viewport: public Rect<int> {
+        using Rect<int>::Rect;
+    };
+
+    struct Coord: public Point<double> {
         using Point<double>::Point;
     };
 
-    class ProjectedPoint: public Point<int> {
-    public:
+    struct Pixel: public Point<int> {
         using Point<int>::Point;
     };
 
@@ -362,82 +427,6 @@ namespace madlib::graph {
 
     };
 
-    struct Rectangle {
-    protected:
-
-    public:
-
-        int x1, y1, x2, y2;
-
-        Rectangle(int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0):
-            x1(x1), y1(y1), x2(x2), y2(y2)
-        {
-            fix();
-        }
-
-        void set(int x1, int y1, int x2, int y2) {
-            this->x1 = x1;
-            this->y1 = y1;
-            this->x2 = x2;
-            this->y2 = y2;
-            fix();
-        }
-
-        void fix() {
-            if (this->x1 > this->x2) swap(this->x1, this->x2);
-            if (this->y1 > this->y2) swap(this->y1, this->y2);
-        }
-
-        bool intersect(int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0) {
-            // Calculate the intersection of the current viewport with the given viewport
-            if (this->x1 < x1) this->x1 = x1;
-            if (this->y1 < y1) this->y1 = y1;
-            if (this->x2 > x2) this->x2 = x2;
-            if (this->y2 > y2) this->y2 = y2;
-
-            // Check if the resulting viewport is still valid (non-empty)
-            if (this->x1 > this->x2 || this->y1 > this->y2) {
-                // The viewports do not intersect, so set them to an empty viewport
-                this->x1 = this->y1 = this->x2 = this->y2 = 0;
-                return false;
-            }
-
-            return true;
-        }
-
-        bool intersect(const Rectangle& other) {
-            return intersect(other.x1, other.y1, other.x2, other.y2);
-        }
-
-        bool insideOf(int x1, int y1, int x2, int y2) const {
-            return (this->x1 >= x1 && this->y1 >= y1 && this->x2 <= x2 && this->y2 <= y2);
-        }
-
-        bool insideOf(const Rectangle& other) const {
-            return insideOf(other.x1, other.y1, other.x2, other.y2);
-        }
-
-        bool containsCompletely(int x1, int y1, int x2, int y2) const {
-            // Check if 'other' rectangle is completely inside 'this' rectangle
-            return (x1 >= this->x1 && y1 >= this->y1 && x2 <= this->x2 && y2 <= this->y2);
-        }
-
-        bool containsCompletely(const Rectangle& other) const {
-            // Check if 'other' rectangle is completely inside 'this' rectangle
-            return containsCompletely(other.x1, other.y1, other.x2, other.y2);
-        }
-
-        bool containsPartially(int x1, int y1, int x2, int y2) const {
-            // Check if 'other' rectangle partially overlaps with 'this' rectangle
-            return !(x2 < this->x1 || x1 > this->x2 || y2 < this->y1 || y1 > this->y2);
-        }
-
-        bool containsPartially(const Rectangle& other) const {
-            // Check if 'other' rectangle partially overlaps with 'this' rectangle
-            return containsPartially(other.x1, other.y1, other.x2, other.y2);
-        }
-    };
-
     class GFX: public EventHandler {
     protected:
 
@@ -446,7 +435,7 @@ namespace madlib::graph {
         GC gc;
         XFontStruct *fontInfo = NULL;
 
-        Rectangle viewport;
+        Viewport viewport;
 
         void* context = NULL;
 
@@ -464,7 +453,7 @@ namespace madlib::graph {
             XSetForeground(display, gc, color);
         }
 
-        void setViewport(Rectangle viewport) {
+        void setViewport(Viewport viewport) {
             this->viewport = viewport;
         }
 
@@ -536,7 +525,7 @@ namespace madlib::graph {
         }
 
         void drawRectangle(int x1, int y1, int x2, int y2) const {
-            Rectangle rect(x1, y1, x2, y2);
+            Viewport rect(x1, y1, x2, y2);
             if (rect.insideOf(viewport)) {
                 XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
                 return;
@@ -548,13 +537,13 @@ namespace madlib::graph {
         }
 
         void fillRectangle(int x1, int y1, int x2, int y2) const {
-            Rectangle rect(x1, y1, x2, y2);
+            Viewport rect(x1, y1, x2, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XFillRectangle(display, window, gc, rect.x1, rect.y1, (unsigned)(rect.x2 - rect.x1), (unsigned)(rect.y2 - rect.y1));
         }
 
         void drawLine(int x1, int y1, int x2, int y2) const {
-            Rectangle rect(x1, y1, x2, y2);
+            Viewport rect(x1, y1, x2, y2);
             
             if (x1 == x2) {
                 drawVerticalLine(x1, y1, y2);
@@ -580,7 +569,7 @@ namespace madlib::graph {
             // if (x1 > x2) {
             //     swap(x1, x2);
             //     swap(y1, y2);
-            //     rect = Rectangle(x1, y1, x2, y2);
+            //     rect = Viewport(x1, y1, x2, y2);
             // }
 
             if (!viewport.containsCompletely(rect)) {
@@ -593,13 +582,13 @@ namespace madlib::graph {
         }
 
         void drawVerticalLine(int x1, int y1, int y2) const {
-            Rectangle rect(x1, y1, x1, y2);
+            Viewport rect(x1, y1, x1, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x1, rect.y2);
         }
         
         void drawHorizontalLine(int x1, int y1, int x2) const {
-            Rectangle rect(x1, y1, x2, y1);
+            Viewport rect(x1, y1, x2, y1);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x2, rect.y1);
         }
@@ -745,8 +734,8 @@ namespace madlib::graph {
         const int defaultZoomCenterX = 0, defaultZoomCenterY = 0; // TODO
         const double defaultZoomRatioX = 1.0, defaultZoomRatioY = 1.0;
 
-        ProjectedPoint zoomCenter = ProjectedPoint(defaultZoomCenterX, defaultZoomCenterY);
-        RealPoint zoomRatio = RealPoint(defaultZoomRatioX, defaultZoomRatioY);
+        Pixel zoomCenter = Pixel(defaultZoomCenterX, defaultZoomCenterY);
+        Coord zoomRatio = Coord(defaultZoomRatioX, defaultZoomRatioY);
 
         bool zoomFixedX;
         bool zoomFixedY;
@@ -754,13 +743,13 @@ namespace madlib::graph {
 
         Zoomable(bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(int centerX, int centerY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
-        Zoomable(const ProjectedPoint& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const Pixel& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(defaultZoomRatioX, defaultZoomRatioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(double ratioX, double ratioY, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
-        Zoomable(const RealPoint& ratio, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const Coord& ratio, bool zoomFixed = true): zoomCenter(defaultZoomCenterX, defaultZoomCenterY), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(int centerX, int centerY, double ratioX, double ratioY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
-        Zoomable(const ProjectedPoint& center, const RealPoint& ratio, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const Pixel& center, const Coord& ratio, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         Zoomable(double ratioX, double ratioY, int centerX, int centerY, bool zoomFixed = true): zoomCenter(centerX, centerY), zoomRatio(ratioX, ratioY), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
-        Zoomable(const RealPoint& ratio, const ProjectedPoint& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
+        Zoomable(const Coord& ratio, const Pixel& center, bool zoomFixed = true): zoomCenter(center), zoomRatio(ratio), zoomFixedX(zoomFixed), zoomFixedY(zoomFixed) {}
         
         virtual ~Zoomable() {}
 
@@ -793,13 +782,13 @@ namespace madlib::graph {
             return *this;
         }
 
-        ProjectedPoint getZoomCenter() const {
+        Pixel getZoomCenter() const {
             return zoomCenter;
         }
 
-        void setZoomCenter(const ProjectedPoint& zoomCenter) {
-            setZoomCenterX(zoomCenter.getX());
-            setZoomCenterY(zoomCenter.getY());
+        void setZoomCenter(const Pixel& zoomCenter) {
+            setZoomCenterX(zoomCenter.x);
+            setZoomCenterY(zoomCenter.y);
         }
 
         void setZoomCenter(int x = 0, int y = 0) {
@@ -808,20 +797,20 @@ namespace madlib::graph {
         }
 
         void setZoomCenterX(int x = 0) {
-            if (!zoomFixedX) zoomCenter.setX(x);
+            if (!zoomFixedX) zoomCenter.x = x;
         }
 
         void setZoomCenterY(int y = 0) {
-            if (!zoomFixedY) zoomCenter.setY(y);
+            if (!zoomFixedY) zoomCenter.y = y;
         }
 
-        RealPoint getZoomRatio() const {
+        Coord getZoomRatio() const {
             return zoomRatio;
         }
 
-        void setZoomRatio(const RealPoint& zoomRatio) {
-            setZoomRatioX(zoomRatio.getX());
-            setZoomRatioY(zoomRatio.getY());
+        void setZoomRatio(const Coord& zoomRatio) {
+            setZoomRatioX(zoomRatio.x);
+            setZoomRatioY(zoomRatio.y);
         }
 
         void setZoomRatio(double x = 1.0, double y = 1.0) {
@@ -830,29 +819,29 @@ namespace madlib::graph {
         }
 
         void setZoomRatioX(double x) {
-            if (!zoomFixedX) zoomRatio.setX(x);
+            if (!zoomFixedX) zoomRatio.x = x;
         }
 
         void setZoomRatioY(double y) {
-            if (!zoomFixedY) zoomRatio.setY(y);
+            if (!zoomFixedY) zoomRatio.y = y;
         }
 
         int applyZoomX(int origoX, int pointX) const {
-            int origoXAddCenterX = origoX + zoomCenter.getX();
+            int origoXAddCenterX = origoX + zoomCenter.x;
             int pointXSubCenterX = pointX - origoXAddCenterX;
-            double pointXSubCenterXMulRatioX = pointXSubCenterX * zoomRatio.getX();
+            double pointXSubCenterXMulRatioX = pointXSubCenterX * zoomRatio.x;
             return origoXAddCenterX + (int)pointXSubCenterXMulRatioX;
         }
 
         int applyZoomY(int origoY, int pointY) const {
-            int origoYAddCenterY = origoY + zoomCenter.getY();
+            int origoYAddCenterY = origoY + zoomCenter.y;
             int pointYSubCenterY = pointY - origoYAddCenterY;
-            double pointYSubCenterYMulRatioY = pointYSubCenterY * zoomRatio.getY();
+            double pointYSubCenterYMulRatioY = pointYSubCenterY * zoomRatio.y;
             return origoYAddCenterY + (int)pointYSubCenterYMulRatioY;
         }
 
-        ProjectedPoint applyZoom(int origoX, int origoY, int pointX, int pointY) const {
-            ProjectedPoint result(
+        Pixel applyZoom(int origoX, int origoY, int pointX, int pointY) const {
+            Pixel result(
                 applyZoomX(origoX, pointX),
                 applyZoomY(origoY, pointY)
             );
@@ -860,8 +849,8 @@ namespace madlib::graph {
             return result;
         }
         
-        ProjectedPoint applyZoom(const ProjectedPoint& origo, const ProjectedPoint& point) const {
-            return applyZoom(origo.getX(), origo.getY(), point.getX(), point.getY());
+        Pixel applyZoom(const Pixel& origo, const Pixel& point) const {
+            return applyZoom(origo.x, origo.y, point.x, point.y);
         }
     };
 
@@ -1029,14 +1018,14 @@ namespace madlib::graph {
             double ratioY;
             switch (button) {
                 case Theme::zoomInScrollButton: // TODO: disable X and/or Y direction of zoom
-                    ratioX = that->getZoomRatio().getX() * Theme::zoomInRatio;
-                    ratioY = that->getZoomRatio().getY() * Theme::zoomInRatio;
+                    ratioX = that->getZoomRatio().x * Theme::zoomInRatio;
+                    ratioY = that->getZoomRatio().y * Theme::zoomInRatio;
                     if (ratioX > Theme::zoomRatioMax) ratioX = Theme::zoomRatioMax;
                     if (ratioY > Theme::zoomRatioMax) ratioY = Theme::zoomRatioMax;
                     break;
                 case Theme::zoomOutScrollButton:
-                    ratioX = that->getZoomRatio().getX() * Theme::zoomOutRatio;
-                    ratioY = that->getZoomRatio().getY() * Theme::zoomOutRatio;
+                    ratioX = that->getZoomRatio().x * Theme::zoomOutRatio;
+                    ratioY = that->getZoomRatio().y * Theme::zoomOutRatio;
                     if (ratioX < Theme::zoomRatioMin) ratioX = Theme::zoomRatioMin;
                     if (ratioY < Theme::zoomRatioMin) ratioY = Theme::zoomRatioMin;
                     break;
@@ -1139,7 +1128,7 @@ namespace madlib::graph {
 
         bool calcScrollOnly = false;
 
-        void reduceViewport(Rectangle& viewport) const {
+        void reduceViewport(Viewport& viewport) const {
             if (!parent) return;
             int parentTop = parent->getTop() + 1;
             int parentLeft = parent->getLeft() + 1;
@@ -1150,7 +1139,7 @@ namespace madlib::graph {
         }
 
         void prepareSetViewport() const {
-            Rectangle viewport;
+            Viewport viewport;
             getViewport(viewport);
             reduceViewport(viewport);
             gfx.setViewport(viewport);
@@ -1224,7 +1213,7 @@ namespace madlib::graph {
             this->calcScrollOnly = calcScrollOnly;
         }
 
-        const Rectangle& getViewport(Rectangle& viewport) const {
+        const Viewport& getViewport(Viewport& viewport) const {
             int t = getTop();
             int l = getLeft();
             int r = getRight(l);
@@ -1514,7 +1503,7 @@ namespace madlib::graph {
             int r = getRight(l);
             int b = getBottom(t);
 
-            Rectangle viewport(l, t, r, b);
+            Viewport viewport(l, t, r, b);
             reduceViewport(viewport);
             gfx.setViewport(viewport);
 
@@ -1529,7 +1518,7 @@ namespace madlib::graph {
             int r = getRight(l, w);
             int b = getBottom(t, h);
 
-            Rectangle viewport(l, t, r, b);
+            Viewport viewport(l, t, r, b);
             reduceViewport(viewport);
             gfx.setViewport(viewport);
             

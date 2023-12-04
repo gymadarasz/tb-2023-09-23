@@ -18,14 +18,14 @@ protected:
 
     Chart testChart = Chart(gfx, 700, 400, 850, 300, PUSHED, black);
 
-    vector<RealPoint> generateRealPoints(size_t n, double min = 0, double max = 1) {
-        vector<RealPoint> realPoints;
+    vector<Coord> generateRealPoints(size_t n, double min = 0, double max = 1) {
+        vector<Coord> coords;
         for (size_t i = 0; i < n; i++) {
             double x = (double)i, y = randd(min, max);
-            RealPoint realPoint(x, y);
-            realPoints.push_back(realPoint);
+            Coord coord(x, y);
+            coords.push_back(coord);
         }
-        return realPoints;
+        return coords;
     }
 
 public:
@@ -55,13 +55,13 @@ public:
 
         Chart::Scale& scale0 = testChart.createScale(LINE, false, &lightBlue);
         Chart::Scale& scale1 = testChart.createScale(LINE, false, &lightGreen);
-        vector<RealPoint> realPoints0 = generateRealPoints(100, -1, 1);
-        vector<RealPoint> realPoints1 = generateRealPoints(100, 0, 1);
-        scale0.adaptXY(realPoints0);
-        scale1.adaptXY(realPoints1);
+        vector<Coord> coords0 = generateRealPoints(100, -1, 1);
+        vector<Coord> coords1 = generateRealPoints(100, 0, 1);
+        scale0.adaptXY(coords0);
+        scale1.adaptXY(coords1);
         Chart::Scale::alignXY(scale0, scale1);
-        scale0.project(realPoints0);
-        scale1.project(realPoints1);
+        scale0.project(coords0);
+        scale1.project(coords1);
         
         // testFrame.setEventContext(&testChart);
         // testFrame.addDrawHandler(Chart::drawHandler);

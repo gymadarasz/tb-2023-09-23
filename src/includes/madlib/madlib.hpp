@@ -23,12 +23,40 @@
 using namespace std;
 using namespace chrono;
 
-#define ERROR(msg) runtime_error(string(msg) + ": " + string(__FILE__) + ":" + to_string(__LINE__)); 
-#define ERR_UNIMP ERROR("Unimplemented");
-#define ERR_MISSING ERROR("Missing");
-#define ERR_INVALID ERROR("Invalid");
-
 namespace madlib {
+
+    #define MS_PER_SEC 1000ul
+    #define MS_PER_MIN (60ul * MS_PER_SEC)
+    #define MS_PER_HOUR (60ul * MS_PER_MIN)
+    #define MS_PER_DAY (24ul * MS_PER_HOUR)
+    #define MS_PER_WEEK (7ul * MS_PER_DAY)
+
+    #define COLOR_DEFAULT "\033[0;0;0m"
+    #define COLOR_ERROR "\033[31m"
+    #define COLOR_ALERT "\033[31m"
+    #define COLOR_WARNING "\033[33m"
+    #define COLOR_INFO "\033[36m"
+    #define COLOR_SUCCESS "\033[32m"
+    #define COLOR_DEBUG "\033[35m"
+    #define COLOR_FILENAME "\033[90m"
+    #define COLOR_DATETIME COLOR_INFO
+
+    #define QUOTEME_1(x) #x
+    #define QUOTEME(x) QUOTEME_1(x)
+
+    #define __DIR__ madlib::path_normalize(madlib::path_extract(__FILE__))
+
+    #define __FILE_LINE__ COLOR_FILENAME + madlib::path_normalize(__FILE__) + ":" + to_string(__LINE__) + COLOR_DEFAULT
+    #define __DATE_TIME__ COLOR_DATETIME "[" + madlib::ms_to_datetime() + "] " COLOR_DEFAULT
+
+    #define ERROR(msg) runtime_error(__FILE_LINE__ + " " + string(msg)); 
+    #define ERR_UNIMP ERROR("Unimplemented");
+    #define ERR_MISSING ERROR("Missing");
+    #define ERR_INVALID ERROR("Invalid");
+
+    #define LOG(...) logger.date().writeln(__VA_ARGS__)
+    #define DBG(...) logger.date().writeln(__FILE_LINE__, " ", COLOR_DEBUG, __VA_ARGS__, COLOR_DEFAULT)
+
     
     /**
         DBG_COUNTER;
@@ -44,11 +72,11 @@ namespace madlib {
 
     typedef long ms_t;
 
-    const ms_t MS_PER_SEC = 1000;
-    const ms_t MS_PER_MIN = 60 * MS_PER_SEC;
-    const ms_t MS_PER_HOUR = 60 * MS_PER_MIN;
-    const ms_t MS_PER_DAY = 24 * MS_PER_HOUR;
-    const ms_t MS_PER_WEEK = 7 * MS_PER_DAY;
+    const ms_t second = 1000;
+    const ms_t minute = 60 * second;
+    const ms_t hour = 60 * minute;
+    const ms_t day = 24 * hour;
+    const ms_t week = 7 * day;
 
     string str_replace(const string& str, const string& from, const string& to) {
         string result = str;
@@ -72,8 +100,14 @@ namespace madlib {
         return result;
     }
 
-    bool str_start_with(const std::string& needle, const std::string& haystack) {
-        return (haystack.length() >= needle.length()) && (haystack.compare(0, needle.length(), needle) == 0);
+    bool str_starts_with(const std::string& prefix, const std::string& str) {
+        return str.length() >= prefix.length() && 
+            str.compare(0, prefix.length(), prefix) == 0;
+    }
+
+    bool str_ends_with(const std::string& suffix, const std::string& str) {
+        return suffix.length() <= str.length() && 
+            str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
     }
 
 
@@ -173,6 +207,45 @@ namespace madlib {
         }
 
         return oss.str();
+    }
+
+    string path_normalize(const string& filepath) {
+        vector<string> components;
+        istringstream iss(filepath);
+        string token;
+
+        // Tokenize the input path using the directory separator '/'
+        while (getline(iss, token, '/')) {
+            if (token == "..") {
+                // Handle '..' by popping the last component if possible
+                if (!components.empty() && components.back() != "..") {
+                    components.pop_back();
+                } else {
+                    components.push_back("..");
+                }
+            } else if (token != ".") {
+                // Skip '.' components and add other components
+                components.push_back(token);
+            }
+        }
+
+        // Reconstruct the normalized path
+        string normalized;
+        for (const string& component : components) {
+            if (!normalized.empty()) {
+                normalized += "/";
+            }
+            normalized += component;
+        }
+
+        return normalized;
+    }
+
+    string path_extract(const string& filepath) {
+        size_t lastSlashPos = filepath.find_last_of('/');
+        if (lastSlashPos != string::npos) return filepath.substr(0, lastSlashPos);
+        // If there's no directory separator, return an empty string or the whole path, depending on your preference.
+        return "";  // Alternatively, you can return filepath;
     }
 
     inline void sleep(unsigned long ms) {
@@ -315,8 +388,6 @@ namespace madlib {
         if (!(ss >> result)) throw ERROR("Invalid value" + (s.empty() ? "" : ": " + s));
         return result;
     }
-
-    #define __DIR__ path_normalize(path_extract(__FILE__))
     
     vector<string> file_find_by_extension(const filesystem::path& folder = ".", const string& pattern = "") {
         vector<string> files;
@@ -363,45 +434,6 @@ namespace madlib {
         } 
         // If there's no dot in the file name, simply append the extension
         return filename + "." + extension;
-    }
-
-    string path_normalize(const string& filepath) {
-        vector<string> components;
-        istringstream iss(filepath);
-        string token;
-
-        // Tokenize the input path using the directory separator '/'
-        while (getline(iss, token, '/')) {
-            if (token == "..") {
-                // Handle '..' by popping the last component if possible
-                if (!components.empty() && components.back() != "..") {
-                    components.pop_back();
-                } else {
-                    components.push_back("..");
-                }
-            } else if (token != ".") {
-                // Skip '.' components and add other components
-                components.push_back(token);
-            }
-        }
-
-        // Reconstruct the normalized path
-        string normalized;
-        for (const string& component : components) {
-            if (!normalized.empty()) {
-                normalized += "/";
-            }
-            normalized += component;
-        }
-
-        return normalized;
-    }
-
-    string path_extract(const string& filepath) {
-        size_t lastSlashPos = filepath.find_last_of('/');
-        if (lastSlashPos != string::npos) return filepath.substr(0, lastSlashPos);
-        // If there's no directory separator, return an empty string or the whole path, depending on your preference.
-        return "";  // Alternatively, you can return filepath;
     }
 
     bool file_exists(const string& filePath) {
@@ -642,7 +674,7 @@ namespace madlib {
         Log(const string& f = "app.log"): Printer(), filename(f) {}
 
         Log& date() {
-            write("[" + ms_to_datetime() + "] ");
+            write(__DATE_TIME__);
             return *this;
         }
 
@@ -670,9 +702,6 @@ namespace madlib {
         }
 
     } logger;
-
-    #define LOG(...) logger.date().writeln(__VA_ARGS__)
-    #define DBG(...) logger.date().writeln(__FILE__, ":", __LINE__, " ", __VA_ARGS__)
 
     template <typename T>
     class Factory {

@@ -123,9 +123,9 @@ namespace madlib::graph {
             bool adapt;
             const void* context = NULL;
 
-            vector<ProjectedPoint> projectedPoints;
+            vector<Pixel> pixels;
 
-            vector<RealPoint> realPoints;
+            vector<Coord> coords;
             vector<string> texts;
 
             int projectX(double x, bool adapt) {
@@ -134,11 +134,11 @@ namespace madlib::graph {
             }
 
             int projectY(double y, bool adapt) {
-                if (adapt) adaptY(y);
+                if (adapt) adaptY(y); // TODO: BUG: I think here is the issue with vertical scroll after zoom in and out
                 return (int)(((y - ymin) * chart.getHeight()) / (ymax - ymin));
             }
             
-            ProjectedPoint& project(double x, double y, ProjectedPoint& result) {
+            Pixel& project(double x, double y, Pixel& result) {
                 if (adapt) adaptXY(x, y);
                 result = applyZoom(
                     projectX(xmin, false), projectY(ymin, false), 
@@ -173,7 +173,7 @@ namespace madlib::graph {
                 ymin = INFINITY;
                 xmax = -INFINITY;
                 ymax = -INFINITY;
-                projectedPoints.clear();
+                pixels.clear();
             }
 
             Shape getShape() const {
@@ -189,8 +189,8 @@ namespace madlib::graph {
                 this->context = context ? context : getDefaultScaleContext(shape);
             }
 
-            const vector<ProjectedPoint>& getProjectedPoints() const {
-                return projectedPoints;
+            const vector<Pixel>& getPixels() const {
+                return pixels;
             }
 
             const vector<string>& getTexts() const {
@@ -212,34 +212,43 @@ namespace madlib::graph {
                 adaptY(y);
             }
 
-            void adaptXY(const RealPoint& realPoint) {
-                adaptXY(realPoint.getX(), realPoint.getY());
+            void adaptXY(const Coord& coord) {
+                adaptXY(coord.x, coord.y);
             }
 
-            void adaptXY(const vector<RealPoint>& realPoints) {
+            void adaptXY(const vector<Coord>& coords) {
                 reset();
-                for (const RealPoint& realPoint: realPoints) adaptXY(realPoint);
+                for (const Coord& coord: coords) adaptXY(coord);
             }
 
-            void setRealPoints(const vector<RealPoint>& realPoints) {
-                this->realPoints = realPoints;
+            void setRealPoints(const vector<Coord>& coords) {
+                this->coords = coords;
             }
 
-            void project(const vector<RealPoint>& realPoints) {
-                setRealPoints(realPoints);
+            void project(const vector<Coord>& coords) {
+                setRealPoints(coords);
                 project();
             }
 
-            void project() {
-                projectedPoints.clear();
-                if (adapt) adaptXY(realPoints);
-                ProjectedPoint projectedPoint;
+            void project() {                
+                if (adapt) adaptXY(coords);
+                else pixels.clear();
+                Pixel pixel;
                 bool _adapt = adapt;
                 adapt = false;
-                for (const RealPoint& realPoint: realPoints) { // NOTE: it may can be sped up by projecting only those points that inside the chart view (just calculate where are the chart edges converted to real-coordinates)
-                    projectedPoints.push_back(
-                        project(realPoint.getX(), realPoint.getY(), projectedPoint)
-                    );
+                // Rectangle bounds(
+                //     - chart.getScrollX(), 
+                //     - chart.getScrollY(), 
+                //     - chart.getScrollX() + chart.getWidth(), 
+                //     - chart.getScrollY() + chart.getHeight()
+                // );
+                // DBG("bounds:", bounds.x1, ":", bounds.x2);
+                // DBG("scale:", xmin, ":", xmax);
+                for (const Coord& coord: coords) { // NOTE: it may can be sped up by projecting only those points that inside the chart view (just calculate where are the chart edges converted to real-coordinates)
+                    project(coord.x, coord.y, pixel);
+                    // DBG("px:", pixel.x, " s:", chart.getScrollX());
+                    // if (bounds.contains(pixel))
+                    pixels.push_back(pixel);
                 }
                 adapt = _adapt;
             }
@@ -248,8 +257,8 @@ namespace madlib::graph {
                 this->texts = texts;
             }
 
-            void project(const vector<RealPoint>& realPoints, const vector<string>& texts) {
-                setRealPoints(realPoints);
+            void project(const vector<Coord>& coords, const vector<string>& texts) {
+                setRealPoints(coords);
                 setTexts(texts);
                 project();
             }
@@ -301,8 +310,9 @@ namespace madlib::graph {
 
     protected:
     
-        static void zoomHandler(void* context, unsigned int /*button*/, int, int) {
+        static void zoomHandler(void* context, unsigned int /*button*/, int x, int y) {
             Chart* that = (Chart*)context;
+            DBG(x, ":", y);
             that->projectScales();
             that->redraw();
         }
@@ -369,17 +379,17 @@ namespace madlib::graph {
             point(x, height - y);
         }
 
-        void drawPoint(const ProjectedPoint& projectedPoint) {
-            point(projectedPoint.getX(), height - projectedPoint.getY());
+        void drawPoint(const Pixel& pixel) {
+            point(pixel.x, height - pixel.y);
         }
 
         void drawPoints(const size_t scale, const Color color) {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
-            if (projectedPoints.empty()) return;
+            vector<Pixel> pixels = scales.at(scale)->getPixels();
+            if (pixels.empty()) return;
             brush(color);
             int h = height;
-            for (const ProjectedPoint& projectedPoint: projectedPoints) 
-                point(projectedPoint.getX(), h - projectedPoint.getY());
+            for (const Pixel& pixel: pixels) 
+                point(pixel.x, h - pixel.y);
         }
 
         void drawLine(int x1, int y1, int x2, int y2) {
@@ -395,12 +405,12 @@ namespace madlib::graph {
         }
 
         void drawPairs(const size_t scale, const Color color, const Shape shape) {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
-            if (projectedPoints.empty()) return;
+            vector<Pixel> pixels = scales.at(scale)->getPixels();
+            if (pixels.empty()) return;
             brush(color);
-            ProjectedPoint prjPoint = projectedPoints.at(0);
-            int x1 = prjPoint.getX();
-            int y1 = prjPoint.getY();
+            Pixel prjPoint = pixels.at(0);
+            int x1 = prjPoint.x;
+            int y1 = prjPoint.y;
             int painterHeight = height;
             DrawPairFunction func;
             switch (shape) {
@@ -416,9 +426,9 @@ namespace madlib::graph {
                 default:
                     throw ERROR("Invalid pair shape: " + ShapeName::getName(shape));
             }
-            for (const ProjectedPoint& projectedPoint: projectedPoints) {
-                int x2 = projectedPoint.getX();
-                int y2 = projectedPoint.getY();
+            for (const Pixel& pixel: pixels) {
+                int x2 = pixel.x;
+                int y2 = pixel.y;
                 func(this, x1, painterHeight - y1, x2, painterHeight - y2);
                 x1 = x2;
                 y1 = y2;
@@ -466,34 +476,34 @@ namespace madlib::graph {
 
         void drawCandle(
             // TODO: FlawFinder: ignore
-            ProjectedPoint open,
-            ProjectedPoint close,
-            ProjectedPoint low,
-            ProjectedPoint high,
+            Pixel open,
+            Pixel close,
+            Pixel low,
+            Pixel high,
             const Color colorInc = green, 
             const Color colorDec = red,
             int painterHeight = 0
         ) {
             drawCandle(
-                open.getX(), open.getY(), // FlawFinder: ignore
-                close.getX(), close.getY(),
-                low.getX(), low.getY(),
-                high.getY(),
+                open.x, open.y, // FlawFinder: ignore
+                close.x, close.y,
+                low.x, low.y,
+                high.y,
                 colorInc, colorDec,
                 painterHeight
             );
         }
 
         void drawCandles(const size_t scale, const CandleStyle& candleStyle) {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
-            if (projectedPoints.empty()) return;
-            size_t size = projectedPoints.size();
+            vector<Pixel> pixels = scales.at(scale)->getPixels();
+            if (pixels.empty()) return;
+            size_t size = pixels.size();
             int painterHeight = height;
             for (size_t i = 0; i < size; i += 4) {
-                const ProjectedPoint& open = projectedPoints.at(i);
-                const ProjectedPoint& close = projectedPoints.at(i + 1);
-                const ProjectedPoint& low = projectedPoints.at(i + 2);
-                const ProjectedPoint& high = projectedPoints.at(i + 3);
+                const Pixel& open = pixels.at(i);
+                const Pixel& close = pixels.at(i + 1);
+                const Pixel& low = pixels.at(i + 2);
+                const Pixel& high = pixels.at(i + 3);
                 drawCandle(
                     open, close, low, high, 
                     candleStyle.getColorUp(), 
@@ -530,16 +540,16 @@ namespace madlib::graph {
         }
 
         void putLabels(size_t scale, const LabelStyle& labelStyle) {
-            vector<ProjectedPoint> projectedPoints = scales.at(scale)->getProjectedPoints();
-            if (projectedPoints.empty()) return;
+            vector<Pixel> pixels = scales.at(scale)->getPixels();
+            if (pixels.empty()) return;
             vector<string> texts = scales.at(scale)->getTexts();
             if (texts.empty()) return;
             int painterHeight = height;
-            size_t size = projectedPoints.size();
+            size_t size = pixels.size();
             for (size_t i = 0; i < size; i++) {
-                ProjectedPoint projectedPoint = projectedPoints.at(i);
+                Pixel pixel = pixels.at(i);
                 putLabel(
-                    projectedPoint.getX(), projectedPoint.getY(), texts.at(i), 
+                    pixel.x, pixel.y, texts.at(i), 
                     labelStyle.getColor(), labelStyle.isHasBackground(), 
                     labelStyle.getBackgroundColor(), labelStyle.getBorderColor(),
                     labelStyle.getPadding(), painterHeight
@@ -555,7 +565,7 @@ namespace madlib::graph {
             Point<int> scrollXY = getScrollXY();
             resetScrollXYMax();
             drawScales();
-            setScrollXY(scrollXY.getX(), scrollXY.getY());
+            setScrollXY(scrollXY.x, scrollXY.y);
 
             // actual drawing
             setCalcScrollOnly(false);

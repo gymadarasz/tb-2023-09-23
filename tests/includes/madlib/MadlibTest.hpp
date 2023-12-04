@@ -98,18 +98,18 @@ public:
     }
     
     static void test_str_start_with_positive() {
-        assert(str_start_with("Hello", "Hello, World!"));
-        assert(str_start_with("abc", "abcdef"));
-        assert(str_start_with("", "Anything")); // An empty needle should match any haystack
-        assert(str_start_with("", "")); // Empty needle and haystack should match
-        assert(str_start_with("a", "a")); // Single character needle and haystack match
+        assert(str_starts_with("Hello", "Hello, World!"));
+        assert(str_starts_with("abc", "abcdef"));
+        assert(str_starts_with("", "Anything")); // An empty needle should match any haystack
+        assert(str_starts_with("", "")); // Empty needle and haystack should match
+        assert(str_starts_with("a", "a")); // Single character needle and haystack match
     }
 
     static void test_str_start_with_negative() {
-        assert(!str_start_with("World", "Hello, World!"));
-        assert(!str_start_with("abc", "ABCDEF")); // Case-sensitive check
-        assert(!str_start_with("Something", "")); // Needle is longer than haystack
-        assert(!str_start_with("abc", "ab")); // Needle is longer than haystack
+        assert(!str_starts_with("World", "Hello, World!"));
+        assert(!str_starts_with("abc", "ABCDEF")); // Case-sensitive check
+        assert(!str_starts_with("Something", "")); // Needle is longer than haystack
+        assert(!str_starts_with("abc", "ab")); // Needle is longer than haystack
     }
 
     static void test_lib_reg_match() {
@@ -180,7 +180,7 @@ public:
             args_parse(argc, argv);
             assert(false);  // Should not reach here, an exception is expected
         } catch (const exception& e) {
-            assert(str_start_with("Empty argument key", string(e.what())));
+            assert(str_ends_with("Empty argument key", string(e.what())));
         }
     }
 
@@ -285,7 +285,7 @@ public:
             assert(false);
         } catch (const exception& e) {
             // Exception expected for invalid key "-valueA"
-            assert(str_start_with("Invalid argument key: -valueA", e.what()));
+            assert(str_ends_with("Invalid argument key: -valueA", e.what()));
         }
     }
 

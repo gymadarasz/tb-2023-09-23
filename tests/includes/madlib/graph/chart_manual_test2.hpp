@@ -39,24 +39,24 @@ int chart_manual_test2()
     gui.child(closeOkBtn);
 
 
-    vector<RealPoint> realPoints;
-    vector<RealPoint> textRealChoords;
+    vector<Coord> coords;
+    vector<Coord> textRealChoords;
     vector<string> texts;
     int i = 0;
     for (double x = 0; x < 100; x++) {
         double y = randd(0, 100) + x*5;
-        RealPoint realPoint(x, y);
-        realPoints.push_back(realPoint);
+        Coord coord(x, y);
+        coords.push_back(coord);
         i++;
         if (i > 10) {
             i = 0;
-            textRealChoords.push_back(realPoint);
+            textRealChoords.push_back(coord);
             texts.push_back(to_string(x));
         }
     }
     
 
-    chart.getScaleAt(0).project(realPoints);
+    chart.getScaleAt(0).project(coords);
     chart.getScaleAt(1).project(textRealChoords, texts);
     chart.draw();
 

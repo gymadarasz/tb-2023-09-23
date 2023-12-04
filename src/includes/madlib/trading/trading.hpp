@@ -555,20 +555,20 @@ namespace madlib::trading {
     class TradeTexts {
     protected:
 
-        vector<RealPoint> buyTextRealChoords;
+        vector<Coord> buyTextRealChoords;
         vector<string> buyTexts;
-        vector<RealPoint> sellTextRealChoords;
+        vector<Coord> sellTextRealChoords;
         vector<string> sellTexts;
-        vector<RealPoint> errorTextRealChoords;
+        vector<Coord> errorTextRealChoords;
         vector<string> errorTexts;
 
     public:
         TradeTexts(
-            const vector<RealPoint> buyTextRealChoords,
+            const vector<Coord> buyTextRealChoords,
             const vector<string> buyTexts,
-            const vector<RealPoint> sellTextRealChoords,
+            const vector<Coord> sellTextRealChoords,
             const vector<string> sellTexts,
-            const vector<RealPoint> errorTextRealChoords,
+            const vector<Coord> errorTextRealChoords,
             const vector<string> errorTexts
 
         ):
@@ -588,7 +588,7 @@ namespace madlib::trading {
             errorTexts({}) 
         {}
 
-        vector<RealPoint>& getBuyTextRealChoords() {
+        vector<Coord>& getBuyTextRealChoords() {
             return buyTextRealChoords;
         }
 
@@ -596,7 +596,7 @@ namespace madlib::trading {
             return buyTexts;
         }
 
-        vector<RealPoint>& getSellTextRealChoords() {
+        vector<Coord>& getSellTextRealChoords() {
             return sellTextRealChoords;
         }
 
@@ -604,7 +604,7 @@ namespace madlib::trading {
             return sellTexts;
         }
 
-        vector<RealPoint>& getErrorTextRealChoords() {
+        vector<Coord>& getErrorTextRealChoords() {
             return errorTextRealChoords;
         }
 
@@ -693,8 +693,8 @@ namespace madlib::trading {
 
     protected:
 
-        void static addText(vector<RealPoint>& textRealChoords, vector<string>& texts, ms_t time, double price, const string& text) {
-            textRealChoords.push_back(RealPoint((double)time, price));
+        void static addText(vector<Coord>& textRealChoords, vector<string>& texts, ms_t time, double price, const string& text) {
+            textRealChoords.push_back(Coord((double)time, price));
             texts.push_back(text);
         }
 
@@ -849,7 +849,7 @@ namespace madlib::trading {
         void projectScales() override final {
             if (showCandles) {
                 vector<Candle> candles = history.getCandles();
-                vector<RealPoint> candlesRealPoints;
+                vector<Coord> candlesRealPoints;
                 for (const Candle& candle: candles) {
                     double start = (double)candle.getStart();
                     double end = (double)candle.getEnd();
@@ -858,23 +858,23 @@ namespace madlib::trading {
                     double low = candle.getLow();
                     double high = candle.getHigh();
                     double middle = start + (end - start) / 2;
-                    candlesRealPoints.push_back(RealPoint(start, open));
-                    candlesRealPoints.push_back(RealPoint(end, close));
-                    candlesRealPoints.push_back(RealPoint(middle, low));
-                    candlesRealPoints.push_back(RealPoint(middle, high));
+                    candlesRealPoints.push_back(Coord(start, open));
+                    candlesRealPoints.push_back(Coord(end, close));
+                    candlesRealPoints.push_back(Coord(middle, low));
+                    candlesRealPoints.push_back(Coord(middle, high));
                 }
                 candlesScale.setRealPoints(candlesRealPoints);
             }
 
             if (showPrices || showVolumes) {
                 vector<Trade> trades = history.getTrades();
-                vector<RealPoint> pricesRealPoints;
-                vector<RealPoint> volumesRealPoints;
+                vector<Coord> pricesRealPoints;
+                vector<Coord> volumesRealPoints;
                 for (const Trade& trade: trades) {
                     pricesRealPoints.push_back(
-                        RealPoint((double)trade.timestamp, trade.price));
+                        Coord((double)trade.timestamp, trade.price));
                     volumesRealPoints.push_back(
-                        RealPoint((double)trade.timestamp, trade.volume));
+                        Coord((double)trade.timestamp, trade.volume));
                 }
                 
                 if (showPrices) {
@@ -1001,10 +1001,10 @@ namespace madlib::trading {
             // **** backtest ****
 
             vector<Candle> candles = history.getCandles();
-            vector<RealPoint> balanceQuotedAtCloses;
-            vector<RealPoint> balanceQuotedFullAtCloses;
-            vector<RealPoint> balanceBaseAtCloses;
-            vector<RealPoint> balanceBaseFullAtCloses;
+            vector<Coord> balanceQuotedAtCloses;
+            vector<Coord> balanceQuotedFullAtCloses;
+            vector<Coord> balanceBaseAtCloses;
+            vector<Coord> balanceBaseFullAtCloses;
             Pair& pair = testExchange.getPairAt(symbol);
             for (const Candle& candle: candles) {
                 testExchange.setCurrentTime(candle.getEnd());
@@ -1012,22 +1012,22 @@ namespace madlib::trading {
             
                 double currentTime = (double)candle.getEnd();
 
-                balanceQuotedAtCloses.push_back(RealPoint(
+                balanceQuotedAtCloses.push_back(Coord(
                     currentTime,
                     testExchange.getBalanceQuoted(pair)
                 ));
                 
-                balanceQuotedFullAtCloses.push_back(RealPoint(
+                balanceQuotedFullAtCloses.push_back(Coord(
                     currentTime,
                     testExchange.getBalanceQuotedFull(pair)
                 ));
             
-                balanceBaseAtCloses.push_back(RealPoint(
+                balanceBaseAtCloses.push_back(Coord(
                     currentTime,
                     testExchange.getBalanceBase(pair)
                 ));
                 
-                balanceBaseFullAtCloses.push_back(RealPoint(
+                balanceBaseFullAtCloses.push_back(Coord(
                     currentTime,
                     testExchange.getBalanceBaseFull(pair)
                 ));

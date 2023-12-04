@@ -11,8 +11,8 @@ const double chart_manual_test1_scaleXMax = 1000;
 
 GFX* chart_manual_test1_gfxPtr;
 
-void chart_manual_test1_generateRealPoints(vector<RealPoint>& realPoints) {
-    realPoints.clear();
+void chart_manual_test1_generateRealPoints(vector<Coord>& coords) {
+    coords.clear();
 
     double y_ = randd(0, 5);
     for (double x = chart_manual_test1_scaleXMin; x <= chart_manual_test1_scaleXMax; x += 1) {
@@ -21,8 +21,8 @@ void chart_manual_test1_generateRealPoints(vector<RealPoint>& realPoints) {
         y_++;
         if (y_ > 100 + randd(0, 5)) y_ = randd(0, 5);
 
-        RealPoint realPoint(x, y);
-        realPoints.push_back(realPoint);
+        Coord coord(x, y);
+        coords.push_back(coord);
     }
 }
 
@@ -49,13 +49,13 @@ int chart_manual_test1()
     gui.child(chart);
     
     // generate data and show on scales
-    vector<RealPoint> realPoints;
-    chart_manual_test1_generateRealPoints(realPoints);
+    vector<Coord> coords;
+    chart_manual_test1_generateRealPoints(coords);
 
-    chart.createScale(LINE, true, &lightGreen).project(realPoints);
+    chart.createScale(LINE, true, &lightGreen).project(coords);
     Chart::Scale& secondScale = chart.createScale(LINE, true, &lightCyan);
     secondScale.setZoomRatio(2.0, 1.5);
-    secondScale.project(realPoints);
+    secondScale.project(coords);
     
 
     gui.loop();
