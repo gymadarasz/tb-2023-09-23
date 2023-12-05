@@ -730,7 +730,7 @@ namespace madlib::graph {
 
     class Zoomable {
     protected:
-        const int defaultZoomCenterX = 1.0, defaultZoomCenterY = 0; // TODO
+        const int defaultZoomCenterX = 0, defaultZoomCenterY = 0; // TODO
         const double defaultZoomRatioX = 1.0, defaultZoomRatioY = 1.0;
 
         Pixel zoomCenter = Pixel(defaultZoomCenterX, defaultZoomCenterY);
@@ -796,11 +796,13 @@ namespace madlib::graph {
         }
 
         void setZoomCenterX(int x = 0) {
-            if (!zoomFixedX) zoomCenter.x = x;
+            if (!zoomFixedX) 
+                zoomCenter.x = x;
         }
 
         void setZoomCenterY(int y = 0) {
-            if (!zoomFixedY) zoomCenter.y = y;
+            if (!zoomFixedY) 
+                zoomCenter.y = y;
         }
 
         Coord getZoomRatio() const {
@@ -1008,7 +1010,7 @@ namespace madlib::graph {
     class Painter: public Scrollable, public Zoomable, public EventHandler {
     protected:
 
-        static void zoomHandler(void* context, unsigned int button, int, int) {
+        static void zoomHandler(void* context, unsigned int button, int x, int y) {
             Painter* that = (Painter*)context;
 
             // change zoom ratio
@@ -1031,8 +1033,8 @@ namespace madlib::graph {
                 default:
                     return; // no scroll zoom
             }
-            that->setZoomRatioX(ratioX);
-            that->setZoomRatioY(ratioY);
+            that->setZoomRatio(ratioX, ratioY);
+            that->setZoomCenter(x, y);
             that->draw(); // redraw
         }
 

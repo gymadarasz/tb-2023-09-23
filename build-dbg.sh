@@ -1,5 +1,5 @@
 #!/bin/bash
-
+tail -f app.log &
 cppcheck . \
 --enable=all \
 --suppress=useStlAlgorithm \

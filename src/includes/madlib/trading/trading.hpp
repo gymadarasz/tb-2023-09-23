@@ -15,9 +15,11 @@ using namespace madlib::graph;
 namespace madlib::trading {
 
     struct Theme: public madlib::graph::Theme {
-        static const Color defaultTradeHistoryChartPriceColor = orange;
-        static const Color defaultTradeHistoryChartVolumeColor = darkGray;
+        static const Color defaultTradeHistoryChartPriceColor;
+        static const Color defaultTradeHistoryChartVolumeColor;
     };
+    const Color Theme::defaultTradeHistoryChartPriceColor = orange;
+    const Color Theme::defaultTradeHistoryChartVolumeColor = darkGray;
 
     ms_t period_to_ms(const string &period) {
         map<const string, ms_t> periods = {
