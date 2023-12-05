@@ -286,6 +286,7 @@ namespace madlib::graph {
         static const Border defaultAccordionBorder = NONE;
         static const Color defaultAccordionBackgroundColor = darkGray;
         static const Align defaultAccordionTogglerTextAlign = CENTER;
+        static const int defaultAccordionContainterTogglerHeight = 30;
 
         static const Align defaultLabelTextAlign = LEFT;
         static const Border defaultLabelBorder = NONE;
@@ -729,7 +730,7 @@ namespace madlib::graph {
 
     class Zoomable {
     protected:
-        const int defaultZoomCenterX = 0, defaultZoomCenterY = 0; // TODO
+        const int defaultZoomCenterX = 1.0, defaultZoomCenterY = 0; // TODO
         const double defaultZoomRatioX = 1.0, defaultZoomRatioY = 1.0;
 
         Pixel zoomCenter = Pixel(defaultZoomCenterX, defaultZoomCenterY);
@@ -2114,7 +2115,6 @@ namespace madlib::graph {
 
         class Container {
         protected:
-            const int togglerHeight = 30; // TODO
             const int innerBorderSize = 1;
 
             Toggler* toggler = NULL;
@@ -2122,14 +2122,16 @@ namespace madlib::graph {
 
             Accordion& accordion;
             int frameHeight;
+            int togglerHeight;
             bool opened = false;
         public:
             Container(
                 Accordion& accordion,
                 const string& title, const Align textAlign, 
-                int frameHeight
+                int frameHeight,
+                int togglerHeight = Theme::defaultAccordionContainterTogglerHeight
             ): 
-                accordion(accordion), frameHeight(frameHeight) 
+                accordion(accordion), frameHeight(frameHeight), togglerHeight(togglerHeight)
             {
                 GFX& gfx = accordion.getGFX();
                 const int width = accordion.width;
@@ -2199,14 +2201,11 @@ namespace madlib::graph {
 
     protected:
         vector<Container*> containers;
-        // bool sticky;
         bool single;
-        // bool one; // TODO: keep "only one" or "at least one" open?
 
     public:
         Accordion(GFX& gfx, int left, int top, int width,
-            // bool sticky = false, 
-            bool single = false, //bool one = true, // TODO
+            bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
             void* eventContext = NULL

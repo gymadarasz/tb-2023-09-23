@@ -14,6 +14,11 @@ using namespace madlib::graph;
 
 namespace madlib::trading {
 
+    struct Theme: public madlib::graph::Theme {
+        static const Color defaultTradeHistoryChartPriceColor = orange;
+        static const Color defaultTradeHistoryChartVolumeColor = darkGray;
+    };
+
     ms_t period_to_ms(const string &period) {
         map<const string, ms_t> periods = {
             {"1s", MS_PER_SEC},
@@ -791,9 +796,9 @@ namespace madlib::trading {
             showCandles, 
             showPrices, 
             showVolumes, 
-            showTexts; // TODO
-        const Color& priceColor; // TODO
-        const Color& volumeColor; // TODO
+            showTexts;
+        const Color& priceColor;
+        const Color& volumeColor;
         const CandleStyle& candleStyle;
         const LabelStyle& buyTextStyle;
         const LabelStyle& sellTextStyle;
@@ -816,8 +821,8 @@ namespace madlib::trading {
             const bool showPrices = true, // TODO
             const bool showVolumes = true, // TODO
             const bool showTexts = true, // TODO
-            const Color& priceColor = orange, // TODO
-            const Color& volumeColor = darkGray, // TODO
+            const Color& priceColor = Theme::defaultTradeHistoryChartPriceColor,
+            const Color& volumeColor = Theme::defaultTradeHistoryChartVolumeColor,
             const CandleStyle& candleStyle = defaultCandleStyle,
             const LabelStyle& buyTextStyle = defaultBuyLabelStyle,
             const LabelStyle& sellTextStyle = defaultSellLabelStyle,
@@ -909,7 +914,8 @@ namespace madlib::trading {
         }
     };
     const Chart::CandleStyle TradeHistoryChart::defaultCandleStyle = Chart::CandleStyle(
-        Theme::defaultChartCandleColorUp, Theme::defaultChartCandleColorDown
+        Theme::defaultChartCandleColorUp, 
+        Theme::defaultChartCandleColorDown
     );
     const Chart::LabelStyle TradeHistoryChart::defaultBuyLabelStyle = Chart::LabelStyle(red);
     const Chart::LabelStyle TradeHistoryChart::defaultSellLabelStyle = Chart::LabelStyle(green);
@@ -921,7 +927,7 @@ namespace madlib::trading {
         TestExchange& testExchange;
         CandleStrategy& candleStrategy;
         const string& symbol;
-        const bool showBalanceQuotedScale = true; // TODO
+        const bool showBalanceQuotedScale;
 
         // **** tradeHistoryChart ****
         
@@ -950,7 +956,7 @@ namespace madlib::trading {
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
             const string& symbol,
-            const bool showBalanceQuotedScale = true,
+            const bool showBalanceQuotedScale = true, // TODO
 
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
