@@ -306,8 +306,6 @@ namespace madlib::graph {
         static const Color defaultChartBoxScaleContext;
         static const Color defaultChartFilledScaleContext;
 
-        static const int defaultMultiChartAccordionInnerBorderSize = 2;
-
         static const int zoomInScrollButton = Button4;
         static const int zoomOutScrollButton = Button5;
         static constexpr double zoomInRatio = 1.25;

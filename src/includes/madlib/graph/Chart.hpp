@@ -642,7 +642,6 @@ namespace madlib::graph {
     class MultiChartAccordion: public Accordion {
     protected:
 
-        const int innerBorderSize = Theme::defaultMultiChartAccordionInnerBorderSize;
         vector<Chart*> charts;
 
     public:
@@ -661,10 +660,10 @@ namespace madlib::graph {
             Frame& cntrFrame = createContainer(title, frameHeight).getFrame();
             cntrFrame.setScrollFixed(true);
             int frameWidth = cntrFrame.getWidth();
-            chart.setTop(innerBorderSize);
-            chart.setLeft(innerBorderSize);
-            chart.setWidth(frameWidth - innerBorderSize * 2);
-            chart.setHeight(frameHeight - innerBorderSize * 2);
+            chart.setTop(0);
+            chart.setLeft(0);
+            chart.setWidth(frameWidth - 2);
+            chart.setHeight(frameHeight);
             chart.setBorder(PUSHED);
             chart.setBackgroundColor(black);
             cntrFrame.child(chart);
