@@ -305,6 +305,12 @@ namespace madlib::graph {
 
         static const int defaultBarThickness = 20;
 
+
+        static const int defaultTimeRangeAreMarginTop = 0;
+        static const int defaultTimeRangeAreMarginLeft = 200;
+        static const int defaultTimeRangeAreMarginRight = 200;
+        static const int defaultTimeRangeAreMarginBottom = 100;
+
         static const Border defaultChartBorder = PUSHED;
         static const Color defaultChartBorderColor = gray;
         static const Color defaultChartBackgroundColor = black;
@@ -1027,6 +1033,8 @@ namespace madlib::graph {
         }
     };
 
+    typedef struct { int width = 0, height = 0; } TextSize;
+
     // TODO: add Resizable class
     class Painter: public Scrollable, public Zoomable, public EventHandler {
     protected:
@@ -1061,9 +1069,6 @@ namespace madlib::graph {
 
     public:
 
-        typedef struct { int width = 0, height = 0; } TextSize;
-
-
         Painter(
             int width, int height, 
             bool scrollFixed = true,
@@ -1084,8 +1089,8 @@ namespace madlib::graph {
         virtual void line(int, int, int, int) { throw ERR_UNIMP; }
         virtual void hLine(int, int, int) { throw ERR_UNIMP; }
         virtual void vLine(int, int, int) { throw ERR_UNIMP; }
-        virtual void font(const char*) const { throw ERR_UNIMP; }
         virtual void write(int, int, const string&) { throw ERR_UNIMP; }
+        virtual void font(const char*) const { throw ERR_UNIMP; }
         virtual TextSize getTextSize(const string&) const { throw ERR_UNIMP; }
         // virtual int getWidth() const { throw ERR_UNIMP; } // = 0; // { return 0; };
         // virtual int getHeight() const { throw ERR_UNIMP; } // = 0; // { return 0; };
@@ -1245,32 +1250,32 @@ namespace madlib::graph {
             gfx.drawPoint(x, y);
         }
 
-        void rect(int x1, int y1, int x2, int y2) override final {
+        virtual void rect(int x1, int y1, int x2, int y2) override {
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawRectangle(x1, y1, x2, y2);
         }
 
-        void fRect(int x1, int y1, int x2, int y2) override final {
+        virtual void fRect(int x1, int y1, int x2, int y2) override {
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.fillRectangle(x1, y1, x2, y2);
         }
 
-        void line(int x1, int y1, int x2, int y2) override final {
+        virtual void line(int x1, int y1, int x2, int y2) override {
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawLine(x1, y1, x2, y2);
         }
 
-        void hLine(int x1, int y1, int x2) override final {
+        virtual void hLine(int x1, int y1, int x2) override {
             int y2 = y1;
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
             gfx.drawHorizontalLine(x1, y1, x2);
         }
 
-        void vLine(int x1, int y1, int y2) override final {
+        virtual void vLine(int x1, int y1, int y2) override {
             int x2 = x1;
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);

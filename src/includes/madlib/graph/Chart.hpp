@@ -183,9 +183,31 @@ namespace madlib::graph {
         }
     };
 
+    class Margin {
+    public:
+
+        int top, 
+            left, 
+            right,
+            bottom; 
+
+        Margin(
+            int top = Theme::defaultTimeRangeAreMarginTop, 
+            int left = Theme::defaultTimeRangeAreMarginLeft, 
+            int right = Theme::defaultTimeRangeAreMarginRight,
+            int bottom = Theme::defaultTimeRangeAreMarginBottom
+        ):
+            top(top), 
+            left(left), 
+            right(right), 
+            bottom(bottom)
+        {}
+    };
+
 
     class TimeRangeArea: public Area {
     protected:
+        Margin margin;
 
         TimeRange* timeRangeFull = NULL;
         TimeRange* timeRange = NULL;
@@ -236,6 +258,38 @@ namespace madlib::graph {
 
         TimeRange& getTimeRange() {
             return *timeRange;
+        }
+
+        Margin* getMargin() {
+            return &margin;
+        }
+
+        void point(int x, int y) override { 
+            Area::point(x + margin.left, y + margin.top);
+        }
+
+        void rect(int x1, int y1, int x2, int y2) override {
+            Area::rect(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
+        }
+
+        void fRect(int x1, int y1, int x2, int y2) override {
+            Area::fRect(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
+        }
+
+        void line(int x1, int y1, int x2, int y2) override {
+            Area::line(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
+        }
+
+        void hLine(int x1, int y1, int x2) override {
+            Area::hLine(x1 + margin.left, y1 + margin.top, x2 + margin.left);
+        }
+
+        void vLine(int x1, int y1, int y2) override {
+            Area::vLine(x1 + margin.left, y1 + margin.top, y2 + margin.top);
+        }
+
+        void write(int x, int y, const string& text) override {
+            Area::write(x + margin.left, y + margin.top, text);
         }
     };
 
@@ -311,20 +365,20 @@ namespace madlib::graph {
             if (shapes.size() == 0) return prepared = false;
             if (other && !other->prepared) other->align(NULL, extends);
 
-            chartHeight = timeRangeArea.getHeight();
-            chartWidth = timeRangeArea.getWidth();
+            chartHeight = timeRangeArea.getHeight() - 
+                (timeRangeArea.getMargin()->top + timeRangeArea.getMargin()->bottom);
+            chartWidth = timeRangeArea.getWidth() - 
+                (timeRangeArea.getMargin()->left + timeRangeArea.getMargin()->right);
 
             if (other && other->prepared) {
-                timeRangeArea.getTimeRange().begin = 
-                    timeRangeArea.getTimeRange().begin > 
-                    other->timeRangeArea.getTimeRange().begin 
-                        ? other->timeRangeArea.getTimeRange().begin
-                        : timeRangeArea.getTimeRange().begin;
-                timeRangeArea.getTimeRange().end = 
-                    timeRangeArea.getTimeRange().end > 
-                    other->timeRangeArea.getTimeRange().end 
-                        ? other->timeRangeArea.getTimeRange().end
-                        : timeRangeArea.getTimeRange().end;
+                timeRangeArea.getTimeRange().begin = max<ms_t>({
+                    timeRangeArea.getTimeRange().begin,
+                    other->timeRangeArea.getTimeRange().begin
+                });
+                timeRangeArea.getTimeRange().end = max<ms_t>({
+                    timeRangeArea.getTimeRange().end,
+                    other->timeRangeArea.getTimeRange().end
+                });
             }
             chartBegin = timeRangeArea.getTimeRange().begin;
             chartEnd = timeRangeArea.getTimeRange().end;
@@ -378,6 +432,27 @@ namespace madlib::graph {
     
         const Color color;
 
+        void projectFirstLastValue() {
+            string text;
+            
+            const PointShape* first = (const PointShape*)shapes[shapeIndexFrom];
+            text = to_string(first->value());
+            TextSize textSize = timeRangeArea.getTextSize(text);
+            timeRangeArea.write(
+                -textSize.width, 
+                chartHeight - translateY(first->value()), 
+                text
+            );
+
+            const PointShape* last = (const PointShape*)shapes[shapeIndexTo];
+            text = to_string(last->value());
+            timeRangeArea.write(
+                chartWidth, 
+                chartHeight - translateY(last->value()), 
+                text
+            );
+        }
+
     public:
 
         explicit PointSeries(
@@ -412,6 +487,8 @@ namespace madlib::graph {
                 );
                 prev = pixel;
             }
+
+            projectFirstLastValue();
         }
     };
 
@@ -421,6 +498,33 @@ namespace madlib::graph {
     
         const Color colorUp;
         const Color colorDown;
+
+        void projectFirstLastValue() {
+            string text;
+
+            const CandleShape* first = (const CandleShape*)shapes[shapeIndexFrom];
+            timeRangeArea.brush(
+                first->open() > first->close() ? colorDown : colorUp
+            );
+            text = to_string(first->open());
+            TextSize textSize = timeRangeArea.getTextSize(text);
+            timeRangeArea.write(
+                -textSize.width, 
+                chartHeight - translateY(first->open()), 
+                text
+            );
+
+            const CandleShape* last = (const CandleShape*)shapes[shapeIndexTo];
+            timeRangeArea.brush(
+                last->open() > last->close() ? colorDown : colorUp
+            );
+            text = to_string(last->close());
+            timeRangeArea.write(
+                chartWidth, 
+                chartHeight - translateY(last->close()), 
+                text
+            );
+        }
 
     public:
 
@@ -466,6 +570,8 @@ namespace madlib::graph {
                     right, chartHeight - close
                 );
             }
+
+            projectFirstLastValue();
         }
     };
 
@@ -481,7 +587,7 @@ namespace madlib::graph {
                 const LabelShape* label = (const LabelShape*)shapes[i];
                 int x = translateX(label->time());
                 int y = translateY(label->value());
-                Painter::TextSize textSize = timeRangeArea.getTextSize(label->text());
+                TextSize textSize = timeRangeArea.getTextSize(label->text());
                 if (label->hasBackground()) {
                     int padding = label->padding();
                     int x1 = x - padding;
