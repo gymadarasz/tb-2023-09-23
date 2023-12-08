@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../graph.hpp"
-#include "../../madlib.hpp"
+#include "graph.hpp"
+#include "../madlib.hpp"
 
 using namespace std;
 using namespace madlib;
 using namespace madlib::graph;
 
-namespace madlib::graph::chart {
+namespace madlib::graph {
 
     template<typename T>
     class Range {
