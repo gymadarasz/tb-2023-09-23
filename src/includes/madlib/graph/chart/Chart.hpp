@@ -204,7 +204,6 @@ namespace madlib::graph::chart {
             ms_t timeRangeBegin, ms_t timeRangeEnd,
             const Border border = Theme::defaultChartBorder,
             const Color backgroundColor = Theme::defaultChartBackgroundColor,
-            const int areaMargin = Theme::defaultChartMargin, // TODO
             const Color borderColor = Theme::defaultChartBorderColor,
             void *eventContext = NULL
         ): 
@@ -213,7 +212,8 @@ namespace madlib::graph::chart {
                 true, true, "", 
                 Theme::defaultAreaTextAlign, 
                 border, backgroundColor, 
-                areaMargin, 0, borderColor, 
+                Theme::defaultAreaMargin,
+                0, borderColor, 
                 Theme::defaultAreaTextColor, 
                 eventContext
             ),
