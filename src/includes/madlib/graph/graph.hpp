@@ -323,6 +323,7 @@ namespace madlib::graph {
 
         static const Color defaultChartSeriesColor = gray;
 
+        static const int touchButton = Button1;
         static const int zoomInScrollButton = Button4;
         static const int zoomOutScrollButton = Button5;
         static constexpr double zoomInRatio = 1.25;
@@ -1105,7 +1106,7 @@ namespace madlib::graph {
 
             // drag & scroll only if no child in the event focus
             for (Area* area: that->areas)
-                if (area->contains(x, y)) return; // cppcheck-suppress useStlAlgorithm
+                if (area->contains(x, y)) return;
 
             that->drag = true;
             that->dragStartedX = x;

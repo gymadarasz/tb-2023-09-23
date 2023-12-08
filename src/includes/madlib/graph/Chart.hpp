@@ -188,7 +188,7 @@ namespace madlib::graph {
         bool hasBackground() const {
             return _hasBackground;
         }
-    };    
+    };
 
 
     class TimeRangeArea: public Area {
@@ -196,6 +196,20 @@ namespace madlib::graph {
 
         TimeRange* timeRangeFull = NULL;
         TimeRange* timeRange = NULL;
+
+        void forceTimeRangeInFull() {
+            if (timeRange->end > timeRangeFull->end)
+                timeRange->end = timeRangeFull->end;
+            if (timeRange->begin < timeRangeFull->begin)
+                timeRange->begin = timeRangeFull->begin;
+        }
+
+        // convert x to ms_t
+        ms_t retractX(int x) const {
+            double diff = (double)timeRange->end - (double)timeRange->begin;
+            double ms = (x * diff) / width;
+            return timeRange->begin + (ms_t)ms;
+        }
 
     public:
         
@@ -366,13 +380,6 @@ namespace madlib::graph {
         }
     };
 
-    class Retractor { // TODO: chart to scales
-    public:
-        virtual void retract(Shape&) {
-            throw ERR_UNIMP;
-        }
-    };
-
     class PointSeries: public Projector {
     protected:
     
@@ -533,6 +540,9 @@ namespace madlib::graph {
     class Chart: public TimeRangeArea {
     protected:
 
+        bool dragTimeRange = false;
+        ms_t dragTimeRangeStartedAt = 0;
+
         static void zoomHandler(void* context, unsigned int button, int x, int) {
             if (
                 button != Theme::zoomInScrollButton &&
@@ -558,15 +568,40 @@ namespace madlib::graph {
             if (zoomAtLeft) chart->timeRange->end += (ms_t)diff;                
             if (zoomAtRight) chart->timeRange->begin -= (ms_t)diff;
 
-            if (chart->timeRange->end > chart->timeRangeFull->end)
-                chart->timeRange->end = chart->timeRangeFull->end;
-            if (chart->timeRange->begin < chart->timeRangeFull->begin)
-                chart->timeRange->begin = chart->timeRangeFull->begin;
-
-            for (Projector* projector: chart->projectors) 
-                projector->setPrepared(false);
-
+            chart->forceTimeRangeInFull();
+            chart->resetProjectorsPrepared();
             chart->draw();
+        }
+
+        void resetProjectorsPrepared() const {
+            for (Projector* projector: projectors) 
+                projector->setPrepared(false);
+        }
+
+        static void dragStartHandler(void* context, unsigned int button, int x, int) {
+            if (button != Theme::touchButton) return;
+            Chart* chart = (Chart*)context;
+            chart->dragTimeRange = true;
+            chart->dragTimeRangeStartedAt = chart->retractX(x);
+        }
+
+        static void dragMoveHandler(void* context, int x, int) {
+            Chart* chart = (Chart*)context;
+            if (!chart->dragTimeRange) return;
+            ms_t at = chart->retractX(x);
+            ms_t diff = at - chart->dragTimeRangeStartedAt;
+            chart->timeRange->begin -= diff;
+            chart->timeRange->end -= diff;
+            chart->dragTimeRangeStartedAt = at;
+            chart->forceTimeRangeInFull();
+            chart->resetProjectorsPrepared();
+            chart->draw();
+        }
+
+        static void dragStopHandler(void* context, unsigned int button, int, int) {
+            if (button != Theme::touchButton) return;
+            Chart* chart = (Chart*)context;
+            chart->dragTimeRange = false;
         }
 
     
@@ -600,6 +635,9 @@ namespace madlib::graph {
             )
         {
             addTouchHandler(Chart::zoomHandler);
+            addTouchHandler(Chart::dragStartHandler);
+            addMoveHandler(Chart::dragMoveHandler);
+            addReleaseHandler(Chart::dragStopHandler);
         }
 
         virtual ~Chart() {
