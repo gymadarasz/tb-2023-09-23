@@ -223,7 +223,7 @@ namespace madlib::graph {
         ms_t retractX(int x) const {
             double diff = (double)timeRange->end - (double)timeRange->begin;
             double ms = (x * diff) / width;
-            return timeRange->begin + (ms_t)ms;
+            return (ms_t)ms;
         }
 
     public:
@@ -640,7 +640,7 @@ namespace madlib::graph {
     protected:
 
         bool dragTimeRange = false;
-        ms_t dragTimeRangeStartedAt = 0;
+        int dragTimeRangeStartedX = 0;
 
         static void zoomHandler(void* context, unsigned int button, int x, int) {
             if (
@@ -649,14 +649,13 @@ namespace madlib::graph {
             ) return;
 
             Chart* chart = (Chart*)context;
-
-            const int width3 = chart->width / 3;
+            const int partialWidth = chart->width / 5;
             bool zoomAtLeft = true;
             bool zoomAtRight = true;
-            if (x < width3) zoomAtRight = false;
-            if (x > width3 * 2) zoomAtLeft = false;
-            if (chart->timeRange->begin <= chart->timeRangeFull->begin) zoomAtLeft = true;
-            if (chart->timeRange->end >= chart->timeRangeFull->end) zoomAtRight = true;
+            if (x <= partialWidth * 2) zoomAtRight = false;
+            if (x >= partialWidth * 3) zoomAtLeft = false;
+            if (chart->timeRange->begin < chart->timeRangeFull->begin) zoomAtLeft = true;
+            if (chart->timeRange->end > chart->timeRangeFull->end) zoomAtRight = true;
             
             double origDiff = (double)(chart->timeRange->end - chart->timeRange->begin);
             double interval = origDiff;
@@ -681,17 +680,16 @@ namespace madlib::graph {
             if (button != Theme::touchButton) return;
             Chart* chart = (Chart*)context;
             chart->dragTimeRange = true;
-            chart->dragTimeRangeStartedAt = chart->retractX(x);
+            chart->dragTimeRangeStartedX = x;
         }
 
         static void dragMoveHandler(void* context, int x, int) {
             Chart* chart = (Chart*)context;
             if (!chart->dragTimeRange) return;
-            ms_t at = chart->retractX(x);
-            ms_t diff = at - chart->dragTimeRangeStartedAt;
+            ms_t diff = chart->retractX(x - chart->dragTimeRangeStartedX);
             chart->timeRange->begin -= diff;
             chart->timeRange->end -= diff;
-            chart->dragTimeRangeStartedAt = at;
+            chart->dragTimeRangeStartedX = x;
             chart->forceTimeRangeInFull();
             chart->resetProjectorsPrepared();
             chart->draw();
@@ -769,6 +767,22 @@ namespace madlib::graph {
                 else if (!projector->isPrepared()) continue;
                 else projector->project();
 
+            TextSize textSize;
+            brush(gray);
+            const string begin = ms_to_datetime(retractX(0));
+            textSize = getTextSize(begin);
+            write(
+                -textSize.width/2, 
+                height - textSize.height, 
+                begin
+            );
+            const string end = ms_to_datetime(retractX(width));
+            textSize = getTextSize(end);
+            write(
+                width - margin.left - margin.right -textSize.width/2, 
+                height - textSize.height, 
+                end
+            );
         }
 
         PointSeries* createPointSeries(

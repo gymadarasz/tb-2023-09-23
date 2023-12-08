@@ -307,9 +307,9 @@ namespace madlib::graph {
 
 
         static const int defaultTimeRangeAreMarginTop = 0;
-        static const int defaultTimeRangeAreMarginLeft = 200;
-        static const int defaultTimeRangeAreMarginRight = 200;
-        static const int defaultTimeRangeAreMarginBottom = 100;
+        static const int defaultTimeRangeAreMarginLeft = 150;
+        static const int defaultTimeRangeAreMarginRight = 150;
+        static const int defaultTimeRangeAreMarginBottom = 20;
 
         static const Border defaultChartBorder = PUSHED;
         static const Color defaultChartBorderColor = gray;
