@@ -769,14 +769,14 @@ namespace madlib::graph {
 
             TextSize textSize;
             brush(gray);
-            const string begin = ms_to_datetime(retractX(0));
+            const string begin = ms_to_datetime(timeRange->begin);
             textSize = getTextSize(begin);
             write(
                 -textSize.width/2, 
                 height - textSize.height, 
                 begin
             );
-            const string end = ms_to_datetime(retractX(width));
+            const string end = ms_to_datetime(timeRange->end);
             textSize = getTextSize(end);
             write(
                 width - margin.left - margin.right -textSize.width/2, 
