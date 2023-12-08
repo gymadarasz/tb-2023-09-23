@@ -137,7 +137,6 @@ namespace madlib::graph {
         const string _text;
         const Color _color;
         const Color _backgroundColor;
-        const Color _borderColor; // TODO: border color can be same as text color
         const int _padding;
         const bool _hasBackground;
 
@@ -149,7 +148,6 @@ namespace madlib::graph {
             const string& text,
             const Color color = Theme::defaultChartLabelColor,
             const Color backgroundColor = Theme::defaultChartLabelBackgroundColor,
-            const Color borderColor = Theme::defaultChartLabelBorderColor,
             const int padding = Theme::defaultChartLabelPadding,
             const bool hasBackground = Theme::defaultChartLabelHasBackground
         ): 
@@ -160,7 +158,6 @@ namespace madlib::graph {
             _text(text),
             _color(color),
             _backgroundColor(backgroundColor),
-            _borderColor(borderColor),
             _padding(padding),
             _hasBackground(hasBackground)
         {}
@@ -175,10 +172,6 @@ namespace madlib::graph {
 
         Color backgroundColor() const {
             return _backgroundColor;
-        }
-
-        Color borderColor() const {
-            return _borderColor;
         }
 
         int padding() const {
@@ -497,7 +490,7 @@ namespace madlib::graph {
                     int y2 = chartHeight - (y - textSize.height) + padding;
                     timeRangeArea.brush(label->backgroundColor());
                     timeRangeArea.fRect(x1, y1, x2, y2);
-                    timeRangeArea.brush(label->borderColor());
+                    timeRangeArea.brush(label->color());
                     timeRangeArea.rect(x1, y1, x2, y2);
                 }
                 timeRangeArea.brush(label->color());
@@ -617,7 +610,7 @@ namespace madlib::graph {
         vector<LabelShape*> labelShapes;
         
     public:
-        using TimeRangeArea::TimeRangeArea;
+
         Chart(
             GFX &gfx, 
             int left, int top, int width, int height,
@@ -746,13 +739,12 @@ namespace madlib::graph {
             const string& text,
             const Color color = Theme::defaultChartLabelColor,
             const Color backgroundColor = Theme::defaultChartLabelBackgroundColor,
-            const Color borderColor = Theme::defaultChartLabelBorderColor,
             const int padding = Theme::defaultChartLabelPadding,
             const bool hasBackground = Theme::defaultChartLabelHasBackground
         ) {
             LabelShape* labelShape = new LabelShape(
                 time, value, text, 
-                color, backgroundColor, borderColor, 
+                color, backgroundColor,
                 padding, hasBackground
             );
             labelShapes.push_back(labelShape);
