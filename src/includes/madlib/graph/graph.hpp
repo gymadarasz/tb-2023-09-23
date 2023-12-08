@@ -26,24 +26,36 @@ namespace madlib::graph {
             this->y = y;
         }
 
+        void set(const Point<T>& other) {
+            set(other.x, other.y);
+        }
+
     };
 
     template<typename T>
-    struct Rect {
-        int x1, y1, x2, y2;
+    struct Rectangle {
+        T x1, y1, x2, y2;
 
-        Rect(T x1 = 0, T y1 = 0, T x2 = 0, T y2 = 0):
+        Rectangle(T x1 = 0, T y1 = 0, T x2 = 0, T y2 = 0, bool _fix = true):
             x1(x1), y1(y1), x2(x2), y2(y2)
         {
-            fix();
+            if (_fix) fix();
         }
 
-        void set(T x1, T y1, T x2, T y2) {
+        T getWidth() const {
+            return x2 - x1;
+        }
+
+        T getHeight() const {
+            return y2 - y1;
+        }
+
+        void set(T x1, T y1, T x2, T y2, bool _fix = true) {
             this->x1 = x1;
             this->y1 = y1;
             this->x2 = x2;
             this->y2 = y2;
-            fix();
+            if (_fix) fix();
         }
 
         void fix() {
@@ -68,7 +80,7 @@ namespace madlib::graph {
             return true;
         }
 
-        bool intersect(const Rect& other) {
+        bool intersect(const Rectangle& other) {
             return intersect(other.x1, other.y1, other.x2, other.y2);
         }
 
@@ -76,7 +88,7 @@ namespace madlib::graph {
             return (this->x1 >= x1 && this->y1 >= y1 && this->x2 <= x2 && this->y2 <= y2);
         }
 
-        bool insideOf(const Rect& other) const {
+        bool insideOf(const Rectangle& other) const {
             return insideOf(other.x1, other.y1, other.x2, other.y2);
         }
 
@@ -85,7 +97,7 @@ namespace madlib::graph {
             return (x1 >= this->x1 && y1 >= this->y1 && x2 <= this->x2 && y2 <= this->y2);
         }
 
-        bool containsCompletely(const Rect& other) const {
+        bool containsCompletely(const Rectangle& other) const {
             // Check if 'other' rectangle is completely inside 'this' rectangle
             return containsCompletely(other.x1, other.y1, other.x2, other.y2);
         }
@@ -95,7 +107,7 @@ namespace madlib::graph {
             return !(x2 < this->x1 || x1 > this->x2 || y2 < this->y1 || y1 > this->y2);
         }
 
-        bool containsPartially(const Rect& other) const {
+        bool containsPartially(const Rectangle& other) const {
             // Check if 'other' rectangle partially overlaps with 'this' rectangle
             return containsPartially(other.x1, other.y1, other.x2, other.y2);
         }
@@ -111,8 +123,8 @@ namespace madlib::graph {
         }
     };
 
-    struct Viewport: public Rect<int> {
-        using Rect<int>::Rect;
+    struct Viewport: public Rectangle<int> {
+        using Rectangle<int>::Rectangle;
     };
 
     struct Coord: public Point<double> {
@@ -294,7 +306,9 @@ namespace madlib::graph {
         static const int defaultBarThickness = 20;
 
         static const Border defaultChartBorder = PUSHED;
+        static const Color defaultChartBorderColor = gray;
         static const Color defaultChartBackgroundColor = black;
+        static const int defaultChartMargin = 0;
         static const Color defaultChartCandleColorUp = green;
         static const Color defaultChartCandleColorDown = red;
         static const Color defaultChartLabelColor = white;
@@ -306,6 +320,8 @@ namespace madlib::graph {
         static const Color defaultChartLineScaleContext;
         static const Color defaultChartBoxScaleContext;
         static const Color defaultChartFilledScaleContext;
+
+        static const Color defaultChartSeriesColor = gray;
 
         static const int zoomInScrollButton = Button4;
         static const int zoomOutScrollButton = Button5;
@@ -432,6 +448,7 @@ namespace madlib::graph {
         static Display *display;
         Window window;
         GC gc;
+        const char* font = NULL;
         XFontStruct *fontInfo = NULL;
 
         Viewport viewport;
@@ -592,7 +609,9 @@ namespace madlib::graph {
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x2, rect.y1);
         }
 
-        void setFont(const char* font) {            
+        void setFont(const char* font) { 
+            if (!font) throw ERROR("No font name set");
+            this->font = font;           
             fontInfo = XLoadQueryFont(display, font);
             if (!fontInfo)
             {
@@ -602,17 +621,18 @@ namespace madlib::graph {
             XSetFont(display, gc, fontInfo->fid);
         }
         
-        void writeText(int x, int y, const string& text) const {
+        void writeText(int x, int y, const string& text) {
             // Cut text to fit into the viewport first
-            string txt = text;            
+            string txt = text;
+            if (!fontInfo) setFont(font);
+            y += fontInfo->ascent;
             while (!txt.empty()) {
                 int width, height;
                 getTextSize(txt, width, height);
-                const int textYFixer4 = 4; // ??4
                 int x1 = x;
-                int y1 = y + textYFixer4;
+                int y1 = y + fontInfo->descent;
                 int x2 = x + width;
-                int y2 = y - height + textYFixer4;
+                int y2 = y - height + fontInfo->descent;
                 if (x1 > x2) swap(x1, x2);
                 if (y1 > y2) swap(y1, y2);
                 
@@ -1047,7 +1067,8 @@ namespace madlib::graph {
             int width, int height, 
             bool scrollFixed = true,
             bool zoomFixed = true,
-            void* eventContext = NULL): 
+            void* eventContext = NULL
+        ): 
             Scrollable(width, height, scrollFixed),
             Zoomable(zoomFixed),
             EventHandler(eventContext)
@@ -1127,8 +1148,6 @@ namespace madlib::graph {
         vector<Area*> areas;
         Area* parent = NULL;
 
-        bool calcScrollOnly = false;
-
         void reduceViewport(Viewport& viewport) const {
             if (!parent) return;
             int parentTop = parent->getTop() + 1;
@@ -1147,7 +1166,7 @@ namespace madlib::graph {
         }
 
         void prepare(int &x, int &y) const {
-            int leftAndScroll = getLeft() - scrollX;
+            int leftAndScroll = getLeft() - scrollX; // TODO: calculate zoom too
             int topAndScroll = getTop() - scrollY;
             x += leftAndScroll;
             y += topAndScroll;
@@ -1155,7 +1174,7 @@ namespace madlib::graph {
         }
 
         void prepare(int &x1, int &y1, int &x2, int &y2) const {
-            int leftAndScroll = getLeft() - scrollX;
+            int leftAndScroll = getLeft() - scrollX; // TODO: calculate zoom too
             int topAndScroll = getTop() - scrollY;
             x1 += leftAndScroll;
             y1 += topAndScroll;
@@ -1206,14 +1225,6 @@ namespace madlib::graph {
             // managing this->areas pointers is in a caller scope, no need vector_destroy<Area>(areas) 
         }
 
-        bool isCalcScrollOnly() const {
-            return calcScrollOnly;
-        }
-
-        void setCalcScrollOnly(bool calcScrollOnly) {
-            this->calcScrollOnly = calcScrollOnly;
-        }
-
         const Viewport& getViewport(Viewport& viewport) const {
             int t = getTop();
             int l = getLeft();
@@ -1229,28 +1240,24 @@ namespace madlib::graph {
 
         void point(int x, int y) override {
             setScrollXYMinMax(x, y);
-            if (calcScrollOnly) return;
             prepare(x, y);
             gfx.drawPoint(x, y);
         }
 
         void rect(int x1, int y1, int x2, int y2) override final {
             setScrollXY12MinMax(x1, y1, x2, y2);
-            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawRectangle(x1, y1, x2, y2);
         }
 
         void fRect(int x1, int y1, int x2, int y2) override final {
             setScrollXY12MinMax(x1, y1, x2, y2);
-            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.fillRectangle(x1, y1, x2, y2);
         }
 
         void line(int x1, int y1, int x2, int y2) override final {
             setScrollXY12MinMax(x1, y1, x2, y2);
-            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawLine(x1, y1, x2, y2);
         }
@@ -1258,7 +1265,6 @@ namespace madlib::graph {
         void hLine(int x1, int y1, int x2) override final {
             int y2 = y1;
             setScrollXY12MinMax(x1, y1, x2, y2);
-            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawHorizontalLine(x1, y1, x2);
         }
@@ -1266,7 +1272,6 @@ namespace madlib::graph {
         void vLine(int x1, int y1, int y2) override final {
             int x2 = x1;
             setScrollXY12MinMax(x1, y1, x2, y2);
-            if (calcScrollOnly) return;
             prepare(x1, y1, x2, y2);
             gfx.drawVerticalLine(x1, y1, y2);
         }
@@ -1277,7 +1282,6 @@ namespace madlib::graph {
 
         void write(int x, int y, const string &text) override {
             setScrollXYMinMax(x, y);
-            if (calcScrollOnly) return;
             prepare(x, y);
             gfx.writeText(x, y, text);
         }
@@ -1313,7 +1317,6 @@ namespace madlib::graph {
                 area.left + area.width + areaMargin,
                 area.top + area.height + areaMargin
             );
-            if (calcScrollOnly) return area;
             area.setParent(this);
             areas.push_back(&area);
             return area;
@@ -1549,7 +1552,7 @@ namespace madlib::graph {
                         throw ERROR("Invalid text align");
                         break;
                 }
-                int txtTop = t + ((h - txtHeight) / 2) + 16; // ??16
+                int txtTop = t + ((h - txtHeight) / 2); // + 16; // ??16
                 gfx.setColor(textColor);
                 gfx.writeText(txtLeft, txtTop, text);
             }

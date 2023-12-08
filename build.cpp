@@ -84,10 +84,10 @@ public:
 };
 
 void exec(string cmd) {
-    cout << "\033[36mExecute command:\033[39m $ " << cmd << endl;
+    cout << COLOR_INFO "Execute command:" COLOR_DEFAULT " $ " << cmd << endl;
     string output = madlib::exec(cmd);
     if (!output.empty()) {
-        cout << output << endl;
+        cout << str_replace(output, "error:", COLOR_ERROR "error:" COLOR_DEFAULT) << endl;
     }
 }
 

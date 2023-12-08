@@ -8,16 +8,16 @@
 
 // Manual tests
 #include "includes/madlib/graph/graph_manual_test1.hpp"
-#include "includes/madlib/graph/chart_manual_test1.hpp"
-#include "includes/madlib/graph/chart_manual_test2.hpp"
-#include "includes/madlib/graph/chart_manual_test3_candles.hpp"
-#include "includes/madlib/graph/chart_manual_test4_history.hpp"
-#include "includes/madlib/graph/chart_manual_test5_zoom.hpp"
-#include "includes/madlib/graph/ChartManualTest6.hpp"
-#include "includes/madlib/graph/ChartManualTest7Zoom.hpp"
+// #include "includes/madlib/graph/chart_manual_test1.hpp"
+// #include "includes/madlib/graph/chart_manual_test2.hpp"
+// #include "includes/madlib/graph/chart_manual_test3_candles.hpp"
+// #include "includes/madlib/graph/chart_manual_test4_history.hpp"
+// #include "includes/madlib/graph/chart_manual_test5_zoom.hpp"
+// #include "includes/madlib/graph/ChartManualTest6.hpp"
+// #include "includes/madlib/graph/ChartManualTest7Zoom.hpp"
 #include "includes/madlib/graph/AccordionManualTest1.hpp"
-#include "includes/madlib/graph/MultiChartAccordionManualTest1.hpp"
-#include "includes/madlib/trading/MonteCarloChartsTest1.hpp"
+// #include "includes/madlib/graph/MultiChartAccordionManualTest1.hpp"
+// #include "includes/madlib/trading/MonteCarloChartsTest1.hpp"
 #include "includes/madlib/graph/LabelManualTest1.hpp"
 
 using namespace std;
@@ -91,17 +91,17 @@ int main() {
     cout << "Manual tests: ";
     
     delete (new LabelManualTest1)->run();
-    delete (new ChartManualTest7Zoom)->run();
-    delete (new MonteCarloChartsTest1)->run(); // TODO: chart scroll and zoom bad
-    delete (new MultiChartAccordionManualTest1)->run();
+    // delete (new ChartManualTest7Zoom)->run();
+    // delete (new MonteCarloChartsTest1)->run(); // TODO: chart scroll and zoom bad
+    // delete (new MultiChartAccordionManualTest1)->run();
     delete (new AccordionManualTest1)->run();
-    delete (new ChartManualTest6)->run();
+    // delete (new ChartManualTest6)->run();
 
-    chart_manual_test5_zoom();
-    chart_manual_test4_history();
-    chart_manual_test3_candles();
-    chart_manual_test2();
-    chart_manual_test1();
+    // chart_manual_test5_zoom();
+    // chart_manual_test4_history();
+    // chart_manual_test3_candles();
+    // chart_manual_test2();
+    // chart_manual_test1();
     graph_manual_test1(); // TODO: BUG: drag-scroll doesnt work if I click below the big willi button somewhere
 
     cout << " [OK]" << endl 

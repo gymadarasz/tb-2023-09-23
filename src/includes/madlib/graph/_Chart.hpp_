@@ -120,7 +120,6 @@ namespace madlib::graph {
             double xmin, ymin, xmax, ymax;
             const Chart& chart;
             Shape shape;
-            bool adapt;
             const void* context = NULL;
 
             vector<Pixel> pixels;
@@ -128,45 +127,40 @@ namespace madlib::graph {
             vector<Coord> coords;
             vector<string> texts;
 
-            int projectX(double x, bool adapt) {
-                if (adapt) adaptX(x);
+            int projectX(double x) {
                 return (int)(((x - xmin) * chart.getWidth()) / (xmax - xmin));
             }
 
-            int projectY(double y, bool adapt) {
-                if (adapt) adaptY(y); // TODO: BUG: I think here is the issue with vertical scroll after zoom in and out
+            int projectY(double y) {
+                // TODO: BUG: I think here is the issue with vertical scroll after zoom in and out
                 return (int)(((y - ymin) * chart.getHeight()) / (ymax - ymin));
             }
             
-            Pixel& project(double x, double y, Pixel& result) {
-                if (adapt) adaptXY(x, y);
+            bool project(double x, double y, Pixel& result) {
                 result = applyZoom(
-                    projectX(xmin, false), projectY(ymin, false), 
-                    projectX(x, adapt), projectY(y, adapt)
+                    projectX(xmin), projectY(ymin), 
+                    projectX(x), projectY(y)
                 );
-                return result;
+                return 
+                    result.x > chart.getScrollX() && 
+                    result.x < chart.getScrollX() + chart.getWidth();                
             }
             
         public:
 
             explicit Scale(
                 const Chart& chart,
-                Shape shape = LINE, bool adapt = true, const void* context = NULL
+                Shape shape = LINE, const void* context = NULL
             ):
                 Zoomable(false),
                 chart(chart),
-                shape(shape), adapt(adapt),
+                shape(shape),
                 context(context ? context : getDefaultScaleContext(shape))
             {
                 reset();
             }
 
             virtual ~Scale() final {}
-
-            Scale& setAdapt(bool adapt) {
-                this->adapt = adapt;
-                return *this;
-            }
 
             void reset() {
                 xmin = INFINITY;
@@ -197,30 +191,6 @@ namespace madlib::graph {
                 return texts;
             }
 
-            void adaptX(double x) {
-                if (xmin > x) xmin = x;
-                if (xmax < x) xmax = x;
-            }
-
-            void adaptY(double y) {
-                if (ymin > y) ymin = y;
-                if (ymax < y) ymax = y;
-            }
-
-            void adaptXY(double x, double y) {
-                adaptX(x);
-                adaptY(y);
-            }
-
-            void adaptXY(const Coord& coord) {
-                adaptXY(coord.x, coord.y);
-            }
-
-            void adaptXY(const vector<Coord>& coords) {
-                reset();
-                for (const Coord& coord: coords) adaptXY(coord);
-            }
-
             void setRealPoints(const vector<Coord>& coords) {
                 this->coords = coords;
             }
@@ -230,27 +200,13 @@ namespace madlib::graph {
                 project();
             }
 
-            void project() {                
-                if (adapt) adaptXY(coords);
-                else pixels.clear();
+            void project() {              
+                pixels.clear();
                 Pixel pixel;
-                bool _adapt = adapt;
-                adapt = false;
-                // Rectangle bounds(
-                //     - chart.getScrollX(), 
-                //     - chart.getScrollY(), 
-                //     - chart.getScrollX() + chart.getWidth(), 
-                //     - chart.getScrollY() + chart.getHeight()
-                // );
-                // DBG("bounds:", bounds.x1, ":", bounds.x2);
-                // DBG("scale:", xmin, ":", xmax);
                 for (const Coord& coord: coords) { // NOTE: it may can be sped up by projecting only those points that inside the chart view (just calculate where are the chart edges converted to real-coordinates)
                     project(coord.x, coord.y, pixel);
-                    // DBG("px:", pixel.x, " s:", chart.getScrollX());
-                    // if (bounds.contains(pixel))
                     pixels.push_back(pixel);
                 }
-                adapt = _adapt;
             }
 
             void setTexts(const vector<string>& texts) {
@@ -313,8 +269,7 @@ namespace madlib::graph {
         static void zoomHandler(void* context, unsigned int /*button*/, int x, int y) {
             Chart* that = (Chart*)context;
             DBG(x, ":", y);
-            that->projectScales();
-            that->redraw();
+            that->draw();
         }
         
         vector<Scale*> scales;
@@ -355,13 +310,6 @@ namespace madlib::graph {
             vector_destroy<Scale>(scales);
         }
 
-        virtual void projectScales() {
-            for (Scale* scale: scales) {
-                scale->setZoomFrom(*this);
-                scale->project();
-            }
-        };
-
         const vector<Scale*> getScales() const {
             return scales;
         }
@@ -371,8 +319,8 @@ namespace madlib::graph {
             return *scales.at(at);
         }
 
-        Scale& createScale(Shape shape/* = LINE*/, bool adapt, const void* context = NULL) {
-            return *vector_create(scales, *this, shape, adapt, context ? context : Scale::getDefaultScaleContext(shape));
+        Scale& createScale(Shape shape, const void* context = NULL) {
+            return *vector_create(scales, *this, shape, context ? context : Scale::getDefaultScaleContext(shape));
         }
         
         void drawPoint(int x, int y) {
@@ -557,29 +505,16 @@ namespace madlib::graph {
             }
         }
 
-        // -------- 
+        // --------
 
-        void redraw() {
-            // recalc
-            setCalcScrollOnly(true);
-            Point<int> scrollXY = getScrollXY();
-            resetScrollXYMax();
-            drawScales();
-            setScrollXY(scrollXY.x, scrollXY.y);
+        virtual void draw() override {
+            Frame::draw();
 
-            // actual drawing
-            setCalcScrollOnly(false);
-            draw();
-        }
-
-        virtual void draw() override final {
-            if (!calcScrollOnly) Frame::draw();
-            drawScales();
-        }
-
-        void drawScales() {
             size_t at = 0;
-            for (const Scale* scale: scales) {
+            for (Scale* scale: scales) {
+                scale->setZoomFrom(*this);
+                scale->project();
+
                 const Shape shape = scale->getShape();
                 const void* context = scale->getContext();
 
@@ -670,9 +605,9 @@ namespace madlib::graph {
             return chart;
         }
         
-        virtual void projectCharts() {
+        virtual void draw() override {
             for (Chart* chart: charts) {
-                chart->projectScales();
+                chart->draw();
             }
         }
     };

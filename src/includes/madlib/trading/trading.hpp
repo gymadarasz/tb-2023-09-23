@@ -806,12 +806,12 @@ namespace madlib::trading {
         const LabelStyle& sellTextStyle;
         const LabelStyle& errorTextStyle;
         
-        Scale& candlesScale = createScale(CANDLE, true, &candleStyle);
-        Scale& priceScale = createScale(LINE, true, &priceColor);
-        Scale& volumeScale = createScale(LINE, true, &volumeColor);
-        Scale& buyTextScale = createScale(LABEL, false, &buyTextStyle);
-        Scale& sellTextScale = createScale(LABEL, false, &sellTextStyle);
-        Scale& errorTextScale = createScale(LABEL, false, &errorTextStyle);
+        Scale& candlesScale = createScale(CANDLE, &candleStyle);
+        Scale& priceScale = createScale(LINE, &priceColor);
+        Scale& volumeScale = createScale(LINE, &volumeColor);
+        Scale& buyTextScale = createScale(LABEL, &buyTextStyle);
+        Scale& sellTextScale = createScale(LABEL, &sellTextStyle);
+        Scale& errorTextScale = createScale(LABEL, &errorTextStyle);
 
     public:
 
@@ -853,7 +853,7 @@ namespace madlib::trading {
 
         virtual ~TradeHistoryChart() {}
 
-        void projectScales() override final {
+        void draw() override final {
             if (showCandles) {
                 vector<Candle> candles = history.getCandles();
                 vector<Coord> candlesRealPoints;
@@ -912,7 +912,7 @@ namespace madlib::trading {
                 Scale::alignXY(*scale0, errorTextScale);
             }
 
-            Chart::projectScales();
+            Chart::draw();
         }
     };
     const Chart::CandleStyle TradeHistoryChart::defaultCandleStyle = Chart::CandleStyle(
@@ -988,16 +988,16 @@ namespace madlib::trading {
             balanceQuotedChart = &createChart(
                 "Balance (quoted)", multiChartAccordionFramesHeight
             );
-            balanceQuotedFullScale = &balanceQuotedChart->createScale(LINE, false, &lightGreen);
-            balanceQuotedScale = &balanceQuotedChart->createScale(LINE, false, &green);
+            balanceQuotedFullScale = &balanceQuotedChart->createScale(LINE, &lightGreen);
+            balanceQuotedScale = &balanceQuotedChart->createScale(LINE, &green);
 
             // **** balanceBaseChart ****
 
             balanceBaseChart = &createChart(
                 "Balance (base)", multiChartAccordionFramesHeight
             );
-            balanceBaseFullScale = &balanceBaseChart->createScale(LINE, false, &yellow);
-            balanceBaseScale = &balanceBaseChart->createScale(LINE, false, &orange);
+            balanceBaseFullScale = &balanceBaseChart->createScale(LINE, &yellow);
+            balanceBaseScale = &balanceBaseChart->createScale(LINE, &orange);
 
             openAll(false);
         }
@@ -1045,9 +1045,9 @@ namespace madlib::trading {
 
             // **** balanceQuotedChart ****
 
-            balanceQuotedFullScale->adaptXY(balanceQuotedFullAtCloses);
+            // balanceQuotedFullScale->adaptXY(balanceQuotedFullAtCloses);
             if (showBalanceQuotedScale) {
-                balanceQuotedScale->adaptXY(balanceQuotedAtCloses);
+                // balanceQuotedScale->adaptXY(balanceQuotedAtCloses);
                 Chart::Scale::alignXY(*balanceQuotedScale, *balanceQuotedFullScale);
                 balanceQuotedScale->setRealPoints(balanceQuotedAtCloses);
             }
@@ -1055,18 +1055,16 @@ namespace madlib::trading {
 
             // **** balanceBaseChart ****
 
-            balanceBaseFullScale->adaptXY(balanceBaseFullAtCloses);
-            balanceBaseScale->adaptXY(balanceBaseAtCloses);
+            // balanceBaseFullScale->adaptXY(balanceBaseFullAtCloses);
+            // balanceBaseScale->adaptXY(balanceBaseAtCloses);
             Chart::Scale::alignXY(*balanceBaseScale, *balanceBaseFullScale);
             balanceBaseScale->setRealPoints(balanceBaseAtCloses);
             balanceBaseFullScale->setRealPoints(balanceBaseFullAtCloses);
-
-            projectCharts();
         }
 
-        void projectCharts() override final {
-            tradeHistoryChart.projectScales();
-            MultiChartAccordion::projectCharts();
+        void draw() override final {
+            tradeHistoryChart.draw();
+            MultiChartAccordion::draw();
         };
     };
 

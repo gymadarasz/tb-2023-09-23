@@ -45,6 +45,6 @@ public:
 
         mainFrame.child(chart);
 
-        chart.projectScales();
+        chart.draw();
     }
 };

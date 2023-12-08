@@ -145,6 +145,7 @@ int bitstamp_history(int, const char* []) {
 
 int main(int argc, const char* argv[])
 {
+    LOG("Start...");
     // return (TradingApplication(argc, argv)).getResult();
     try {
         if (argv[1] && !strcmp(argv[1], "test-command")) return test(argc, argv);

@@ -252,25 +252,33 @@ namespace madlib {
         this_thread::sleep_for(chrono::milliseconds(ms));
     }
 
+    mt19937* rand_gen = NULL;
+
+    inline void rand_init() {
+        random_device rd; 
+        rand_gen = new std::mt19937(rd());
+    }
+
+    inline void rand_init_seed(unsigned int seed) {
+        rand_gen = new std::mt19937(seed);
+    }
+
     inline double randd(double min, double max) {
-        random_device rd;
-        mt19937 gen(rd());
+        if (!rand_gen) rand_init();
         uniform_real_distribution<double> dis(min, max);
-        return dis(gen);
+        return dis(*rand_gen);
     }
 
     inline long randl(long min, long max) {
-        random_device rd;
-        mt19937 gen(rd());
+        if (!rand_gen) rand_init();
         uniform_int_distribution<long> dis(min, max);
-        return dis(gen);
+        return dis(*rand_gen);
     }
 
     inline int randi(int min, int max) {
-        random_device rd;
-        mt19937 gen(rd());
+        if (!rand_gen) rand_init();
         uniform_int_distribution<int> dis(min, max);
-        return dis(gen);
+        return dis(*rand_gen);
     }
 
     template<typename T>

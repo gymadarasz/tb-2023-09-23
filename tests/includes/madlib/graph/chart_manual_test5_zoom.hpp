@@ -70,7 +70,7 @@ int chart_manual_test5_zoom()
     gui.child(chart);
     chart_manual_test5_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test5_draw);    
-    chart.projectScales();
+    chart.draw();
 
     gui.loop();
     

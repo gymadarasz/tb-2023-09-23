@@ -25,10 +25,10 @@ int chart_manual_test2()
     chart_manual_test2_gfxPtr = &gfx;
     GUI gui(gfx, 800, 600, "chart_manual_test2", black);
     Chart chart(gfx, 5, 5, 790, 590);
-    chart.createScale(LINE, true, &green);
+    chart.createScale(LINE, &green);
     chart_manual_test2_chartPtr = &chart;
     gui.addDrawHandler(chart_manual_test2_draw);
-    chart.createScale(LABEL, true);
+    chart.createScale(LABEL);
 
 
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");

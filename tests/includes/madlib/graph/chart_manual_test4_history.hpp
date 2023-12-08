@@ -65,7 +65,7 @@ int chart_manual_test4_history()
     gui.child(chart);
     chart_manual_test4_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test4_draw);
-    chart.projectScales();
+    chart.draw();
 
     gui.loop();
     
