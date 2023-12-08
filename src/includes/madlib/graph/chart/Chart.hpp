@@ -484,22 +484,22 @@ namespace madlib::graph::chart {
     class Alignment {
     protected:
         ShapeType shapeType;
-        void* projector;
+        Projector* projector;
         ShapeType alignToShapeType;
-        void* alignTo;
+        Projector* alignToProjector;
         bool extends;
     public:
         Alignment(
             ShapeType shapeType,
-            void* projector,
+            Projector* projector,
             ShapeType alignToShapeType = NONE,
-            void* alignTo = NULL,
+            Projector* alignToProjector = NULL,
             bool extends = true
         ):
             shapeType(shapeType),
             projector(projector),
             alignToShapeType(alignToShapeType),
-            alignTo(alignTo),
+            alignToProjector(alignToProjector),
             extends(extends)
         {
             if (!projector) throw ERR_MISSING;
@@ -509,7 +509,7 @@ namespace madlib::graph::chart {
             return shapeType;
         }
 
-        void* getProjector() const {
+        Projector* getProjector() const {
             return projector;
         }
 
@@ -517,8 +517,8 @@ namespace madlib::graph::chart {
             return alignToShapeType;
         }
 
-        void* getAlignTo() const {
-            return alignTo;
+        Projector* getAlignToProjector() const {
+            return alignToProjector;
         }
 
         bool isExtends() const {
@@ -529,7 +529,7 @@ namespace madlib::graph::chart {
     class Chart: public TimeRangeArea {
     protected:
     
-        vector<void*> projectors;
+        vector<Projector*> projectors;
         vector<Alignment> alignments;
 
         vector<PointSeries*> pointSeriesProjectors;
@@ -556,136 +556,15 @@ namespace madlib::graph::chart {
         void draw() override {
             TimeRangeArea::draw();
         
-
             for (const Alignment& alignment: alignments) {
-                switch (alignment.getShapeType()) {
-                    case NONE:
-                        throw ERR_MISSING;
-
-                    case LINE:
-
-                        switch(alignment.getAlignToShapeType()) {
-                            case NONE: 
-                                ((Projector*)alignment.getProjector())
-                                    ->align();
-                                break;
-
-                            case LINE:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            case CANDLE:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            case LABEL:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            default:
-                                throw ERR_INVALID;
-                        }
-
-                        break;
-
-                    case CANDLE:
-
-                        switch(alignment.getAlignToShapeType()) {
-                            case NONE: 
-                                ((Projector*)alignment.getProjector())
-                                    ->align();
-                                break;
-
-                            case LINE:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            case CANDLE:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            case LABEL:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            default:
-                                throw ERR_INVALID;
-                        }
-
-                        break;
-
-                    case LABEL:
-
-                        switch(alignment.getAlignToShapeType()) {
-                            case NONE: 
-                                ((Projector*)alignment.getProjector())
-                                    ->align();
-                                break;
-
-                            case LINE:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            case CANDLE:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            case LABEL:
-                                ((Projector*)alignment.getProjector())
-                                    ->align(
-                                        (Projector*)alignment.getAlignTo(), 
-                                        alignment.isExtends()
-                                    );
-                                break;
-
-                            default:
-                                throw ERR_INVALID;
-                        }
-
-                        break;
-                    
-                    
-                    default:
-                        throw ERR_INVALID;
-                }
-                
+                alignment.getProjector()->align(
+                    alignment.getAlignToProjector(), 
+                    alignment.isExtends()
+                );                
             }
 
-            for (void* that: projectors) {
-                if (!that) continue;
-                Projector* projector = (Projector*)that;
+            for (Projector* projector: projectors) {
+                if (!projector) continue;
                 if (!projector->prepared) continue;
                 projector->project();
             }
@@ -694,7 +573,7 @@ namespace madlib::graph::chart {
 
         PointSeries* createPointSeries(
             ShapeType alignToShapeType = NONE,
-            void* alignToProjector = NULL,
+            Projector* alignToProjector = NULL,
             bool alignExtends = true,
             Color color = Theme::defaultChartSeriesColor
         ) {
@@ -712,7 +591,7 @@ namespace madlib::graph::chart {
 
         CandleSeries* createCandleSeries(
             ShapeType alignToShapeType = NONE,
-            void* alignToProjector = NULL,
+            Projector* alignToProjector = NULL,
             bool alignExtends = true,
             Color colorUp = Theme::defaultChartCandleColorUp, 
             Color colorDown = Theme::defaultChartCandleColorDown
@@ -731,7 +610,7 @@ namespace madlib::graph::chart {
 
         LabelSeries* createLabelSeries(
             ShapeType alignToShapeType = NONE,
-            void* alignToProjector = NULL,
+            Projector* alignToProjector = NULL,
             bool alignExtends = true
         ) {
             LabelSeries* labelSeries = new LabelSeries(*this);
@@ -781,7 +660,9 @@ namespace madlib::graph::chart {
             const bool hasBackground = Theme::defaultChartLabelHasBackground
         ) {
             LabelShape* labelShape = new LabelShape(
-                time, value, text, color, backgroundColor, borderColor, padding, hasBackground
+                time, value, text, 
+                color, backgroundColor, borderColor, 
+                padding, hasBackground
             );
             labelShapes.push_back(labelShape);
             return labelShape;
