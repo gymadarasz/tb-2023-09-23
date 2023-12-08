@@ -20,7 +20,7 @@ protected:
     Chart chart1 = Chart(
         gfx, 10, 100, 1500, 300,
         datetime_to_ms("2020-01-01"), 
-        datetime_to_ms("2020-01-06")
+        datetime_to_ms("2020-01-26")
     );
 
 public:

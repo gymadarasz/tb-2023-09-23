@@ -137,7 +137,7 @@ namespace madlib::graph {
         const string _text;
         const Color _color;
         const Color _backgroundColor;
-        const Color _borderColor;
+        const Color _borderColor; // TODO: border color can be same as text color
         const int _padding;
         const bool _hasBackground;
 
@@ -194,6 +194,7 @@ namespace madlib::graph {
     class TimeRangeArea: public Area {
     protected:
 
+        TimeRange* timeRangeFull = NULL;
         TimeRange* timeRange = NULL;
 
     public:
@@ -217,10 +218,12 @@ namespace madlib::graph {
                 Theme::defaultAreaTextColor, 
                 eventContext
             ),
+            timeRangeFull(new TimeRange(timeRangeBegin, timeRangeEnd)),
             timeRange(new TimeRange(timeRangeBegin, timeRangeEnd))
         {}
 
         virtual ~TimeRangeArea() {
+            delete timeRangeFull;
             delete timeRange;
         }
 
@@ -261,6 +264,10 @@ namespace madlib::graph {
             return prepared;
         }
 
+        void setPrepared(bool prepared) {
+            this->prepared = prepared;
+        }
+
         TimeRangeArea& getTimeRangeArea() const {
             return timeRangeArea;
         }
@@ -293,52 +300,66 @@ namespace madlib::graph {
         }
 
         bool align(Projector* other = NULL, bool extends = true) {
-            if (!other && shapes.size() == 0) return prepared = false;
-
-            if (other && !other->prepared && !other->align(NULL, extends)) 
-                return align(NULL, extends);
+            if (prepared) return true;
+            if (shapes.size() == 0) return prepared = false;
+            if (other && !other->prepared) other->align(NULL, extends);
 
             chartHeight = timeRangeArea.getHeight();
             chartWidth = timeRangeArea.getWidth();
+
+            if (other && other->prepared) {
+                timeRangeArea.getTimeRange().begin = 
+                    timeRangeArea.getTimeRange().begin > 
+                    other->timeRangeArea.getTimeRange().begin 
+                        ? other->timeRangeArea.getTimeRange().begin
+                        : timeRangeArea.getTimeRange().begin;
+                timeRangeArea.getTimeRange().end = 
+                    timeRangeArea.getTimeRange().end > 
+                    other->timeRangeArea.getTimeRange().end 
+                        ? other->timeRangeArea.getTimeRange().end
+                        : timeRangeArea.getTimeRange().end;
+            }
             chartBegin = timeRangeArea.getTimeRange().begin;
             chartEnd = timeRangeArea.getTimeRange().end;
-
+            chartInterval = chartEnd - chartBegin;
+            if (other && other->prepared) {
+                other->chartBegin = chartBegin;
+                other->chartEnd = chartEnd;
+                other->chartInterval = chartInterval;
+            }
+            
             shapesValueMin = INFINITY;
             shapesValueMax = -INFINITY;
-            if (other) {
+            if (other && other->prepared && extends) {
                 shapesValueMin = other->shapesValueMin;
                 shapesValueMax = other->shapesValueMax;
             }
-
+            
             shapeIndexFrom = __SIZE_MAX__;
-            shapeIndexTo = 0;
+            shapeIndexTo = __SIZE_MAX__;
+
             for (const Shape* shape: shapes) {
+                shapeIndexTo++;
+
                 TimeRange shapeTimeRange = shape->getTimeRange();
                 if (shapeTimeRange.end < chartBegin) continue;
                 if (shapeTimeRange.begin > chartEnd) break;
 
-                if (!other || extends) {
-                    MinMax<double> valueMinMax = shape->getValueMinMax();
-                    if (shapesValueMin > valueMinMax.min) shapesValueMin = valueMinMax.min;
-                    if (shapesValueMax < valueMinMax.max) shapesValueMax = valueMinMax.max;
-                }
-
                 if (shapeIndexFrom == __SIZE_MAX__) shapeIndexFrom = shapeIndexTo;
-                shapeIndexTo++;
+
+                MinMax<double> valueMinMax = shape->getValueMinMax();
+                if (shapesValueMin > valueMinMax.min) shapesValueMin = valueMinMax.min;
+                if (shapesValueMax < valueMinMax.max) shapesValueMax = valueMinMax.max;
+
             }
-            if (shapeIndexFrom == __SIZE_MAX__) return prepared = false;
-
-            chartInterval = chartEnd - chartBegin;
             shapesValueDiff = shapesValueMax - shapesValueMin;
-
-            if (other && extends) {
+            if (other && other->prepared && extends) {
                 other->shapesValueMin = shapesValueMin;
                 other->shapesValueMax = shapesValueMax;
-                other->getTimeRangeArea().getTimeRange().begin = chartBegin;
-                other->getTimeRangeArea().getTimeRange().end = chartEnd;
-                other->chartInterval = chartInterval;
                 other->shapesValueDiff = shapesValueDiff;
             }
+            
+            if (shapeIndexFrom == __SIZE_MAX__) return prepared = false;
 
 
             return prepared = true;
@@ -511,6 +532,43 @@ namespace madlib::graph {
 
     class Chart: public TimeRangeArea {
     protected:
+
+        static void zoomHandler(void* context, unsigned int button, int x, int) {
+            if (
+                button != Theme::zoomInScrollButton &&
+                button != Theme::zoomOutScrollButton
+            ) return;
+
+            Chart* chart = (Chart*)context;
+
+            const int width3 = chart->width / 3;
+            bool zoomAtLeft = true;
+            bool zoomAtRight = true;
+            if (x < width3) zoomAtRight = false;
+            if (x > width3 * 2) zoomAtLeft = false;
+            if (chart->timeRange->begin <= chart->timeRangeFull->begin) zoomAtLeft = true;
+            if (chart->timeRange->end >= chart->timeRangeFull->end) zoomAtRight = true;
+            
+            double origDiff = (double)(chart->timeRange->end - chart->timeRange->begin);
+            double interval = origDiff;
+            if (button == Theme::zoomInScrollButton) interval *= Theme::zoomInRatio;
+            if (button == Theme::zoomOutScrollButton) interval *= Theme::zoomOutRatio;
+            double diff = origDiff - interval;
+
+            if (zoomAtLeft) chart->timeRange->end += (ms_t)diff;                
+            if (zoomAtRight) chart->timeRange->begin -= (ms_t)diff;
+
+            if (chart->timeRange->end > chart->timeRangeFull->end)
+                chart->timeRange->end = chart->timeRangeFull->end;
+            if (chart->timeRange->begin < chart->timeRangeFull->begin)
+                chart->timeRange->begin = chart->timeRangeFull->begin;
+
+            for (Projector* projector: chart->projectors) 
+                projector->setPrepared(false);
+
+            chart->draw();
+        }
+
     
         vector<Projector*> projectors;
         vector<Alignment> alignments;
@@ -525,6 +583,24 @@ namespace madlib::graph {
         
     public:
         using TimeRangeArea::TimeRangeArea;
+        Chart(
+            GFX &gfx, 
+            int left, int top, int width, int height,
+            ms_t timeRangeBegin, ms_t timeRangeEnd,
+            const Border border = Theme::defaultChartBorder,
+            const Color backgroundColor = Theme::defaultChartBackgroundColor,
+            const Color borderColor = Theme::defaultChartBorderColor,
+            void *eventContext = NULL
+        ):
+            TimeRangeArea(
+                gfx, left, top, width, height,
+                timeRangeBegin, timeRangeEnd,
+                border, backgroundColor, borderColor,
+                eventContext
+            )
+        {
+            addTouchHandler(Chart::zoomHandler);
+        }
 
         virtual ~Chart() {
             clear();
@@ -545,18 +621,16 @@ namespace madlib::graph {
         void draw() override {
             TimeRangeArea::draw();
         
-            for (const Alignment& alignment: alignments) {
+            for (const Alignment& alignment: alignments)
                 alignment.getProjector()->align(
                     alignment.getAlignToProjector(), 
                     alignment.isExtends()
-                );                
-            }
+                );
 
-            for (Projector* projector: projectors) {
+            for (Projector* projector: projectors)
                 if (!projector) continue;
-                if (!projector->isPrepared()) continue;
-                projector->project();
-            }
+                else if (!projector->isPrepared()) continue;
+                else projector->project();
 
         }
 
