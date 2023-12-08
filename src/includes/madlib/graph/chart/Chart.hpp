@@ -31,16 +31,6 @@ namespace madlib::graph::chart {
         ):
             Range(begin, end)
         {}
-
-        // TimeRange(
-        //     const string& datetimeBegin, 
-        //     const string& datetimeEnd
-        // ):
-        //     Range(
-        //         datetime_to_ms(datetimeBegin),
-        //         datetime_to_ms(datetimeEnd)
-        //     )
-        // {}
     };
 
     class Shape {
@@ -240,12 +230,11 @@ namespace madlib::graph::chart {
     };
 
 
-    template<typename ShapeT>
     class Projector {
     protected:
 
         TimeRangeArea& timeRangeArea;
-        vector<ShapeT> shapes;
+        vector<Shape*> shapes;
 
     public:
 
@@ -262,18 +251,16 @@ namespace madlib::graph::chart {
         bool prepared = false;
 
         explicit Projector(
-            TimeRangeArea& timeRangeArea //, 
-            // const vector<ShapeT>& shapes
+            TimeRangeArea& timeRangeArea
         ): 
-            timeRangeArea(timeRangeArea) //,
-            // shapes(shapes)
+            timeRangeArea(timeRangeArea)
         {}
 
         TimeRangeArea& getTimeRangeArea() const {
             return timeRangeArea;
         }
 
-        vector<ShapeT>& getShapes() {
+        vector<Shape*>& getShapes() {
             return shapes;
         }
 
@@ -300,16 +287,11 @@ namespace madlib::graph::chart {
             return Pixel(translateX(ms), translateY(value));
         }
 
-        bool align(bool extends = true) {
-            return align<Shape>(NULL, extends);
-        }
-
-        template<typename T>
-        bool align(Projector<T>* other = NULL, bool extends = true) {
+        bool align(Projector* other = NULL, bool extends = true) {
             if (!other && shapes.size() == 0) return prepared = false;
 
-            if (other && !other->prepared && !other->align(extends)) 
-                return align(extends);
+            if (other && !other->prepared && !other->align(NULL, extends)) 
+                return align(NULL, extends);
 
             chartHeight = timeRangeArea.getHeight();
             chartWidth = timeRangeArea.getWidth();
@@ -325,13 +307,13 @@ namespace madlib::graph::chart {
 
             shapeIndexFrom = __SIZE_MAX__;
             shapeIndexTo = 0;
-            for (const Shape& shape: shapes) {
-                TimeRange timeRange = shape.getTimeRange();
+            for (const Shape* shape: shapes) {
+                TimeRange timeRange = shape->getTimeRange();
                 if (timeRange.end < chartBegin) continue;
                 if (timeRange.begin > chartEnd) break;
 
                 if (!other || extends) {
-                    MinMax<double> valueMinMax = shape.getValueMinMax();
+                    MinMax<double> valueMinMax = shape->getValueMinMax();
                     if (shapesValueMin > valueMinMax.min) shapesValueMin = valueMinMax.min;
                     if (shapesValueMax < valueMinMax.max) shapesValueMax = valueMinMax.max;
                 }
@@ -365,7 +347,7 @@ namespace madlib::graph::chart {
         }
     };
 
-    class PointSeries: public Projector<PointShape> {
+    class PointSeries: public Projector {
     protected:
     
         const Color color;
@@ -374,10 +356,9 @@ namespace madlib::graph::chart {
 
         explicit PointSeries(
             TimeRangeArea& area,
-            // const vector<PointShape>& shapes,
             const Color color = Theme::defaultChartSeriesColor
         ):
-            Projector(area/*, shapes*/),
+            Projector(area),
             color(color)
         {}
 
@@ -386,19 +367,19 @@ namespace madlib::graph::chart {
         void project() override {
             if (!prepared) return;
 
-            const PointShape& first = (const PointShape&)shapes[shapeIndexFrom];
+            const PointShape* first = (const PointShape*)shapes[shapeIndexFrom];
 
             Pixel prev = translate(
-                first.time(), 
-                first.value()
+                first->time(), 
+                first->value()
             );
             timeRangeArea.brush(color);
             
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
-                const PointShape& point = (const PointShape&)shapes[i];
+                const PointShape* point = (const PointShape*)shapes[i];
                 Pixel pixel = translate(
-                    point.time(), 
-                    point.value()
+                    point->time(), 
+                    point->value()
                 );
 
                 timeRangeArea.line(
@@ -411,7 +392,7 @@ namespace madlib::graph::chart {
     };
 
 
-    class CandleSeries: public Projector<CandleShape> {
+    class CandleSeries: public Projector {
     protected:
     
         const Color colorUp;
@@ -421,11 +402,10 @@ namespace madlib::graph::chart {
 
         explicit CandleSeries(
             TimeRangeArea& area,
-            // const vector<CandleShape>& shapes,
             const Color colorUp = Theme::defaultChartCandleColorUp,
             const Color colorDown = Theme::defaultChartCandleColorDown
         ):
-            Projector(area/*, shapes*/),
+            Projector(area),
             colorUp(colorUp),
             colorDown(colorDown)
         {}
@@ -436,29 +416,29 @@ namespace madlib::graph::chart {
             if (!prepared) return;
             
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
-                const CandleShape& candle = (const CandleShape&)shapes[i];
-                Color color = candle.open() > candle.close() ? colorDown : colorUp;
+                const CandleShape* candle = (const CandleShape*)shapes[i];
+                Color color = candle->open() > candle->close() ? colorDown : colorUp;
                 timeRangeArea.brush(color);
 
-                const ms_t mid = candle.begin() + (candle.end() - candle.begin()) / 2;
+                const ms_t mid = candle->begin() + (candle->end() - candle->begin()) / 2;
                 int wick = translateX(mid);
-                int high = translateY(candle.high());
-                int low = translateY(candle.low());
+                int high = translateY(candle->high());
+                int low = translateY(candle->low());
                 timeRangeArea.vLine(
                     wick, 
                     chartHeight - high, 
                     chartHeight - low
                 );
                 
-                int left = translateX(candle.begin());
-                int right = translateX(candle.end());
+                int left = translateX(candle->begin());
+                int right = translateX(candle->end());
                 int diff = right - left;
                 if (diff > 3) {
                     left += 1;
                     right -= 1;
                 }
-                int open = translateY(candle.open());
-                int close = translateY(candle.close());
+                int open = translateY(candle->open());
+                int close = translateY(candle->close());
                 timeRangeArea.fRect(
                     left, chartHeight - open, 
                     right, chartHeight - close
@@ -467,15 +447,10 @@ namespace madlib::graph::chart {
         }
     };
 
-    class LabelSeries: public Projector<LabelShape> {
+    class LabelSeries: public Projector {
     public:
 
-        explicit LabelSeries(
-            TimeRangeArea& area //,
-            // const vector<LabelShape>& shapes
-        ):
-            Projector(area/*, shapes*/)
-        {}
+        using Projector::Projector;
 
         virtual ~LabelSeries() {}
 
@@ -483,23 +458,23 @@ namespace madlib::graph::chart {
             if (!prepared) return;
             
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
-                const LabelShape& label = (const LabelShape&)shapes[i];
-                int x = translateX(label.time());
-                int y = translateY(label.value());
-                Painter::TextSize textSize = timeRangeArea.getTextSize(label.text());
-                if (label.hasBackground()) {
-                    int padding = label.padding();
+                const LabelShape* label = (const LabelShape*)shapes[i];
+                int x = translateX(label->time());
+                int y = translateY(label->value());
+                Painter::TextSize textSize = timeRangeArea.getTextSize(label->text());
+                if (label->hasBackground()) {
+                    int padding = label->padding();
                     int x1 = x - padding;
                     int y1 = chartHeight - y - padding;
                     int x2 = x + textSize.width + padding;
                     int y2 = chartHeight - (y - textSize.height) + padding;
-                    timeRangeArea.brush(label.backgroundColor());
+                    timeRangeArea.brush(label->backgroundColor());
                     timeRangeArea.fRect(x1, y1, x2, y2);
-                    timeRangeArea.brush(label.borderColor());
+                    timeRangeArea.brush(label->borderColor());
                     timeRangeArea.rect(x1, y1, x2, y2);
                 }
-                timeRangeArea.brush(label.color());
-                timeRangeArea.write(x, chartHeight - y, label.text());
+                timeRangeArea.brush(label->color());
+                timeRangeArea.write(x, chartHeight - y, label->text());
             }
         }
     };
@@ -560,6 +535,10 @@ namespace madlib::graph::chart {
         vector<PointSeries*> pointSeriesProjectors;
         vector<CandleSeries*> candleSeriesProjectors;
         vector<LabelSeries*> labelSeriesProjectors;
+
+        vector<PointShape*> pointShapes;
+        vector<CandleShape*> candleShapes;
+        vector<LabelShape*> labelShapes;
         
     public:
         using TimeRangeArea::TimeRangeArea;
@@ -568,6 +547,10 @@ namespace madlib::graph::chart {
             vector_destroy(pointSeriesProjectors);
             vector_destroy(candleSeriesProjectors);
             vector_destroy(labelSeriesProjectors);
+
+            vector_destroy(pointShapes);
+            vector_destroy(candleShapes);
+            vector_destroy(labelShapes);
         }
 
         void draw() override {
@@ -583,30 +566,30 @@ namespace madlib::graph::chart {
 
                         switch(alignment.getAlignToShapeType()) {
                             case NONE: 
-                                ((Projector<PointShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align();
                                 break;
 
                             case LINE:
-                                ((Projector<PointShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<PointShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
 
                             case CANDLE:
-                                ((Projector<PointShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<CandleShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
 
                             case LABEL:
-                                ((Projector<PointShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<LabelShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
@@ -621,30 +604,30 @@ namespace madlib::graph::chart {
 
                         switch(alignment.getAlignToShapeType()) {
                             case NONE: 
-                                ((Projector<CandleShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align();
                                 break;
 
                             case LINE:
-                                ((Projector<CandleShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<PointShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
 
                             case CANDLE:
-                                ((Projector<CandleShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<CandleShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
 
                             case LABEL:
-                                ((Projector<CandleShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<LabelShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
@@ -659,30 +642,30 @@ namespace madlib::graph::chart {
 
                         switch(alignment.getAlignToShapeType()) {
                             case NONE: 
-                                ((Projector<LabelShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align();
                                 break;
 
                             case LINE:
-                                ((Projector<LabelShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<PointShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
 
                             case CANDLE:
-                                ((Projector<LabelShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<CandleShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
 
                             case LABEL:
-                                ((Projector<LabelShape>*)alignment.getProjector())
+                                ((Projector*)alignment.getProjector())
                                     ->align(
-                                        (Projector<LabelShape>*)alignment.getAlignTo(), 
+                                        (Projector*)alignment.getAlignTo(), 
                                         alignment.isExtends()
                                     );
                                 break;
@@ -702,7 +685,7 @@ namespace madlib::graph::chart {
 
             for (void* that: projectors) {
                 if (!that) continue;
-                Projector<Shape>* projector = (Projector<Shape>*)that;
+                Projector* projector = (Projector*)that;
                 if (!projector->prepared) continue;
                 projector->project();
             }
@@ -710,14 +693,13 @@ namespace madlib::graph::chart {
         }
 
         PointSeries* createPointSeries(
-            // const vector<PointShape>& points, 
             ShapeType alignToShapeType = NONE,
             void* alignToProjector = NULL,
             bool alignExtends = true,
             Color color = Theme::defaultChartSeriesColor
         ) {
             PointSeries* pointSeries = new PointSeries(
-                *this, /*points,*/ color
+                *this, color
             );
             pointSeriesProjectors.push_back(pointSeries);
             projectors.push_back(pointSeries);
@@ -729,7 +711,6 @@ namespace madlib::graph::chart {
         }
 
         CandleSeries* createCandleSeries(
-            // const vector<CandleShape>& candles, 
             ShapeType alignToShapeType = NONE,
             void* alignToProjector = NULL,
             bool alignExtends = true,
@@ -737,7 +718,7 @@ namespace madlib::graph::chart {
             Color colorDown = Theme::defaultChartCandleColorDown
         ) {
             CandleSeries* candleSeries = new CandleSeries(
-                *this, /*candles,*/ colorUp, colorDown
+                *this, colorUp, colorDown
             );
             candleSeriesProjectors.push_back(candleSeries);
             projectors.push_back(candleSeries);
@@ -749,14 +730,11 @@ namespace madlib::graph::chart {
         }
 
         LabelSeries* createLabelSeries(
-            // const vector<LabelShape>& labels,
             ShapeType alignToShapeType = NONE,
             void* alignToProjector = NULL,
             bool alignExtends = true
         ) {
-            LabelSeries* labelSeries = new LabelSeries(
-                *this//, labels
-            );
+            LabelSeries* labelSeries = new LabelSeries(*this);
             labelSeriesProjectors.push_back(labelSeries);
             projectors.push_back(labelSeries);
             alignments.push_back(Alignment(
@@ -764,6 +742,49 @@ namespace madlib::graph::chart {
                 alignToShapeType, alignToProjector, alignExtends
             ));
             return labelSeries;
+        }
+
+        PointShape* createPointShape(
+            ms_t time, 
+            double value
+        ) {
+            PointShape* pointShape = new PointShape(
+                time, value
+            );
+            pointShapes.push_back(pointShape);
+            return pointShape;
+        }
+
+        CandleShape* createCandleShape(
+            ms_t begin,
+            ms_t end,
+            double open,
+            double low,
+            double high,
+            double close
+        ) {
+            CandleShape* candleShape = new CandleShape(
+                begin, end, open, low, high, close
+            );
+            candleShapes.push_back(candleShape);
+            return candleShape;
+        }
+
+        LabelShape* createLabelShape(
+            ms_t time,
+            double value,
+            const string& text,
+            const Color color = Theme::defaultChartLabelColor,
+            const Color backgroundColor = Theme::defaultChartLabelBackgroundColor,
+            const Color borderColor = Theme::defaultChartLabelBorderColor,
+            const int padding = Theme::defaultChartLabelPadding,
+            const bool hasBackground = Theme::defaultChartLabelHasBackground
+        ) {
+            LabelShape* labelShape = new LabelShape(
+                time, value, text, color, backgroundColor, borderColor, padding, hasBackground
+            );
+            labelShapes.push_back(labelShape);
+            return labelShape;
         }
     };
 
