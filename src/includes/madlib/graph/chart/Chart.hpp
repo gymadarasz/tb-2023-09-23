@@ -479,42 +479,26 @@ namespace madlib::graph::chart {
         }
     };
 
-    enum ShapeType { NONE, LINE, CANDLE, LABEL };
-
     class Alignment {
     protected:
-        ShapeType shapeType;
         Projector* projector;
-        ShapeType alignToShapeType;
         Projector* alignToProjector;
         bool extends;
     public:
-        Alignment(
-            ShapeType shapeType,
+        explicit Alignment(
             Projector* projector,
-            ShapeType alignToShapeType = NONE,
             Projector* alignToProjector = NULL,
             bool extends = true
         ):
-            shapeType(shapeType),
             projector(projector),
-            alignToShapeType(alignToShapeType),
             alignToProjector(alignToProjector),
             extends(extends)
         {
             if (!projector) throw ERR_MISSING;
         }
 
-        ShapeType getShapeType() const {
-            return shapeType;
-        }
-
         Projector* getProjector() const {
             return projector;
-        }
-
-        ShapeType getAlignToShapeType() const {
-            return alignToShapeType;
         }
 
         Projector* getAlignToProjector() const {
@@ -572,7 +556,6 @@ namespace madlib::graph::chart {
         }
 
         PointSeries* createPointSeries(
-            ShapeType alignToShapeType = NONE,
             Projector* alignToProjector = NULL,
             bool alignExtends = true,
             Color color = Theme::defaultChartSeriesColor
@@ -583,14 +566,12 @@ namespace madlib::graph::chart {
             pointSeriesProjectors.push_back(pointSeries);
             projectors.push_back(pointSeries);
             alignments.push_back(Alignment(
-                LINE, pointSeries, 
-                alignToShapeType, alignToProjector, alignExtends
+                pointSeries, alignToProjector, alignExtends
             ));
             return pointSeries;
         }
 
         CandleSeries* createCandleSeries(
-            ShapeType alignToShapeType = NONE,
             Projector* alignToProjector = NULL,
             bool alignExtends = true,
             Color colorUp = Theme::defaultChartCandleColorUp, 
@@ -601,25 +582,18 @@ namespace madlib::graph::chart {
             );
             candleSeriesProjectors.push_back(candleSeries);
             projectors.push_back(candleSeries);
-            alignments.push_back(Alignment(
-                CANDLE, candleSeries, 
-                alignToShapeType, alignToProjector, alignExtends
-            ));
+            alignments.push_back(Alignment(candleSeries, alignToProjector, alignExtends));
             return candleSeries;
         }
 
         LabelSeries* createLabelSeries(
-            ShapeType alignToShapeType = NONE,
             Projector* alignToProjector = NULL,
             bool alignExtends = true
         ) {
             LabelSeries* labelSeries = new LabelSeries(*this);
             labelSeriesProjectors.push_back(labelSeries);
             projectors.push_back(labelSeries);
-            alignments.push_back(Alignment(
-                LABEL, labelSeries, 
-                alignToShapeType, alignToProjector, alignExtends
-            ));
+            alignments.push_back(Alignment(labelSeries, alignToProjector, alignExtends));
             return labelSeries;
         }
 
