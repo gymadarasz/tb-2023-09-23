@@ -233,11 +233,6 @@ namespace madlib::graph::chart {
     class Projector {
     protected:
 
-        TimeRangeArea& timeRangeArea;
-        vector<Shape*> shapes;
-
-    public:
-
         ms_t chartBegin = 0;
         ms_t chartEnd = 0;
         int chartHeight = 0;
@@ -248,13 +243,23 @@ namespace madlib::graph::chart {
         double shapesValueDiff = 0;
         size_t shapeIndexFrom = 0;
         size_t shapeIndexTo = 0;
+        
         bool prepared = false;
+
+        TimeRangeArea& timeRangeArea;
+        vector<Shape*> shapes;
+
+    public:
 
         explicit Projector(
             TimeRangeArea& timeRangeArea
         ): 
             timeRangeArea(timeRangeArea)
         {}
+
+        bool isPrepared() const {
+            return prepared;
+        }
 
         TimeRangeArea& getTimeRangeArea() const {
             return timeRangeArea;
@@ -308,9 +313,9 @@ namespace madlib::graph::chart {
             shapeIndexFrom = __SIZE_MAX__;
             shapeIndexTo = 0;
             for (const Shape* shape: shapes) {
-                TimeRange timeRange = shape->getTimeRange();
-                if (timeRange.end < chartBegin) continue;
-                if (timeRange.begin > chartEnd) break;
+                TimeRange shapeTimeRange = shape->getTimeRange();
+                if (shapeTimeRange.end < chartBegin) continue;
+                if (shapeTimeRange.begin > chartEnd) break;
 
                 if (!other || extends) {
                     MinMax<double> valueMinMax = shape->getValueMinMax();
@@ -365,8 +370,6 @@ namespace madlib::graph::chart {
         virtual ~PointSeries() {}
 
         void project() override {
-            if (!prepared) return;
-
             const PointShape* first = (const PointShape*)shapes[shapeIndexFrom];
 
             Pixel prev = translate(
@@ -413,8 +416,6 @@ namespace madlib::graph::chart {
         virtual ~CandleSeries() {}
 
         void project() override {
-            if (!prepared) return;
-            
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
                 const CandleShape* candle = (const CandleShape*)shapes[i];
                 Color color = candle->open() > candle->close() ? colorDown : colorUp;
@@ -455,8 +456,6 @@ namespace madlib::graph::chart {
         virtual ~LabelSeries() {}
 
         void project() override {
-            if (!prepared) return;
-            
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
                 const LabelShape* label = (const LabelShape*)shapes[i];
                 int x = translateX(label->time());
@@ -528,14 +527,20 @@ namespace madlib::graph::chart {
         using TimeRangeArea::TimeRangeArea;
 
         virtual ~Chart() {
+            clear();
+        }
+
+        void clear() {
             vector_destroy(pointSeriesProjectors);
             vector_destroy(candleSeriesProjectors);
             vector_destroy(labelSeriesProjectors);
+            projectors.clear();
 
             vector_destroy(pointShapes);
             vector_destroy(candleShapes);
             vector_destroy(labelShapes);
-        }
+            alignments.clear();
+        };
 
         void draw() override {
             TimeRangeArea::draw();
@@ -549,7 +554,7 @@ namespace madlib::graph::chart {
 
             for (Projector* projector: projectors) {
                 if (!projector) continue;
-                if (!projector->prepared) continue;
+                if (!projector->isPrepared()) continue;
                 projector->project();
             }
 
