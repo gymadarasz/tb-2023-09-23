@@ -995,11 +995,6 @@ namespace madlib::trading {
                 candleStrategy.onCandleClose(candle);
             }
         }
-
-        void draw() override final {
-            tradeHistoryChart.draw();
-            MultiChartAccordion::draw();
-        };
     };
 
 }

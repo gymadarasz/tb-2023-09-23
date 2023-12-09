@@ -16,7 +16,7 @@ class BitstampHistoryApplication: public FrameApplication {
 protected:
 
     const string symbol = "BTCUSD";
-    const ms_t startTime = datetime_to_ms("2023-10-25 00:50:00");
+    const ms_t startTime = datetime_to_ms("2015-09-25 00:50:00");
     const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
     const ms_t period = period_to_ms("1m");
     BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
@@ -35,38 +35,24 @@ protected:
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
     };
-    TradeTexts tradeTexts;
-    ACandleStrategy strategy = ACandleStrategy(
-        testExchange, strategyParameters, tradeTexts
-    );
-
     
-    const bool showCandles = true;
-    const bool showPrices = true;
-    const bool showVolumes = true;
-    const Color priceColor = orange;
-    const Color volumeColor = darkGray;
-    TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-        gfx, 0, 0, 600, 300, history, strategy.getTradeTexts()
+    ACandleStrategy strategy = ACandleStrategy(
+        testExchange, strategyParameters
     );
 
     const int multiChartAccordionLeft = 10;
     const int multiChartAccordionTop = 50;
     const int multiChartAccordionWidth = 1000;
-    // MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-    //     gfx, multiChartAccordionLeft, multiChartAccordionTop, multiChartAccordionWidth);
-
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
-    const Chart::LabelStyle buyTextStyle = Chart::LabelStyle(red);
-    const Chart::LabelStyle sellTextStyle = Chart::LabelStyle(green);
-    const Chart::LabelStyle errorTextStyle = Chart::LabelStyle(gray);
+    
     CandleStrategyBacktester tester = CandleStrategyBacktester(
         gfx, 
         multiChartAccordionLeft, 
         multiChartAccordionTop, 
         multiChartAccordionWidth, 
         multiChartAccordionFramesHeight,
+        startTime, endTime,
         history, testExchange, strategy, symbol
     );
 

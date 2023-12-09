@@ -16,25 +16,36 @@ namespace madlib::graph {
 
         Range(T begin, T end): begin(begin), end(end) {}
 
-        void apply(const Range<T>& other) {
+        bool apply(const Range<T>& other) {
+            bool changed = false;
             if (&other != this) {
+                changed = begin != other.begin || end != other.end;
                 begin = other.begin;
                 end = other.end;
             }
+            return changed;
         }
 
-        void expand(const Range<T>& other) {
+        bool expand(const Range<T>& other) {
+            bool changed = false;
             if (&other != this) {
+                T _begin = begin, _end = end;
                 begin = min(other.begin, begin);
                 end = max(other.end, end);
+                changed = begin != _begin || end != _end;
             }
+            return changed;
         }
 
-        void limit(const Range<T>& other) {
+        bool limit(const Range<T>& other) {
+            bool changed = false;
             if (&other != this) {
+                T _begin = begin, _end = end;
                 begin = max(other.begin, begin);
                 end = min(other.end, end);
+                changed = begin != _begin || end != _end;
             }
+            return changed;
         }
 
     };
@@ -235,14 +246,6 @@ namespace madlib::graph {
         TimeRange* timeRangeFull = NULL;
         TimeRange* timeRange = NULL;
 
-        void forceTimeRangeInFull() {
-            // if (timeRange->end > timeRangeFull->end)
-            //     timeRange->end = timeRangeFull->end;
-            // if (timeRange->begin < timeRangeFull->begin)
-            //     timeRange->begin = timeRangeFull->begin;
-            timeRange->limit(*timeRangeFull);
-        }
-
         // convert x to ms_t
         ms_t retractX(int x) const {
             double diff = (double)timeRange->end - (double)timeRange->begin;
@@ -282,11 +285,6 @@ namespace madlib::graph {
 
         TimeRange& getTimeRange() const {
             return *timeRange;
-        }
-
-        void setTimeRange(const TimeRange& timeRange) {
-            this->timeRange->apply(timeRange);
-            forceTimeRangeInFull();
         }
 
         TimeRange& getTimeRangeFull() const {
@@ -507,7 +505,9 @@ namespace madlib::graph {
             );
             timeRangeArea.brush(color);
             
-            for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
+            size_t step = (shapeIndexTo - shapeIndexFrom) / (size_t)chartWidth;
+            if (step < 1) step = 1;
+            for (size_t i = shapeIndexFrom; i < shapeIndexTo; i += step) {
                 const PointShape* point = (const PointShape*)shapes[i];
                 Pixel pixel = translate(
                     point->time(), 
@@ -574,7 +574,9 @@ namespace madlib::graph {
         virtual ~CandleSeries() {}
 
         void project() override {
-            for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
+            size_t step = (shapeIndexTo - shapeIndexFrom) / (size_t)chartWidth;
+            if (step < 1) step = 1;
+            for (size_t i = shapeIndexFrom; i < shapeIndexTo; i += step) {
                 const CandleShape* candle = (const CandleShape*)shapes[i];
                 Color color = candle->open() > candle->close() ? colorDown : colorUp;
                 timeRangeArea.brush(color);
@@ -609,6 +611,8 @@ namespace madlib::graph {
     };
 
     class LabelSeries: public Projector {
+    protected:
+        const size_t maxLabelsToShow = 50; // TODO
     public:
 
         using Projector::Projector;
@@ -616,6 +620,7 @@ namespace madlib::graph {
         virtual ~LabelSeries() {}
 
         void project() override {
+            if (shapeIndexTo - shapeIndexFrom > maxLabelsToShow) return;
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
                 const LabelShape* label = (const LabelShape*)shapes[i];
                 int x = translateX(label->time());
@@ -688,10 +693,14 @@ namespace madlib::graph {
             void follow(const Chart& that) {
                 for (Chart* chart: charts)
                     if (chart != &that) {
-                        chart->getTimeRangeFull().expand(that.getTimeRangeFull());
-                        chart->setTimeRange(that.getTimeRange());
-                        chart->resetProjectorsPrepared();
-                        chart->draw();
+                        bool changed = false;
+                        if (chart->getTimeRangeFull().expand(that.getTimeRangeFull())) changed = true;
+                        if (chart->getTimeRange().apply(that.getTimeRange())) changed = true;
+                        if (chart->getTimeRange().limit(chart->getTimeRangeFull())) changed = true;
+                        if (changed) {
+                            chart->resetProjectorsPrepared();
+                            chart->draw();
+                        }
                     }
             }
 
@@ -728,7 +737,7 @@ namespace madlib::graph {
             if (zoomAtLeft) chart->timeRange->end += (ms_t)diff;                
             if (zoomAtRight) chart->timeRange->begin -= (ms_t)diff;
 
-            chart->forceTimeRangeInFull();
+            chart->getTimeRange().limit(chart->getTimeRangeFull());
             chart->resetProjectorsPrepared();
             chart->draw();
             if (chart->multiChart) chart->multiChart->follow(*chart);
@@ -753,7 +762,8 @@ namespace madlib::graph {
             chart->timeRange->begin -= diff;
             chart->timeRange->end -= diff;
             chart->dragTimeRangeStartedX = x;
-            chart->forceTimeRangeInFull();
+
+            chart->getTimeRange().limit(chart->getTimeRangeFull());
             chart->resetProjectorsPrepared();
             chart->draw();
             if (chart->multiChart) chart->multiChart->follow(*chart);
@@ -1000,13 +1010,6 @@ namespace madlib::graph {
             createChartFrame(title, *chart, frameHeight);
             attach(*chart);
             return chart;
-        }
-        
-        virtual void draw() override {
-            Accordion::draw();
-            for (Chart* chart: charts) {
-                chart->draw();
-            }
         }
     };
 }
