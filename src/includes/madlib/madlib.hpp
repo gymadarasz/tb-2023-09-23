@@ -300,22 +300,6 @@ namespace madlib {
         return rands;
     }
 
-    template<typename T>
-    T min(vector<T> values) {
-        if (values.empty()) throw ERROR("Empty set has no minimum");
-        T minVal = values[0];
-        for (size_t i = 1; i < values.size(); ++i) if (values[i] < minVal) minVal = values[i];
-        return minVal;
-    }
-
-    template<typename T>
-    T max(vector<T> values) {
-        if (values.empty()) throw ERROR("Empty set has no maximun");
-        T maxVal = values[0];
-        for (size_t i = 1; i < values.size(); ++i) if (values[i] > maxVal) maxVal = values[i];
-        return maxVal;
-    }
-
     template <typename... Args>
     string concat(Args... args) {
         ostringstream stream;
@@ -593,6 +577,22 @@ namespace madlib {
     template<typename T>
     bool vector_has(const vector<T>& v, size_t at) {
         return v.size() > at;
+    }
+    
+    template<typename T>
+    T vector_min(vector<T> values) {
+        if (values.empty()) throw ERROR("Empty set has no minimum");
+        T minVal = values[0];
+        for (size_t i = 1; i < values.size(); ++i) if (values[i] < minVal) minVal = values[i];
+        return minVal;
+    }
+
+    template<typename T>
+    T vector_max(vector<T> values) {
+        if (values.empty()) throw ERROR("Empty set has no maximun");
+        T maxVal = values[0];
+        for (size_t i = 1; i < values.size(); ++i) if (values[i] > maxVal) maxVal = values[i];
+        return maxVal;
     }  
 
     template<typename KeyT, typename T>

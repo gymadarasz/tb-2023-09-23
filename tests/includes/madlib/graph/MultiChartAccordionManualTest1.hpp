@@ -3,10 +3,15 @@
 #include "../../ManualTestApplication.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 
+
 class MultiChartAccordionManualTest1: public ManualTestApplication {
 protected:
     const ms_t chartStart = datetime_to_ms("2020-01-01");
     const ms_t chartFinish = datetime_to_ms("2020-01-07");
+
+    Chart::MultiChart multiChart1 = Chart::MultiChart();
+    Chart::MultiChart multiChart2 = Chart::MultiChart();
+    // Chart::MultiChart multiChart3 = Chart::MultiChart();
 
     Chart chart1 = Chart(gfx, 10, 100, 500, 180, chartStart, chartFinish);
     Chart chart2 = Chart(gfx, 10, 300, 500, 180, chartStart, chartFinish);
@@ -41,6 +46,9 @@ public:
         generateRealPoints(chart1, chart1.createPointSeries()->getShapes());
         generateRealPoints(chart2, chart2.createPointSeries()->getShapes());
         generateRealPoints(chart3, chart3.createPointSeries()->getShapes());
+        multiChart1.attach(chart1);
+        multiChart1.attach(chart2);
+        multiChart1.attach(chart3);
         mainFrame.child(chart1);
         mainFrame.child(chart2);
         mainFrame.child(chart3);
@@ -52,6 +60,9 @@ public:
         Chart* chart23 = accordion.createChart("Third Chart", 240);
         generateRealPoints(*chart23, chart23->createPointSeries()->getShapes());        
         accordion.openAll(true);
+        multiChart2.attach(*chart21);
+        multiChart2.attach(*chart22);
+        multiChart2.attach(*chart23);
         mainFrame.child(accordion);
 
         Chart* chart31 = multiChartAccordion.createChart("Accordion First Chart", 240);
@@ -65,21 +76,11 @@ public:
         mainFrame.child(multiChartAccordion);
 
         PointSeries* scale0 = testChart.createPointSeries(NULL, true, lightBlue);
-        // Chart::Scale& scale0 = testChart.createScale(LINE, &lightBlue);
         PointSeries* scale1 = testChart.createPointSeries(scale0, true, lightGreen);
-        // Chart::Scale& scale1 = testChart.createScale(LINE, &lightGreen);
         generateRealPoints(testChart, scale0->getShapes(), -1, 1);
-        // vector<Coord> coords0 = generateRealPoints(100, -1, 1);
         generateRealPoints(testChart, scale1->getShapes(), 0, 1);
-        // vector<Coord> coords1 = generateRealPoints(100, 0, 1);
-        // scale0.adaptXY(coords0);
-        // scale1.adaptXY(coords1);
-        // Chart::Scale::alignXY(scale0, scale1);
-        // scale0.project(coords0);
-        // scale1.project(coords1);
+        multiChartAccordion.attach(testChart);
         
-        // testFrame.setEventContext(&testChart);
-        // testFrame.addDrawHandler(Chart::drawHandler);
         mainFrame.child(testChart);
     }
 };

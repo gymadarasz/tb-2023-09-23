@@ -57,8 +57,8 @@ int chart_manual_test3_candles()
         ms_t end = time;
         double open = candlePrices[0];
         double close = candlePrices[candlePrices.size() - 1];
-        double low = min(candlePrices);
-        double high = max(candlePrices);
+        double low = vector_min(candlePrices);
+        double high = vector_max(candlePrices);
         
         candlesRealPoints.push_back(chart.createCandleShape(start, end, open, low, high, close));
     }

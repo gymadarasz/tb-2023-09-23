@@ -13,7 +13,30 @@ namespace madlib::graph {
     class Range {
     public:
         T begin, end;
+
         Range(T begin, T end): begin(begin), end(end) {}
+
+        void apply(const Range<T>& other) {
+            if (&other != this) {
+                begin = other.begin;
+                end = other.end;
+            }
+        }
+
+        void expand(const Range<T>& other) {
+            if (&other != this) {
+                begin = min(other.begin, begin);
+                end = max(other.end, end);
+            }
+        }
+
+        void limit(const Range<T>& other) {
+            if (&other != this) {
+                begin = max(other.begin, begin);
+                end = min(other.end, end);
+            }
+        }
+
     };
 
     template<typename T>
@@ -213,10 +236,11 @@ namespace madlib::graph {
         TimeRange* timeRange = NULL;
 
         void forceTimeRangeInFull() {
-            if (timeRange->end > timeRangeFull->end)
-                timeRange->end = timeRangeFull->end;
-            if (timeRange->begin < timeRangeFull->begin)
-                timeRange->begin = timeRangeFull->begin;
+            // if (timeRange->end > timeRangeFull->end)
+            //     timeRange->end = timeRangeFull->end;
+            // if (timeRange->begin < timeRangeFull->begin)
+            //     timeRange->begin = timeRangeFull->begin;
+            timeRange->limit(*timeRangeFull);
         }
 
         // convert x to ms_t
@@ -256,8 +280,17 @@ namespace madlib::graph {
             delete timeRange;
         }
 
-        TimeRange& getTimeRange() {
+        TimeRange& getTimeRange() const {
             return *timeRange;
+        }
+
+        void setTimeRange(const TimeRange& timeRange) {
+            this->timeRange->apply(timeRange);
+            forceTimeRangeInFull();
+        }
+
+        TimeRange& getTimeRangeFull() const {
+            return *timeRangeFull;
         }
 
         Margin* getMargin() {
@@ -371,14 +404,14 @@ namespace madlib::graph {
                 (timeRangeArea.getMargin()->left + timeRangeArea.getMargin()->right);
 
             if (other && other->prepared) {
-                timeRangeArea.getTimeRange().begin = max<ms_t>({
+                timeRangeArea.getTimeRange().begin = min(
                     timeRangeArea.getTimeRange().begin,
                     other->timeRangeArea.getTimeRange().begin
-                });
-                timeRangeArea.getTimeRange().end = max<ms_t>({
+                );
+                timeRangeArea.getTimeRange().end = max(
                     timeRangeArea.getTimeRange().end,
                     other->timeRangeArea.getTimeRange().end
-                });
+                );
             }
             chartBegin = timeRangeArea.getTimeRange().begin;
             chartEnd = timeRangeArea.getTimeRange().end;
@@ -637,7 +670,36 @@ namespace madlib::graph {
     };
 
     class Chart: public TimeRangeArea {
+    public:
+
+        class MultiChart {
+        protected:
+
+            vector<Chart*> charts;
+
+        public:
+
+            void attach(Chart& chart) {
+                charts.push_back(&chart);
+                chart.join(this);
+                follow(chart);
+            }
+
+            void follow(const Chart& that) {
+                for (Chart* chart: charts)
+                    if (chart != &that) {
+                        chart->getTimeRangeFull().expand(that.getTimeRangeFull());
+                        chart->setTimeRange(that.getTimeRange());
+                        chart->resetProjectorsPrepared();
+                        chart->draw();
+                    }
+            }
+
+        };
+
     protected:
+
+        MultiChart* multiChart = NULL;
 
         bool dragTimeRange = false;
         int dragTimeRangeStartedX = 0;
@@ -669,6 +731,7 @@ namespace madlib::graph {
             chart->forceTimeRangeInFull();
             chart->resetProjectorsPrepared();
             chart->draw();
+            if (chart->multiChart) chart->multiChart->follow(*chart);
         }
 
         void resetProjectorsPrepared() const {
@@ -693,6 +756,7 @@ namespace madlib::graph {
             chart->forceTimeRangeInFull();
             chart->resetProjectorsPrepared();
             chart->draw();
+            if (chart->multiChart) chart->multiChart->follow(*chart);
         }
 
         static void dragStopHandler(void* context, unsigned int button, int, int) {
@@ -713,6 +777,25 @@ namespace madlib::graph {
         vector<CandleShape*> candleShapes;
         vector<LabelShape*> labelShapes;
         
+        void drawTimeRange() {
+            TextSize textSize;
+            brush(gray);
+            const string begin = ms_to_datetime(timeRange->begin);
+            textSize = getTextSize(begin);
+            write(
+                -textSize.width/2, 
+                height - textSize.height, 
+                begin
+            );
+            const string end = ms_to_datetime(timeRange->end);
+            textSize = getTextSize(end);
+            write(
+                width - margin.left - margin.right -textSize.width/2, 
+                height - textSize.height, 
+                end
+            );
+        }
+
     public:
 
         Chart(
@@ -753,6 +836,10 @@ namespace madlib::graph {
             alignments.clear();
         };
 
+        void join(MultiChart* multiChart) {
+            this->multiChart = multiChart;
+        }
+
         void draw() override {
             TimeRangeArea::draw();
         
@@ -767,22 +854,7 @@ namespace madlib::graph {
                 else if (!projector->isPrepared()) continue;
                 else projector->project();
 
-            TextSize textSize;
-            brush(gray);
-            const string begin = ms_to_datetime(timeRange->begin);
-            textSize = getTextSize(begin);
-            write(
-                -textSize.width/2, 
-                height - textSize.height, 
-                begin
-            );
-            const string end = ms_to_datetime(timeRange->end);
-            textSize = getTextSize(end);
-            write(
-                width - margin.left - margin.right -textSize.width/2, 
-                height - textSize.height, 
-                end
-            );
+            drawTimeRange();
         }
 
         PointSeries* createPointSeries(
@@ -878,10 +950,10 @@ namespace madlib::graph {
     };
 
 
-    class MultiChartAccordion: public Accordion {
+    class MultiChartAccordion: public Chart::MultiChart, public Accordion {
     protected:
 
-        vector<Chart*> charts;
+        // vector<Chart*> charts;
         ms_t timeRangeBegin;
         ms_t timeRangeEnd;
 
@@ -926,6 +998,7 @@ namespace madlib::graph {
             Chart* chart = new Chart(gfx, 0, 0, 0, 0, timeRangeBegin, timeRangeEnd);
             charts.push_back(chart);
             createChartFrame(title, *chart, frameHeight);
+            attach(*chart);
             return chart;
         }
         
