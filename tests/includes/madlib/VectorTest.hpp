@@ -30,6 +30,24 @@ protected:
 
 public:
 
+    static void test_vector_create_destroy() {
+
+        struct Foo {
+            int data;
+            explicit Foo(int data): data(data) {}
+        };
+
+        vector<Foo*> foos;
+        vector_create(foos, 123);
+        vector_create(foos, 234);
+        vector_create(foos, 345);
+        assert(foos[0]->data == 123);
+        assert(foos[1]->data == 234);
+        assert(foos[2]->data == 345);
+        vector_destroy(foos);
+        assert(foos.size() == 0);
+    }
+
     static void testVector_concat() {
         cleanup();
 

@@ -36,18 +36,6 @@ int main() {
 
     cout << "Testing in progress: ";
 
-    struct Foo {
-        int data;
-        explicit Foo(int data): data(data) {}
-    };
-
-    vector<Foo*> foos;
-    vector_create(foos, 123);
-    vector_create(foos, 234);
-    vector_create(foos, 345);
-    vector_destroy(foos);
-    assert(foos.size() == 0);
-
     Tester::run(MadlibTest::test_shared_lib);
     Tester::run(MadlibTest::test_str_start_with_positive);
     Tester::run(MadlibTest::test_str_start_with_negative);
@@ -83,6 +71,7 @@ int main() {
     Tester::run(ToolsTest::test_map_has);
     Tester::run(ToolsTest::test_map_keys);
     Tester::run(ToolsTest::test_map_key_exists);
+    Tester::run(VectorTest::test_vector_create_destroy);
     Tester::run(VectorTest::testVector_concat);
     Tester::run(VectorTest::testVector_save_and_load);
     Tester::run(VectorTest::testVector_load_and_load_with_reference);

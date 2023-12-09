@@ -276,7 +276,7 @@ namespace madlib::graph {
     };
 
     struct Theme {
-        static const unsigned long defaultGFXEventLoopMs = 100;
+        static const unsigned long defaultGFXEventLoopMs = 300;
         static const Color defaultWindowColor = gray;
         static const char* defaultWindowTitle;
         static const char* defaultWindowFont;
