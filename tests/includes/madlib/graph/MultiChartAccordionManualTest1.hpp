@@ -79,7 +79,7 @@ public:
         PointSeries* scale1 = testChart.createPointSeries(scale0, true, lightGreen);
         generateRealPoints(testChart, scale0->getShapes(), -1, 1);
         generateRealPoints(testChart, scale1->getShapes(), 0, 1);
-        multiChartAccordion.attach(testChart);
+        multiChartAccordion.getMultiChart().attach(testChart);
         
         mainFrame.child(testChart);
     }

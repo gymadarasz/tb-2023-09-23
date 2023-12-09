@@ -36,6 +36,18 @@ int main() {
 
     cout << "Testing in progress: ";
 
+    struct Foo {
+        int data;
+        explicit Foo(int data): data(data) {}
+    };
+
+    vector<Foo*> foos;
+    vector_create(foos, 123);
+    vector_create(foos, 234);
+    vector_create(foos, 345);
+    vector_destroy(foos);
+    assert(foos.size() == 0);
+
     Tester::run(MadlibTest::test_shared_lib);
     Tester::run(MadlibTest::test_str_start_with_positive);
     Tester::run(MadlibTest::test_str_start_with_negative);

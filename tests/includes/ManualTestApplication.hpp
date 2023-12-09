@@ -18,6 +18,10 @@ protected:
 
 public:
 
+    using FrameApplication::FrameApplication;
+
+    virtual ~ManualTestApplication() {}
+
     virtual void init() override {
         FrameApplication::init();
         

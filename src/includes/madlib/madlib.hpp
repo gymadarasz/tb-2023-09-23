@@ -133,7 +133,7 @@ namespace madlib {
         smatch m;
         if (regex_search(str, m, r)) {
             if (matches != nullptr) {
-                // Clear the vector before adding new matches
+                // Clear the vector before adding more matches
                 matches->clear();
                 for (unsigned int i = 0; i < m.size(); i++) {
                     matches->push_back(m[i].str());
@@ -254,12 +254,19 @@ namespace madlib {
 
     mt19937* rand_gen = NULL;
 
+    inline void rand_close() {
+        delete rand_gen;
+        rand_gen = NULL;
+    }
+
     inline void rand_init() {
+        if (rand_gen) rand_close();
         random_device rd; 
         rand_gen = new std::mt19937(rd());
     }
 
     inline void rand_init_seed(unsigned int seed) {
+        if (rand_gen) rand_close();
         rand_gen = new std::mt19937(seed);
     }
 
@@ -578,7 +585,7 @@ namespace madlib {
     bool vector_has(const vector<T>& v, size_t at) {
         return v.size() > at;
     }
-    
+
     template<typename T>
     T vector_min(vector<T> values) {
         if (values.empty()) throw ERROR("Empty set has no minimum");

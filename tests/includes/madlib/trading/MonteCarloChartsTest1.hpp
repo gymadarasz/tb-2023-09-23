@@ -73,6 +73,10 @@ protected:
     );
 
 public:
+
+    using ManualTestApplication::ManualTestApplication;
+    virtual ~MonteCarloChartsTest1() {}
+
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("MonteCarloChartsTest1");

@@ -2375,6 +2375,8 @@ namespace madlib::graph {
         GUI gui = GUI(gfx, 1600, 900, "Application");
 
     public:
+    
+        Application() {}
 
         virtual ~Application() {}
 
@@ -2402,6 +2404,11 @@ namespace madlib::graph {
             false, false, NONE, Theme::defaultWindowColor
         );
     public:
+
+        using Application::Application;
+
+        virtual ~FrameApplication() {}
+
         virtual void init() override {
             gui.child(mainFrame);
         }

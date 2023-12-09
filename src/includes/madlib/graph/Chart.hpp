@@ -684,6 +684,10 @@ namespace madlib::graph {
 
         public:
 
+            MultiChart() {}
+
+            virtual ~MultiChart() {}
+
             void attach(Chart& chart) {
                 charts.push_back(&chart);
                 chart.join(this);
@@ -960,10 +964,10 @@ namespace madlib::graph {
     };
 
 
-    class MultiChartAccordion: public Chart::MultiChart, public Accordion {
+    class MultiChartAccordion: public Accordion {
     protected:
-
-        // vector<Chart*> charts;
+        Chart::MultiChart multiChart;
+        vector<Chart*> charts;
         ms_t timeRangeBegin;
         ms_t timeRangeEnd;
 
@@ -1004,11 +1008,15 @@ namespace madlib::graph {
             vector_destroy(charts);
         }
 
+        Chart::MultiChart& getMultiChart() {
+            return multiChart;
+        }
+
         Chart* createChart(const string& title, int frameHeight) { // TODO bubble up params default
             Chart* chart = new Chart(gfx, 0, 0, 0, 0, timeRangeBegin, timeRangeEnd);
             charts.push_back(chart);
             createChartFrame(title, *chart, frameHeight);
-            attach(*chart);
+            multiChart.attach(*chart);
             return chart;
         }
     };
