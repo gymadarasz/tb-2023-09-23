@@ -9,7 +9,7 @@
 using namespace madlib::graph;
 // using namespace madlib::trading;
 
-class LabelManualTest1: public ManualTestApplication {
+class ChartLabelManualTest1: public ManualTestApplication {
 protected:
         
     Label label1 = Label(
@@ -73,5 +73,5 @@ public:
         mainFrame.child(chart1);
     }
 
-    virtual ~LabelManualTest1() {}
+    virtual ~ChartLabelManualTest1() {}
 };

@@ -21,10 +21,12 @@ void chart_manual_test3_close(void*, unsigned int, int, int) {
 
 int chart_manual_test3_candles()
 {
+    const ms_t chartStart = datetime_to_ms("2020-01-01");
+    const ms_t chartFinish = datetime_to_ms("2020-01-07");
     GFX gfx;
     chart_manual_test3_gfxPtr = &gfx;
     GUI gui(gfx, 800, 600, "chart_manual_test3_candles");
-    Chart chart(gfx, 10, 10, 780, 580, PUSHED, black);
+    Chart chart(gfx, 10, 10, 780, 580, chartStart, chartFinish);
     gui.child(chart);
     chart_manual_test3_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test3_draw);
@@ -37,38 +39,29 @@ int chart_manual_test3_candles()
     closeOkBtn.addTouchHandler(chart_manual_test3_close);
     gui.child(closeOkBtn);
 
-
-    vector<Coord> candlesRealPoints;
-    vector<Coord> pricesRealPoints;
+    CandleSeries* candleSeries = chart.createCandleSeries();
+    vector<Shape*>& candlesRealPoints = candleSeries->getShapes();
+    vector<Shape*>& pricesRealPoints = chart.createPointSeries(candleSeries)->getShapes();
     double price = 1000;
-    double time = 0;
+    ms_t time = chartStart;
     for (int i = 0; i < 30; i++) {
         vector<double> rands = rand_norm_dist<double>(0.0, 1.0, 10);
         vector<double> candlePrices;
-        double start = time;
+        ms_t start = time;
         for (size_t j = 0; j < rands.size(); j++) {
             price += rands[j];
-            time++;
-            pricesRealPoints.push_back(Coord((double)time, price));
+            time+=hour;
+            pricesRealPoints.push_back(chart.createPointShape(time, price));
             candlePrices.push_back(price);
         }
-        double end = time;
+        ms_t end = time;
         double open = candlePrices[0];
         double close = candlePrices[candlePrices.size() - 1];
         double low = min(candlePrices);
         double high = max(candlePrices);
         
-        double middle = start + (end - start) / 2;
-        candlesRealPoints.push_back(Coord((double)start, open));
-        candlesRealPoints.push_back(Coord((double)end, close));
-        candlesRealPoints.push_back(Coord((double)middle, low));
-        candlesRealPoints.push_back(Coord((double)middle, high));
+        candlesRealPoints.push_back(chart.createCandleShape(start, end, open, low, high, close));
     }
-    chart.createScale(LINE);
-    chart.getScaleAt(0).setShape(CANDLE);
-    chart.getScaleAt(0).project(candlesRealPoints);
-    chart.createScale(LINE, &orange);
-    chart.getScaleAt(1).project(pricesRealPoints);
 
     gui.loop();
     

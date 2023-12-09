@@ -21,14 +21,16 @@ void chart_manual_test2_close(void*, unsigned int, int, int) {
 
 int chart_manual_test2()
 {
+    const ms_t start = datetime_to_ms("2020-01-01");
+    const ms_t finish = datetime_to_ms("2020-01-07");
     GFX gfx;
     chart_manual_test2_gfxPtr = &gfx;
     GUI gui(gfx, 800, 600, "chart_manual_test2", black);
-    Chart chart(gfx, 5, 5, 790, 590);
-    chart.createScale(LINE, &green);
+    Chart chart(gfx, 5, 5, 790, 590, start, finish);
+    PointSeries* mainSeriesProjector = chart.createPointSeries(NULL, true, green);
     chart_manual_test2_chartPtr = &chart;
     gui.addDrawHandler(chart_manual_test2_draw);
-    chart.createScale(LABEL);
+    LabelSeries* textSeriesProjector = chart.createLabelSeries(mainSeriesProjector);
 
 
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
@@ -39,27 +41,18 @@ int chart_manual_test2()
     gui.child(closeOkBtn);
 
 
-    vector<Coord> coords;
-    vector<Coord> textRealChoords;
-    vector<string> texts;
+    vector<Shape*>& coords = mainSeriesProjector->getShapes();
+    vector<Shape*>& textRealChoords = textSeriesProjector->getShapes();
     int i = 0;
-    for (double x = 0; x < 100; x++) {
-        double y = randd(0, 100) + x*5;
-        Coord coord(x, y);
-        coords.push_back(coord);
+    for (ms_t x = start; x < finish; x+= hour) {
+        double y = randd(0, 100000000) + (double)x*5;
+        coords.push_back(chart.createPointShape(x, y));
         i++;
         if (i > 10) {
             i = 0;
-            textRealChoords.push_back(coord);
-            texts.push_back(to_string(x));
+            textRealChoords.push_back(chart.createLabelShape(x, y, to_string(x)));
         }
     }
-    
-
-    chart.getScaleAt(0).project(coords);
-    chart.getScaleAt(1).project(textRealChoords, texts);
-    chart.draw();
-
 
     gui.loop();
     

@@ -5,27 +5,32 @@
 
 class MultiChartAccordionManualTest1: public ManualTestApplication {
 protected:
+    const ms_t chartStart = datetime_to_ms("2020-01-01");
+    const ms_t chartFinish = datetime_to_ms("2020-01-07");
 
-    Chart chart1 = Chart(gfx, 10, 100, 300, 180, PUSHED, black);
-    Chart chart2 = Chart(gfx, 10, 300, 300, 180, PUSHED, black);
-    Chart chart3 = Chart(gfx, 10, 500, 300, 180, PUSHED, black);
+    Chart chart1 = Chart(gfx, 10, 100, 500, 180, chartStart, chartFinish);
+    Chart chart2 = Chart(gfx, 10, 300, 500, 180, chartStart, chartFinish);
+    Chart chart3 = Chart(gfx, 10, 500, 500, 180, chartStart, chartFinish);
 
-    MultiChartAccordion accordion = MultiChartAccordion(gfx, 350, 10, 300);
+    MultiChartAccordion accordion = MultiChartAccordion(
+        gfx, 550, 10, 500, 
+        chartStart, chartFinish);
 
     // MultiChart multiChart;
 
-    MultiChartAccordion multiChartAccordion = MultiChartAccordion(gfx, 700, 10, 850);
+    MultiChartAccordion multiChartAccordion = MultiChartAccordion(
+        gfx, 1100, 10, 850, 
+        chartStart, chartFinish);
 
-    Chart testChart = Chart(gfx, 700, 400, 850, 300, PUSHED, black);
+    Chart testChart = Chart(
+        gfx, 1100, 400, 850, 300, 
+        chartStart, chartFinish);
 
-    vector<Coord> generateRealPoints(size_t n, double min = 0, double max = 1) {
-        vector<Coord> coords;
-        for (size_t i = 0; i < n; i++) {
-            double x = (double)i, y = randd(min, max);
-            Coord coord(x, y);
-            coords.push_back(coord);
+    void generateRealPoints(Chart& chart, vector<Shape*>& points, double min = 0, double max = 1, ms_t step = hour) {
+        for (ms_t i = chart.getTimeRange().begin; i < chart.getTimeRange().end; i+=step) {
+            double y = randd(min, max);
+            points.push_back(chart.createPointShape(i, y));
         }
-        return coords;
     }
 
 public:
@@ -33,35 +38,45 @@ public:
         ManualTestApplication::init();
         gui.setTitle("MultiChartAccordionManualTest1");
 
-        chart1.createScale(LINE).project(generateRealPoints(100));
-        chart2.createScale(LINE).project(generateRealPoints(100));
-        chart3.createScale(LINE).project(generateRealPoints(100));
+        generateRealPoints(chart1, chart1.createPointSeries()->getShapes());
+        generateRealPoints(chart2, chart2.createPointSeries()->getShapes());
+        generateRealPoints(chart3, chart3.createPointSeries()->getShapes());
         mainFrame.child(chart1);
         mainFrame.child(chart2);
         mainFrame.child(chart3);
         
-        accordion.createChart("First Chart", 240).createScale(LINE).project(generateRealPoints(100));
-        accordion.createChart("Second Chart", 240).createScale(LINE).project(generateRealPoints(100));
-        accordion.createChart("Third Chart", 240).createScale(LINE).project(generateRealPoints(100));        
+        Chart* chart21 = accordion.createChart("First Chart", 240);
+        generateRealPoints(*chart21, chart21->createPointSeries()->getShapes());
+        Chart* chart22 = accordion.createChart("Second Chart", 240);
+        generateRealPoints(*chart22, chart22->createPointSeries()->getShapes());
+        Chart* chart23 = accordion.createChart("Third Chart", 240);
+        generateRealPoints(*chart23, chart23->createPointSeries()->getShapes());        
         accordion.openAll(true);
         mainFrame.child(accordion);
 
-        multiChartAccordion.createChart("Accordion First Chart", 240).createScale(LINE).project(generateRealPoints(100));
-        multiChartAccordion.createChart("Accordion Second Chart", 240).createScale(LINE).project(generateRealPoints(100));
-        multiChartAccordion.createChart("Accordion Third Chart", 240).createScale(LINE).project(generateRealPoints(100));
+        Chart* chart31 = multiChartAccordion.createChart("Accordion First Chart", 240);
+        generateRealPoints(*chart31, chart31->createPointSeries()->getShapes());
+        Chart* chart32 = multiChartAccordion.createChart("Accordion Second Chart", 240);
+        generateRealPoints(*chart32, chart32->createPointSeries()->getShapes());
+        Chart* chart33 = multiChartAccordion.createChart("Accordion Third Chart", 240);
+        generateRealPoints(*chart33, chart33->createPointSeries()->getShapes());
         multiChartAccordion.setSingle(true, false);
         multiChartAccordion.openAt(0, true);
         mainFrame.child(multiChartAccordion);
 
-        Chart::Scale& scale0 = testChart.createScale(LINE, &lightBlue);
-        Chart::Scale& scale1 = testChart.createScale(LINE, &lightGreen);
-        vector<Coord> coords0 = generateRealPoints(100, -1, 1);
-        vector<Coord> coords1 = generateRealPoints(100, 0, 1);
+        PointSeries* scale0 = testChart.createPointSeries(NULL, true, lightBlue);
+        // Chart::Scale& scale0 = testChart.createScale(LINE, &lightBlue);
+        PointSeries* scale1 = testChart.createPointSeries(scale0, true, lightGreen);
+        // Chart::Scale& scale1 = testChart.createScale(LINE, &lightGreen);
+        generateRealPoints(testChart, scale0->getShapes(), -1, 1);
+        // vector<Coord> coords0 = generateRealPoints(100, -1, 1);
+        generateRealPoints(testChart, scale1->getShapes(), 0, 1);
+        // vector<Coord> coords1 = generateRealPoints(100, 0, 1);
         // scale0.adaptXY(coords0);
         // scale1.adaptXY(coords1);
-        Chart::Scale::alignXY(scale0, scale1);
-        scale0.project(coords0);
-        scale1.project(coords1);
+        // Chart::Scale::alignXY(scale0, scale1);
+        // scale0.project(coords0);
+        // scale1.project(coords1);
         
         // testFrame.setEventContext(&testChart);
         // testFrame.addDrawHandler(Chart::drawHandler);

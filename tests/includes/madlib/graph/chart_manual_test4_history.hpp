@@ -44,7 +44,7 @@ int chart_manual_test4_history()
     const double volumeStdDeviation = 5;
     const double priceMean = 100;  // Initial price
     const double priceStdDeviation = 5;
-    const double timeLamda = MS_PER_MIN;  // Mean time in milliseconds (60 seconds)
+    const double timeLamda = MS_PER_MIN * 10;  // Mean time in milliseconds (60 seconds)
     const ms_t startTime = datetime_to_ms("2023-01-01"); // Current time as the start time
     const ms_t endTime = datetime_to_ms("2023-01-02"); // 300 seconds in the future
     const ms_t period = period_to_ms("1h");
@@ -60,12 +60,13 @@ int chart_manual_test4_history()
     );
 
     // Zoom zoom;
-    TradeTexts tradeTexts;
-    TradeHistoryChart chart(gfx, 10, 10, 780, 580, history, tradeTexts);
+    TradeHistoryChart chart(
+        gfx, 10, 10, 780, 580,
+        history
+    );
     gui.child(chart);
     chart_manual_test4_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test4_draw);
-    chart.draw();
 
     gui.loop();
     

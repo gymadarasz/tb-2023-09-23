@@ -33,9 +33,8 @@ protected:
         timeLambda, seed
     );
 
-    TradeTexts tradeTexts;
     TradeHistoryChart chart = TradeHistoryChart(
-        gfx, 10, 60, 1580, 780, history, tradeTexts
+        gfx, 10, 60, 1580, 780, history
     );
 public:
 

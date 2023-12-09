@@ -17,9 +17,15 @@ namespace madlib::trading {
     struct Theme: public madlib::graph::Theme {
         static const Color defaultTradeHistoryChartPriceColor;
         static const Color defaultTradeHistoryChartVolumeColor;
+        static const Color defaultTradeLabelBuyColor;
+        static const Color defaultTradeLabelSellColor;
+        static const Color defaultTradeLabelErrorColor;
     };
     const Color Theme::defaultTradeHistoryChartPriceColor = orange;
     const Color Theme::defaultTradeHistoryChartVolumeColor = darkGray;
+    const Color Theme::defaultTradeLabelBuyColor = red;
+    const Color Theme::defaultTradeLabelSellColor = green;
+    const Color Theme::defaultTradeLabelErrorColor = gray;
 
     ms_t period_to_ms(const string &period) {
         map<const string, ms_t> periods = {
@@ -181,6 +187,14 @@ namespace madlib::trading {
             endTime(endTime), 
             period(period)
         {}
+
+        ms_t getStartTime() const {
+            return startTime;
+        }
+
+        ms_t getEndTime() const {
+            return endTime;
+        }
 
         virtual vector<Trade> getTrades() const final {
             return trades;
@@ -558,68 +572,6 @@ namespace madlib::trading {
         // }
     };
 
-
-    class TradeTexts {
-    protected:
-
-        vector<Coord> buyTextRealChoords;
-        vector<string> buyTexts;
-        vector<Coord> sellTextRealChoords;
-        vector<string> sellTexts;
-        vector<Coord> errorTextRealChoords;
-        vector<string> errorTexts;
-
-    public:
-        TradeTexts(
-            const vector<Coord>& buyTextRealChoords,
-            const vector<string>& buyTexts,
-            const vector<Coord>& sellTextRealChoords,
-            const vector<string>& sellTexts,
-            const vector<Coord>& errorTextRealChoords,
-            const vector<string>& errorTexts
-
-        ):
-            buyTextRealChoords(buyTextRealChoords),
-            buyTexts(buyTexts),
-            sellTextRealChoords(sellTextRealChoords),
-            sellTexts(sellTexts),
-            errorTextRealChoords(errorTextRealChoords),
-            errorTexts(errorTexts) 
-        {}
-        TradeTexts():
-            buyTextRealChoords({}),
-            buyTexts({}),
-            sellTextRealChoords({}),
-            sellTexts({}),
-            errorTextRealChoords({}),
-            errorTexts({}) 
-        {}
-
-        vector<Coord>& getBuyTextRealChoords() {
-            return buyTextRealChoords;
-        }
-
-        vector<string>& getBuyTexts() {
-            return buyTexts;
-        }
-
-        vector<Coord>& getSellTextRealChoords() {
-            return sellTextRealChoords;
-        }
-
-        vector<string>& getSellTexts() {
-            return sellTexts;
-        }
-
-        vector<Coord>& getErrorTextRealChoords() {
-            return errorTextRealChoords;
-        }
-
-        vector<string>& getErrorTexts() {
-            return errorTexts;
-        }
-    };
-
     class Strategy {
     public:
 
@@ -700,45 +652,55 @@ namespace madlib::trading {
 
     protected:
 
-        void static addText(vector<Coord>& textRealChoords, vector<string>& texts, ms_t time, double price, const string& text) {
-            textRealChoords.push_back(Coord((double)time, price));
-            texts.push_back(text);
-        }
-
         Exchange& exchange;
         map<string, Parameter> parameters;
-        TradeTexts& tradeTexts;
+        LabelSeries* tradeTexts;
+
     public:
+
         Strategy(
             Exchange& exchange,
             const map<string, Parameter>& parameters,
-            TradeTexts& tradeTexts
+            LabelSeries* tradeTexts = NULL
         ):
             exchange(exchange),
             parameters(parameters),
             tradeTexts(tradeTexts)
         {}
 
-        TradeTexts& getTradeTexts() {
+        LabelSeries* getTradeTexts() const {
             return tradeTexts;
         }
 
-        void addBuyText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY") {
-            if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
-            addText(tradeTexts.getBuyTextRealChoords(), tradeTexts.getBuyTexts(), currentTime, currentPrice, text);
+        void setTradeTexts(LabelSeries* tradeTexts) {
+            this->tradeTexts = tradeTexts;
         }
 
-        void addSellText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL") {
+        void addBuyText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
+            if (!tradeTexts) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
-            addText(tradeTexts.getSellTextRealChoords(), tradeTexts.getSellTexts(), currentTime, currentPrice, text);
+            Chart& chart = (Chart&)tradeTexts->getTimeRangeArea();
+            tradeTexts->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            // addText(tradeTexts.getBuyTextRealChoords(), tradeTexts.getBuyTexts(), currentTime, currentPrice, text);
         }
 
-        void addErrorText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR") {
+        void addSellText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
+            if (!tradeTexts) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
-            addText(tradeTexts.getErrorTextRealChoords(), tradeTexts.getErrorTexts(), currentTime, currentPrice, text);
+            Chart& chart = (Chart&)tradeTexts->getTimeRangeArea();
+            tradeTexts->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            // addText(tradeTexts.getSellTextRealChoords(), tradeTexts.getSellTexts(), currentTime, currentPrice, text);
+        }
+
+        void addErrorText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
+            if (!tradeTexts) return;
+            if (!currentTime) currentTime = exchange.getCurrentTime();
+            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            Chart& chart = (Chart&)tradeTexts->getTimeRangeArea();
+            tradeTexts->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            // addText(tradeTexts.getErrorTextRealChoords(), tradeTexts.getErrorTexts(), currentTime, currentPrice, text);
         }
 
         bool marketBuy(const string& symbol, double amount) {
@@ -786,142 +748,115 @@ namespace madlib::trading {
 
     class TradeHistoryChart: public Chart {
     protected:
-
-        static const CandleStyle defaultCandleStyle;
-        static const LabelStyle defaultBuyLabelStyle;
-        static const LabelStyle defaultSellLabelStyle;
-        static const LabelStyle defaultErrorLabelStyle;
-
         const TradeHistory& history;
-        TradeTexts& tradeTexts;
-        const bool 
-            showCandles, 
-            showPrices, 
-            showVolumes, 
-            showTexts;
+        LabelSeries* tradeTexts = NULL;
         const Color& priceColor;
         const Color& volumeColor;
-        const CandleStyle& candleStyle;
-        const LabelStyle& buyTextStyle;
-        const LabelStyle& sellTextStyle;
-        const LabelStyle& errorTextStyle;
-        
-        Scale& candlesScale = createScale(CANDLE, &candleStyle);
-        Scale& priceScale = createScale(LINE, &priceColor);
-        Scale& volumeScale = createScale(LINE, &volumeColor);
-        Scale& buyTextScale = createScale(LABEL, &buyTextStyle);
-        Scale& sellTextScale = createScale(LABEL, &sellTextStyle);
-        Scale& errorTextScale = createScale(LABEL, &errorTextStyle);
+
+        Projector* mainProjector = NULL;
+        CandleSeries* candleSeries = NULL;
+        PointSeries* priceSeries = NULL;
+        PointSeries* volumeSeries = NULL;
+        LabelSeries* textSeries = NULL;
 
     public:
 
         TradeHistoryChart(
             GFX& gfx, int left, int top, int width, int height,
+            // ms_t timeRangeBegin, ms_t timeRangeEnd,
             const TradeHistory& history,
-            TradeTexts& tradeTexts,
+            LabelSeries* tradeTexts = NULL,
             const bool showCandles = true, // TODO
             const bool showPrices = true, // TODO
             const bool showVolumes = true, // TODO
             const bool showTexts = true, // TODO
+            const bool generate = true,
             const Color& priceColor = Theme::defaultTradeHistoryChartPriceColor,
             const Color& volumeColor = Theme::defaultTradeHistoryChartVolumeColor,
-            const CandleStyle& candleStyle = defaultCandleStyle,
-            const LabelStyle& buyTextStyle = defaultBuyLabelStyle,
-            const LabelStyle& sellTextStyle = defaultSellLabelStyle,
-            const LabelStyle& errorTextStyle = defaultErrorLabelStyle,
             void* eventContext = NULL
         ):  
             Chart(
                 gfx, left, top, width, height,
+                history.getStartTime(), history.getEndTime(),
                 Theme::defaultChartBorder,
                 Theme::defaultChartBackgroundColor,
+                Theme::defaultChartBorderColor,
                 eventContext
             ),
             history(history),
             tradeTexts(tradeTexts),
-            showCandles(showCandles),
-            showPrices(showPrices),
-            showVolumes(showVolumes),
-            showTexts(showTexts),
             priceColor(priceColor),
-            volumeColor(volumeColor),
-            candleStyle(candleStyle),
-            buyTextStyle(buyTextStyle),
-            sellTextStyle(sellTextStyle),
-            errorTextStyle(errorTextStyle)
-        {}
+            volumeColor(volumeColor)
+        {
+            if (showCandles)
+                mainProjector = candleSeries = createCandleSeries();
+            if (showPrices)
+                mainProjector = priceSeries = createPointSeries(
+                    mainProjector, true, priceColor
+                );
+            if (showVolumes)
+                volumeSeries = createPointSeries(NULL, true, volumeColor);
+            if (showTexts)
+                textSeries = createLabelSeries(mainProjector, true);
+            
+            if (generate) this->generate();
+        }
 
         virtual ~TradeHistoryChart() {}
 
-        void draw() override final {
-            if (showCandles) {
+        LabelSeries* getTextSeries() const {
+            return textSeries;
+        }
+
+        void generate() {
+            
+            if (candleSeries) {
                 vector<Candle> candles = history.getCandles();
-                vector<Coord> candlesRealPoints;
+                vector<Shape*>& candleShapes = candleSeries->getShapes();
                 for (const Candle& candle: candles) {
-                    double start = (double)candle.getStart();
-                    double end = (double)candle.getEnd();
-                    double open = candle.getOpen();
-                    double close = candle.getClose();
-                    double low = candle.getLow();
-                    double high = candle.getHigh();
-                    double middle = start + (end - start) / 2;
-                    candlesRealPoints.push_back(Coord(start, open));
-                    candlesRealPoints.push_back(Coord(end, close));
-                    candlesRealPoints.push_back(Coord(middle, low));
-                    candlesRealPoints.push_back(Coord(middle, high));
+                    candleShapes.push_back(createCandleShape(
+                        candle.getStart(),
+                        candle.getEnd(),
+                        candle.getOpen(),
+                        candle.getLow(),
+                        candle.getHigh(),
+                        candle.getClose()
+                    ));
                 }
-                candlesScale.setRealPoints(candlesRealPoints);
             }
 
-            if (showPrices || showVolumes) {
+            if (priceSeries || volumeColor) {
                 vector<Trade> trades = history.getTrades();
-                vector<Coord> pricesRealPoints;
-                vector<Coord> volumesRealPoints;
                 for (const Trade& trade: trades) {
-                    pricesRealPoints.push_back(
-                        Coord((double)trade.timestamp, trade.price));
-                    volumesRealPoints.push_back(
-                        Coord((double)trade.timestamp, trade.volume));
+                    if (priceSeries) priceSeries->getShapes().push_back(
+                        createPointShape(trade.timestamp, trade.price)
+                    );
+                    if (volumeSeries) volumeSeries->getShapes().push_back(
+                        createPointShape(trade.timestamp, trade.volume)
+                    );
                 }
-                
-                if (showPrices) {
-                    priceScale.setRealPoints(pricesRealPoints);
-                    if (showCandles) {
-                        candlesScale.project();
-                        Scale::alignXY(priceScale, candlesScale);
-                    }
-                }
-                if (showVolumes) 
-                    volumeScale.setRealPoints(volumesRealPoints);
             }
 
-            Scale* scale0 = NULL;
-            if (showPrices) scale0 = &priceScale;
-            else if (showCandles) scale0 = &candlesScale;
-            if (scale0 && showTexts) {
-                buyTextScale.setRealPoints(tradeTexts.getBuyTextRealChoords());
-                buyTextScale.setTexts(tradeTexts.getBuyTexts());
-                Scale::alignXY(*scale0, buyTextScale);
-
-                sellTextScale.setRealPoints(tradeTexts.getSellTextRealChoords());
-                sellTextScale.setTexts(tradeTexts.getSellTexts());
-                Scale::alignXY(*scale0, sellTextScale);
-
-                errorTextScale.setRealPoints(tradeTexts.getErrorTextRealChoords());
-                errorTextScale.setTexts(tradeTexts.getErrorTexts());
-                Scale::alignXY(*scale0, errorTextScale);
+            if (
+                mainProjector && textSeries && tradeTexts &&
+                textSeries != tradeTexts
+            ) {
+                vector<Shape*>& textShapes = textSeries->getShapes();
+                for (Shape* shape: tradeTexts->getShapes()) {
+                    LabelShape* tradeText = (LabelShape*)shape;
+                    textShapes.push_back(createLabelShape(
+                        tradeText->time(), 
+                        tradeText->value(),
+                        tradeText->text(),
+                        tradeText->color(),
+                        tradeText->backgroundColor(),
+                        tradeText->padding(),
+                        tradeText->hasBackground()
+                    ));
+                }
             }
-
-            Chart::draw();
         }
     };
-    const Chart::CandleStyle TradeHistoryChart::defaultCandleStyle = Chart::CandleStyle(
-        Theme::defaultChartCandleColorUp, 
-        Theme::defaultChartCandleColorDown
-    );
-    const Chart::LabelStyle TradeHistoryChart::defaultBuyLabelStyle = Chart::LabelStyle(red);
-    const Chart::LabelStyle TradeHistoryChart::defaultSellLabelStyle = Chart::LabelStyle(green);
-    const Chart::LabelStyle TradeHistoryChart::defaultErrorLabelStyle = Chart::LabelStyle(gray);
 
     class CandleStrategyBacktester: public MultiChartAccordion {
     protected:
@@ -940,20 +875,21 @@ namespace madlib::trading {
         // **** balanceQuotedChart ****
 
         Chart* balanceQuotedChart = NULL;
-        Chart::Scale* balanceQuotedFullScale = NULL;
-        Chart::Scale* balanceQuotedScale = NULL;
+        PointSeries* balanceQuotedFullScale = NULL;
+        PointSeries* balanceQuotedScale = NULL;
 
         // **** balanceBaseChart ****
 
         Chart* balanceBaseChart = NULL;
-        Chart::Scale* balanceBaseFullScale = NULL;
-        Chart::Scale* balanceBaseScale = NULL;
+        PointSeries* balanceBaseFullScale = NULL;
+        PointSeries* balanceBaseScale = NULL;
         
     public:
 
         CandleStrategyBacktester(
             GFX& gfx, int left, int top, int width,
             const int multiChartAccordionFramesHeight,
+            ms_t timeRangeBegin, ms_t timeRangeEnd,
             const TradeHistory& history,
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
@@ -966,7 +902,8 @@ namespace madlib::trading {
             void* eventContext = NULL
         ):
             MultiChartAccordion(
-                gfx, left, top, width, 
+                gfx, left, top, width,
+                timeRangeBegin, timeRangeEnd,
                 single, border, backgroundColor, 
                 eventContext
             ),
@@ -979,25 +916,30 @@ namespace madlib::trading {
             // **** tradeHistoryChart ****
 
             // TODO: BUG: after zoom(out then in..) the charts drag-scroll top limit doesnt stops - lines (shapes) can scrolled out totally at the bottom
-            addChart(
+            createChartFrame(
                 "History", tradeHistoryChart, multiChartAccordionFramesHeight
             );
 
+            if (!candleStrategy.getTradeTexts())
+                candleStrategy.setTradeTexts(
+                    tradeHistoryChart.getTextSeries()
+                );
+
             // **** balanceQuotedChart ****
 
-            balanceQuotedChart = &createChart(
+            balanceQuotedChart = createChart(
                 "Balance (quoted)", multiChartAccordionFramesHeight
             );
-            balanceQuotedFullScale = &balanceQuotedChart->createScale(LINE, &lightGreen);
-            balanceQuotedScale = &balanceQuotedChart->createScale(LINE, &green);
+            balanceQuotedFullScale = balanceQuotedChart->createPointSeries(NULL, true, lightGreen);
+            balanceQuotedScale = balanceQuotedChart->createPointSeries(balanceQuotedFullScale, true, green);
 
             // **** balanceBaseChart ****
 
-            balanceBaseChart = &createChart(
+            balanceBaseChart = createChart(
                 "Balance (base)", multiChartAccordionFramesHeight
             );
-            balanceBaseFullScale = &balanceBaseChart->createScale(LINE, &yellow);
-            balanceBaseScale = &balanceBaseChart->createScale(LINE, &orange);
+            balanceBaseFullScale = balanceBaseChart->createPointSeries(NULL, true, yellow);
+            balanceBaseScale = balanceBaseChart->createPointSeries(balanceBaseFullScale, true, orange);
 
             openAll(false);
         }
@@ -1009,57 +951,47 @@ namespace madlib::trading {
             // **** backtest ****
 
             vector<Candle> candles = history.getCandles();
-            vector<Coord> balanceQuotedAtCloses;
-            vector<Coord> balanceQuotedFullAtCloses;
-            vector<Coord> balanceBaseAtCloses;
-            vector<Coord> balanceBaseFullAtCloses;
+            vector<Shape*>& balanceQuotedAtCloses = balanceQuotedScale->getShapes();
+            vector<Shape*>& balanceQuotedFullAtCloses = balanceQuotedFullScale->getShapes();
+            vector<Shape*>& balanceBaseAtCloses = balanceBaseScale->getShapes();
+            vector<Shape*>& balanceBaseFullAtCloses = balanceBaseFullScale->getShapes();
             Pair& pair = testExchange.getPairAt(symbol);
             for (const Candle& candle: candles) {
                 testExchange.setCurrentTime(candle.getEnd());
                 pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
             
-                double currentTime = (double)candle.getEnd();
+                ms_t currentTime = candle.getEnd();
 
-                balanceQuotedAtCloses.push_back(Coord(
-                    currentTime,
-                    testExchange.getBalanceQuoted(pair)
-                ));
+                // **** balanceQuotedChart ****
+
+                if (showBalanceQuotedScale) {
+                    balanceQuotedAtCloses.push_back(balanceQuotedChart->createPointShape(
+                        currentTime,
+                        testExchange.getBalanceQuoted(pair)
+                    ));
+                }
                 
-                balanceQuotedFullAtCloses.push_back(Coord(
+                balanceQuotedFullAtCloses.push_back(balanceQuotedChart->createPointShape(
                     currentTime,
                     testExchange.getBalanceQuotedFull(pair)
                 ));
+
+                // **** balanceBaseChart ****
             
-                balanceBaseAtCloses.push_back(Coord(
+                balanceBaseAtCloses.push_back(balanceBaseChart->createPointShape(
                     currentTime,
                     testExchange.getBalanceBase(pair)
                 ));
                 
-                balanceBaseFullAtCloses.push_back(Coord(
+                balanceBaseFullAtCloses.push_back(balanceBaseChart->createPointShape(
                     currentTime,
                     testExchange.getBalanceBaseFull(pair)
                 ));
 
+                // **** backtest ****
+                
                 candleStrategy.onCandleClose(candle);
             }
-
-            // **** balanceQuotedChart ****
-
-            // balanceQuotedFullScale->adaptXY(balanceQuotedFullAtCloses);
-            if (showBalanceQuotedScale) {
-                // balanceQuotedScale->adaptXY(balanceQuotedAtCloses);
-                Chart::Scale::alignXY(*balanceQuotedScale, *balanceQuotedFullScale);
-                balanceQuotedScale->setRealPoints(balanceQuotedAtCloses);
-            }
-            balanceQuotedFullScale->setRealPoints(balanceQuotedFullAtCloses);
-
-            // **** balanceBaseChart ****
-
-            // balanceBaseFullScale->adaptXY(balanceBaseFullAtCloses);
-            // balanceBaseScale->adaptXY(balanceBaseAtCloses);
-            Chart::Scale::alignXY(*balanceBaseScale, *balanceBaseFullScale);
-            balanceBaseScale->setRealPoints(balanceBaseAtCloses);
-            balanceBaseFullScale->setRealPoints(balanceBaseFullAtCloses);
         }
 
         void draw() override final {

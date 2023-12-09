@@ -55,15 +55,16 @@ protected:
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
     };
-    TradeTexts tradeTexts;
+
     ACandleStrategy aCandleStrategy = ACandleStrategy(
-        testExchange, strategyParameters, tradeTexts
+        testExchange, strategyParameters
     );
     
     // const int multiChartAccordionFramesHeight = 300;
     const bool showBalanceQuotedScale = true;
     CandleStrategyBacktester backtester = CandleStrategyBacktester(
         gfx, 10, 50, 1000, 340,
+        startTime, endTime,
         // multiChartAccordion,
         history, // tradeHistoryChart,
         testExchange, aCandleStrategy, symbol, 

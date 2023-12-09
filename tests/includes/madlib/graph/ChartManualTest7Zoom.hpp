@@ -33,9 +33,8 @@ protected:
         timeLambda, seed
     );
 
-    TradeTexts tradeTexts;
     TradeHistoryChart chart = TradeHistoryChart(
-        gfx, 300, 300, 1000, 300, history, tradeTexts
+        gfx, 300, 300, 1000, 300, history
     );
 
 
@@ -63,7 +62,5 @@ public:
         mainFrame.child(intervalBarVertical);
 
         mainFrame.child(chart);
-
-        chart.draw();
     }
 };

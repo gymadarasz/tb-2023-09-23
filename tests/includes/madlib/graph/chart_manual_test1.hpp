@@ -6,23 +6,20 @@
 using namespace std;
 using namespace madlib::graph;
 
-const double chart_manual_test1_scaleXMin = 0;
-const double chart_manual_test1_scaleXMax = 1000;
+const ms_t chart_manual_test1_scaleXMin = datetime_to_ms("2020-01-01");
+const ms_t chart_manual_test1_scaleXMax = datetime_to_ms("2020-01-07");
 
 GFX* chart_manual_test1_gfxPtr;
 
-void chart_manual_test1_generateRealPoints(vector<Coord>& coords) {
-    coords.clear();
-
+void chart_manual_test1_generateRealPoints(Chart& chart, vector<Shape*>& points, int div) {
     double y_ = randd(0, 5);
-    for (double x = chart_manual_test1_scaleXMin; x <= chart_manual_test1_scaleXMax; x += 1) {
+    for (ms_t x = chart_manual_test1_scaleXMin; x <= chart_manual_test1_scaleXMax; x += hour / div) {
 
         double y = y_ + randd(0, 5);
         y_++;
         if (y_ > 100 + randd(0, 5)) y_ = randd(0, 5);
 
-        Coord coord(x, y);
-        coords.push_back(coord);
+        points.push_back(chart.createPointShape(x, y));
     }
 }
 
@@ -36,7 +33,10 @@ int chart_manual_test1()
     GFX gfx;
     chart_manual_test1_gfxPtr = &gfx;
     GUI gui(gfx, 800, 600, "chart_manual_test1");
-    Chart chart(gfx, 50, 50, 700, 500);
+    Chart chart(gfx, 50, 50, 700, 500, 
+        chart_manual_test1_scaleXMin, 
+        chart_manual_test1_scaleXMax
+    );
 
     Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
     closeOkBtn.setBackgroundColor(green);
@@ -49,15 +49,14 @@ int chart_manual_test1()
     gui.child(chart);
     
     // generate data and show on scales
-    vector<Coord> coords;
-    chart_manual_test1_generateRealPoints(coords);
-
-    chart.createScale(LINE, &lightGreen).project(coords);
-    Chart::Scale& secondScale = chart.createScale(LINE, &lightCyan);
-    secondScale.setZoomRatio(2.0, 1.5);
-    secondScale.project(coords);
+    PointSeries* mainProjector = chart.createPointSeries(NULL, true, lightGreen);
+    chart_manual_test1_generateRealPoints(
+        chart, mainProjector->getShapes(), 1
+    );
+    chart_manual_test1_generateRealPoints(
+        chart, chart.createPointSeries(mainProjector, true, lightCyan)->getShapes(), 2
+    );
     
-
     gui.loop();
     
     return 0;

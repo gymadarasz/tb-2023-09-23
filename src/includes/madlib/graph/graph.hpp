@@ -2142,7 +2142,9 @@ namespace madlib::graph {
                 int frameHeight,
                 int togglerHeight = Theme::defaultAccordionContainterTogglerHeight
             ): 
-                accordion(accordion), frameHeight(frameHeight), togglerHeight(togglerHeight)
+                accordion(accordion), 
+                frameHeight(frameHeight), 
+                togglerHeight(togglerHeight)
             {
                 GFX& gfx = accordion.getGFX();
                 const int width = accordion.width;
@@ -2197,12 +2199,12 @@ namespace madlib::graph {
                 return accordion;
             }
 
-            Toggler& getToggler() const {
-                return *toggler;
+            Toggler* getToggler() const {
+                return toggler;
             }
 
-            Frame& getFrame() const {
-                return *frame;
+            Frame* getFrame() const {
+                return frame;
             }
 
             int getFrameHeight() const {
@@ -2215,14 +2217,16 @@ namespace madlib::graph {
         bool single;
 
     public:
-        Accordion(GFX& gfx, int left, int top, int width,
+        Accordion(
+            GFX& gfx, int left, int top, int width,
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
             void* eventContext = NULL
         ): 
             Area(
-                gfx, left, top, width, 0, false, false, "", CENTER,
+                gfx, left, top, width, 
+                0, false, false, "", CENTER,
                 border, backgroundColor,
                 Theme::defaultAreaMargin,
                 Theme::defaultAreaTextMargin,
@@ -2301,8 +2305,11 @@ namespace madlib::graph {
             if (redraw) getParentOrSelf()->draw();
         }
 
-        Container& createContainer(const string& title, int frameHeight) {
-            return *vector_create(containers, *this, title, textAlign, frameHeight);
+        Container* createContainer(const string& title, int frameHeight) {
+            // return vector_create(containers, *this, title, textAlign, frameHeight);
+            Container* container = new Container(*this, title, textAlign, frameHeight);
+            containers.push_back(container);
+            return container;
         }
 
         vector<Container*>& getContainers() {
@@ -2315,13 +2322,13 @@ namespace madlib::graph {
             if (container->isOpened()) return;
             container->open();
             const int frameHeight = container->getFrameHeight();
-            container->getFrame().setHeight(frameHeight);
+            container->getFrame()->setHeight(frameHeight);
             for (size_t i = containerIndex + 1; i < containersSize; i++) {
                 container = containers.at(i);
-                Toggler& toggler = container->getToggler();
-                toggler.setTop(toggler.getTop(false) + frameHeight);
-                Frame& frame = container->getFrame();
-                frame.setTop(frame.getTop(false) + frameHeight);
+                Toggler* toggler = container->getToggler();
+                toggler->setTop(toggler->getTop(false) + frameHeight);
+                Frame* frame = container->getFrame();
+                frame->setTop(frame->getTop(false) + frameHeight);
             }
             height += frameHeight;
             if (redraw) getParentOrSelf()->draw();
@@ -2333,13 +2340,13 @@ namespace madlib::graph {
             if (!container->isOpened()) return;
             container->close();
             const int frameHeight = container->getFrameHeight();
-            container->getFrame().setHeight(0);
+            container->getFrame()->setHeight(0);
             for (size_t i = containerIndex + 1; i < containersSize; i++) {
                 container = containers.at(i);
-                Toggler& toggler = container->getToggler();
-                toggler.setTop(toggler.getTop(false) - frameHeight);
-                Frame& frame = container->getFrame();
-                frame.setTop(frame.getTop(false) - frameHeight);
+                Toggler* toggler = container->getToggler();
+                toggler->setTop(toggler->getTop(false) - frameHeight);
+                Frame* frame = container->getFrame();
+                frame->setTop(frame->getTop(false) - frameHeight);
             }
             height -= frameHeight;
             if (redraw) getParentOrSelf()->draw();

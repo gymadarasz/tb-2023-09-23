@@ -794,9 +794,14 @@ namespace madlib::graph {
                 *this, color
             );
             pointSeriesProjectors.push_back(pointSeries);
+            // alignToProjector = alignToProjector
+            //     ? alignToProjector
+            //     : projectors.size() > 0 ? projectors[0] : NULL;
             projectors.push_back(pointSeries);
             alignments.push_back(Alignment(
-                pointSeries, alignToProjector, alignExtends
+                pointSeries, 
+                alignToProjector, 
+                alignExtends
             ));
             return pointSeries;
         }
@@ -872,4 +877,63 @@ namespace madlib::graph {
         }
     };
 
+
+    class MultiChartAccordion: public Accordion {
+    protected:
+
+        vector<Chart*> charts;
+        ms_t timeRangeBegin;
+        ms_t timeRangeEnd;
+
+        void createChartFrame(const string& title, Chart& chart, int frameHeight) {
+            Frame* cntrFrame = createContainer(title, frameHeight)->getFrame();
+            cntrFrame->setScrollFixed(true);
+            int frameWidth = cntrFrame->getWidth();
+            chart.setTop(0);
+            chart.setLeft(0);
+            chart.setWidth(frameWidth - 2);
+            chart.setHeight(frameHeight - 1);
+            chart.setBorder(PUSHED);
+            chart.setBackgroundColor(black);
+            cntrFrame->child(chart);
+        }
+
+    public:
+    
+        MultiChartAccordion(
+            GFX& gfx, int left, int top, int width,
+            ms_t timeRangeBegin,
+            ms_t timeRangeEnd,
+            bool single = false,
+            const Border border = Theme::defaultAccordionBorder,
+            const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
+            void* eventContext = NULL
+        ):
+            Accordion(
+                gfx, left, top, width, 
+                single, border, backgroundColor, 
+                eventContext
+            ),
+            timeRangeBegin(timeRangeBegin),
+            timeRangeEnd(timeRangeEnd)
+        {}
+
+        virtual ~MultiChartAccordion() {
+            vector_destroy(charts);
+        }
+
+        Chart* createChart(const string& title, int frameHeight) { // TODO bubble up params default
+            Chart* chart = new Chart(gfx, 0, 0, 0, 0, timeRangeBegin, timeRangeEnd);
+            charts.push_back(chart);
+            createChartFrame(title, *chart, frameHeight);
+            return chart;
+        }
+        
+        virtual void draw() override {
+            Accordion::draw();
+            for (Chart* chart: charts) {
+                chart->draw();
+            }
+        }
+    };
 }

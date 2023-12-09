@@ -64,13 +64,14 @@ int chart_manual_test5_zoom()
         timeLambda, seed
     );
 
-    TradeTexts tradeTexts;
-    TradeHistoryChart chart(gfx, 10, 10, 1580, 580, history, tradeTexts);
+    TradeHistoryChart chart(
+        gfx, 10, 10, 1580, 580,
+        history
+    );
     chart.setZoomRatio(1.5, 1.5);
     gui.child(chart);
     chart_manual_test5_chartPtr = &chart;
-    chart.addDrawHandler(chart_manual_test5_draw);    
-    chart.draw();
+    chart.addDrawHandler(chart_manual_test5_draw);
 
     gui.loop();
     
