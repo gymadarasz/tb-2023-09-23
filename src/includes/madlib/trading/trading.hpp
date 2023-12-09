@@ -925,6 +925,8 @@ namespace madlib::trading {
                     tradeHistoryChart.getTextSeries()
                 );
 
+            attach(tradeHistoryChart);
+
             // **** balanceQuotedChart ****
 
             balanceQuotedChart = createChart(

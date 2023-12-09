@@ -91,8 +91,8 @@ int main() {
     cout << "Manual tests: ";
     
     delete (new ChartLabelManualTest1)->run();
-    // delete (new ChartManualTest7Zoom)->run();
-    // delete (new MonteCarloChartsTest1)->run(); // TODO: chart scroll and zoom bad
+    delete (new ChartManualTest7Zoom)->run();
+    delete (new MonteCarloChartsTest1)->run(); // TODO: chart scroll and zoom bad
     delete (new MultiChartAccordionManualTest1)->run();
     delete (new AccordionManualTest1)->run();
     delete (new ChartManualTest6)->run();
