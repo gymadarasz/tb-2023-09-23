@@ -1932,6 +1932,8 @@ namespace madlib::graph {
             handler->setHeight(direction == VERTICAL ? size : thickness - 2);
         }
 
+        virtual ~ScrollBar() {}
+
         double getValueSize() {
             return valueSize;
         }

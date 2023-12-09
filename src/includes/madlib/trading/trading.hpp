@@ -707,7 +707,6 @@ namespace madlib::trading {
             ms_t currentTime = exchange.getCurrentTime();
             double currentPrice = exchange.getPairAt(symbol).getPrice();
             if (exchange.marketBuy(symbol, amount, false)) {
-                DBG(ms_to_datetime(currentTime));
                 addBuyText(symbol, currentTime, currentPrice);
                 return true;
             }
@@ -958,7 +957,18 @@ namespace madlib::trading {
             vector<Shape*>& balanceBaseAtCloses = balanceBaseScale->getShapes();
             vector<Shape*>& balanceBaseFullAtCloses = balanceBaseFullScale->getShapes();
             Pair& pair = testExchange.getPairAt(symbol);
+            
+
+            size_t n = candles.size();
+            ms_t t = now();
+            LOG("Backtest starts of ", n, " candles...");
             for (const Candle& candle: candles) {
+                if (now() - t > second) {
+                    t = now();
+                    LOG("Backtest in progress: ", n, " candles left...");
+                }
+                n--; 
+
                 testExchange.setCurrentTime(candle.getEnd());
                 pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
             
@@ -994,6 +1004,7 @@ namespace madlib::trading {
                 
                 candleStrategy.onCandleClose(candle);
             }
+            LOG("Backtest done.");
         }
     };
 
