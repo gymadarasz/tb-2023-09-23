@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <dlfcn.h>
 
-#include "interfaces/Printer.h"
-
 using namespace std;
 using namespace chrono;
 
@@ -680,6 +678,21 @@ namespace madlib {
         return args_get(args, key, &defstr);
     }
 
+    class Shared {
+    public:
+        explicit Shared(void* = nullptr) {}
+    };
+
+    class Printer: public Shared {
+    public:
+        using Shared::Shared;
+        virtual void print(const string& output) = 0;
+        void println(const string& output) {
+            print(output + "\n");
+        }
+        virtual ~Printer() {}
+    };
+
     class Log: public Printer {
     protected:
         string filename;
@@ -761,6 +774,16 @@ namespace madlib {
 
     };
 
+
+    #define EXPORT_CLASS(class) \
+        extern "C" class* create##class(void* context = nullptr) { \
+            return new class(context); \
+        } \
+        extern "C" void destroy##class(class* instance) { \
+            delete instance; \
+        }
+
+        
     class SharedFactory {
     protected:
         typedef void* (*SharedCreator)(void*);
@@ -774,31 +797,9 @@ namespace madlib {
 
         vector<SharedInstance> instances;
 
-        const string path;
     public:
 
-        explicit SharedFactory(const string& path): path(path) {} 
-
-        void* create(const string& libname, void* context = NULL) {
-            const string soPath = path_normalize(path + "/" + libname + ".so");
-            const string create = "create" + libname;
-            const string destroy = "destroy" + libname;
-
-            void* handle = dlopen((soPath).c_str(), RTLD_LAZY);
-            if (!handle) throw ERROR("Unable to open: " + soPath + " - " + dlerror());
-
-            SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
-            if (!creator) throw ERROR("Unable to create: " + libname + " - " + dlerror());
-
-            SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
-            
-            void* library = creator(context);
-            if (!library) throw ERROR("Unable to instanciate: " + libname);
-
-            instances.push_back({ library, handle, destroyer });
-
-            return instances.at(instances.size() - 1).library;
-        }
+        SharedFactory() {} 
 
         virtual ~SharedFactory() {
             for (const SharedInstance& instance: instances) {
@@ -806,5 +807,28 @@ namespace madlib {
                 if (instance.handle) dlclose(instance.handle);
             }
         }
+
+        template<typename A = void*>
+        void* create(const string& path, const string& clazz, A context = NULL) {
+            const string soPath = path_normalize(path + "/" + clazz + ".so");
+            const string create = "create" + clazz;
+            const string destroy = "destroy" + clazz;
+
+            void* handle = dlopen((soPath).c_str(), RTLD_LAZY);
+            if (!handle) throw ERROR("Unable to open: " + soPath + " - " + dlerror());
+
+            SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
+            if (!creator) throw ERROR("Unable to create: " + clazz + " - " + dlerror());
+
+            SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
+            
+            void* library = creator(&context);
+            if (!library) throw ERROR("Unable to instanciate: " + clazz);
+
+            instances.push_back({ library, handle, destroyer });
+
+            return instances.at(instances.size() - 1).library;
+        }
+
     };
 }

@@ -630,6 +630,9 @@ namespace madlib::trading {
             explicit Parameter(long value, long min = LONG_MIN, long max = LONG_MAX):
                 type(LONG), _long(Limited<long>(value, min, max)) {}
 
+
+            virtual ~Parameter() {}
+
             Type getType() const {
                 return type;
             }
@@ -667,6 +670,8 @@ namespace madlib::trading {
             parameters(parameters),
             labelSeries(labelSeries)
         {}
+        
+        virtual ~Strategy() {}
 
         LabelSeries* getLabelSeries() const {
             return labelSeries;
@@ -737,7 +742,15 @@ namespace madlib::trading {
 
     class CandleStrategy: public Strategy {
     public:
+        struct Args {
+            Exchange& exchange;
+            const map<string, Parameter>& parameters;
+            LabelSeries* labelSeries = NULL;
+        };
+        
         using Strategy::Strategy;
+
+        virtual ~CandleStrategy() {}
 
         virtual void onCandleClose(const Candle&) {
             throw ERR_UNIMP;

@@ -2375,6 +2375,7 @@ namespace madlib::graph {
 
         GFX gfx = GFX(this);
         GUI gui = GUI(gfx, 1600, 900, "Application");
+        SharedFactory sharedFactory;
 
     public:
     

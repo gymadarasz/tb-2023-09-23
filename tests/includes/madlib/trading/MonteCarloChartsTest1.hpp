@@ -1,13 +1,11 @@
 #pragma once
 
 #include "../../../../src/includes/madlib/trading/trading.hpp"
-#include "../../../../src/includes/madlib/trading/strategy/ACandleStrategy.hpp"
 #include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../ManualTestApplication.hpp"
 
 using namespace madlib::graph;
 using namespace madlib::trading;
-using namespace madlib::trading::strategy;
 
 class MonteCarloChartsTest1: public ManualTestApplication {
 protected:
@@ -56,25 +54,28 @@ protected:
         {"symbol", Strategy::Parameter(symbol)},
     };
 
-    ACandleStrategy aCandleStrategy = ACandleStrategy(
-        testExchange, strategyParameters
-    );
-    
-    // const int multiChartAccordionFramesHeight = 300;
     const bool showBalanceQuotedScale = true;
+
+    CandleStrategy* candleStrategy = 
+        (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
+            "build/src/shared/trading/strategy",
+            "ACandleStrategy", 
+            { testExchange, strategyParameters }
+        );
+    
     CandleStrategyBacktester backtester = CandleStrategyBacktester(
         gfx, 10, 50, 1000, 340,
         startTime, endTime,
         // multiChartAccordion,
         history, // tradeHistoryChart,
-        testExchange, aCandleStrategy, symbol, 
+        testExchange, *candleStrategy, symbol, 
         // multiChartAccordionFramesHeight,
         showBalanceQuotedScale
     );
-
 public:
 
     using ManualTestApplication::ManualTestApplication;
+
     virtual ~MonteCarloChartsTest1() {}
 
     void init() override {

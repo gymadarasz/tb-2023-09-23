@@ -294,15 +294,15 @@ public:
         stringstream buffer;
         streambuf* original_cout = cout.rdbuf(buffer.rdbuf());
 
-        SharedFactory sharedFactory("build/src/shared");
+        SharedFactory sharedFactory = SharedFactory();
 
-        Printer* printer1 = (Printer*)sharedFactory.create("Test1Printer");
+        Printer* printer1 = (Printer*)sharedFactory.create("build/src/shared", "Test1Printer");
         printer1->println("Printer1 is printing");
         assert(buffer.str() == "Test1Printer prints: Printer1 is printing\n");
 
         buffer.str("");  // Clear the buffer for reuse
         
-        Printer* printer2 = (Printer*)sharedFactory.create("Test2Printer");
+        Printer* printer2 = (Printer*)sharedFactory.create("build/src/shared", "Test2Printer");
         printer2->println("Printer2 is printing");
         assert(buffer.str() == "Test2Printer prints: Printer2 is printing\n");
 

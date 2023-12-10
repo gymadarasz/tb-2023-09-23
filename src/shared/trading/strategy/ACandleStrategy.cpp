@@ -1,6 +1,4 @@
-#pragma once
-
-#include "../trading.hpp"
+#include "../../../includes/madlib/trading/trading.hpp"
 
 namespace madlib::trading::strategy {
 
@@ -12,7 +10,14 @@ namespace madlib::trading::strategy {
         long tick = 0;
         double exitAt = 0;
     public:
-        using CandleStrategy::CandleStrategy;
+
+        explicit ACandleStrategy(void* context): CandleStrategy(
+            ((Args*)context)->exchange,
+            ((Args*)context)->parameters,
+            ((Args*)context)->labelSeries
+        ) {}
+
+        virtual ~ACandleStrategy() {}
 
         void onCandleClose(const Candle& candle) override {
             const string symbol = parameters.at("symbol").getString();
@@ -69,4 +74,5 @@ namespace madlib::trading::strategy {
         }
     };
 
+    EXPORT_CLASS(ACandleStrategy)
 }

@@ -3,7 +3,7 @@ cppcheck . \
 --enable=all \
 --suppress=useStlAlgorithm \
 --suppress=cstyleCast \
---suppress=missingIncludeSystem \
+--suppress=missingInclude \
 --suppress=unusedFunction \
 --suppress=noCopyConstructor \
 --suppress=noOperatorEq \
