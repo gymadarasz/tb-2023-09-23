@@ -785,10 +785,10 @@ namespace madlib {
             const string destroy = "destroy" + libname;
 
             void* handle = dlopen((soPath).c_str(), RTLD_LAZY);
-            if (!handle) throw ERROR("Unable to open: " + soPath);
+            if (!handle) throw ERROR("Unable to open: " + soPath + " - " + dlerror());
 
             SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
-            if (!creator) throw ERROR("Unable to create: " + libname);
+            if (!creator) throw ERROR("Unable to create: " + libname + " - " + dlerror());
 
             SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
             
