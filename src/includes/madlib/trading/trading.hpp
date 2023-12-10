@@ -654,53 +654,53 @@ namespace madlib::trading {
 
         Exchange& exchange;
         map<string, Parameter> parameters;
-        LabelSeries* tradeTexts;
+        LabelSeries* labelSeries;
 
     public:
 
         Strategy(
             Exchange& exchange,
             const map<string, Parameter>& parameters,
-            LabelSeries* tradeTexts = NULL
+            LabelSeries* labelSeries = NULL
         ):
             exchange(exchange),
             parameters(parameters),
-            tradeTexts(tradeTexts)
+            labelSeries(labelSeries)
         {}
 
-        LabelSeries* getTradeTexts() const {
-            return tradeTexts;
+        LabelSeries* getLabelSeries() const {
+            return labelSeries;
         }
 
-        void setTradeTexts(LabelSeries* tradeTexts) {
-            this->tradeTexts = tradeTexts;
+        void setLabelSeries(LabelSeries* labelSeries) {
+            this->labelSeries = labelSeries;
         }
 
         void addBuyText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
-            if (!tradeTexts) return;
+            if (!labelSeries) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
-            Chart& chart = (Chart&)tradeTexts->getTimeRangeArea();
-            tradeTexts->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
-            // addText(tradeTexts.getBuyTextRealChoords(), tradeTexts.getBuyTexts(), currentTime, currentPrice, text);
+            Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
+            labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            // addText(labelSeries.getBuyTextRealChoords(), labelSeries.getBuyTexts(), currentTime, currentPrice, text);
         }
 
         void addSellText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
-            if (!tradeTexts) return;
+            if (!labelSeries) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
-            Chart& chart = (Chart&)tradeTexts->getTimeRangeArea();
-            tradeTexts->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
-            // addText(tradeTexts.getSellTextRealChoords(), tradeTexts.getSellTexts(), currentTime, currentPrice, text);
+            Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
+            labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            // addText(labelSeries.getSellTextRealChoords(), labelSeries.getSellTexts(), currentTime, currentPrice, text);
         }
 
         void addErrorText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
-            if (!tradeTexts) return;
+            if (!labelSeries) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
-            Chart& chart = (Chart&)tradeTexts->getTimeRangeArea();
-            tradeTexts->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
-            // addText(tradeTexts.getErrorTextRealChoords(), tradeTexts.getErrorTexts(), currentTime, currentPrice, text);
+            Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
+            labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            // addText(labelSeries.getErrorTextRealChoords(), labelSeries.getErrorTexts(), currentTime, currentPrice, text);
         }
 
         bool marketBuy(const string& symbol, double amount) {
@@ -748,7 +748,7 @@ namespace madlib::trading {
     class TradeHistoryChart: public Chart {
     protected:
         const TradeHistory& history;
-        LabelSeries* tradeTexts = NULL;
+        LabelSeries* labelSeries = NULL;
         const Color& priceColor;
         const Color& volumeColor;
 
@@ -764,7 +764,7 @@ namespace madlib::trading {
             GFX& gfx, int left, int top, int width, int height,
             // ms_t timeRangeBegin, ms_t timeRangeEnd,
             const TradeHistory& history,
-            LabelSeries* tradeTexts = NULL,
+            LabelSeries* labelSeries = NULL,
             const bool showCandles = true, // TODO
             const bool showPrices = true, // TODO
             const bool showVolumes = true, // TODO
@@ -783,16 +783,17 @@ namespace madlib::trading {
                 eventContext
             ),
             history(history),
-            tradeTexts(tradeTexts),
+            labelSeries(labelSeries),
             priceColor(priceColor),
             volumeColor(volumeColor)
         {
             if (showCandles)
                 mainProjector = candleSeries = createCandleSeries();
-            if (showPrices)
-                mainProjector = priceSeries = createPointSeries(
+            if (showPrices) {
+                priceSeries = createPointSeries(
                     mainProjector, true, priceColor
                 );
+            }
             if (showVolumes)
                 volumeSeries = createPointSeries(NULL, true, volumeColor);
             if (showTexts)
@@ -824,24 +825,27 @@ namespace madlib::trading {
                 }
             }
 
-            if (priceSeries || volumeColor) {
+            if (priceSeries || volumeSeries) {
                 vector<Trade> trades = history.getTrades();
-                for (const Trade& trade: trades) {
-                    if (priceSeries) priceSeries->getShapes().push_back(
-                        createPointShape(trade.timestamp, trade.price)
-                    );
-                    if (volumeSeries) volumeSeries->getShapes().push_back(
-                        createPointShape(trade.timestamp, trade.volume)
-                    );
+                if (trades.size()) {
+                    mainProjector = priceSeries;
+                    for (const Trade& trade: trades) {
+                        if (priceSeries) priceSeries->getShapes().push_back(
+                            createPointShape(trade.timestamp, trade.price)
+                        );
+                        if (volumeSeries) volumeSeries->getShapes().push_back(
+                            createPointShape(trade.timestamp, trade.volume)
+                        );
+                    }
                 }
             }
 
             if (
-                mainProjector && textSeries && tradeTexts &&
-                textSeries != tradeTexts
+                mainProjector && textSeries && labelSeries &&
+                textSeries != labelSeries
             ) {
                 vector<Shape*>& textShapes = textSeries->getShapes();
-                for (Shape* shape: tradeTexts->getShapes()) {
+                for (Shape* shape: labelSeries->getShapes()) {
                     LabelShape* tradeText = (LabelShape*)shape;
                     textShapes.push_back(createLabelShape(
                         tradeText->time(), 
@@ -868,7 +872,7 @@ namespace madlib::trading {
         // **** tradeHistoryChart ****
         
         TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-            gfx, 0, 0, 0, 0, history, candleStrategy.getTradeTexts()
+            gfx, 0, 0, 0, 0, history, candleStrategy.getLabelSeries()
         );
 
         // **** balanceQuotedChart ****
@@ -919,8 +923,8 @@ namespace madlib::trading {
                 "History", tradeHistoryChart, multiChartAccordionFramesHeight
             );
 
-            if (!candleStrategy.getTradeTexts())
-                candleStrategy.setTradeTexts(
+            if (!candleStrategy.getLabelSeries())
+                candleStrategy.setLabelSeries(
                     tradeHistoryChart.getTextSeries()
                 );
 

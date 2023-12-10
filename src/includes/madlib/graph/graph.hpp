@@ -2385,6 +2385,7 @@ namespace madlib::graph {
         Application* run() {
             try {
                 init();
+                gui.draw();
                 gui.loop();
             } catch (exception& e) {
                 LOG("Exception: " + string(e.what()));

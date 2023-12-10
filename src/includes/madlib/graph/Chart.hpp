@@ -393,15 +393,15 @@ namespace madlib::graph {
 
         bool align(Projector* other = NULL, bool extends = true) {
             if (prepared) return true;
-            if (shapes.size() == 0) return prepared = false;
-            if (other && !other->prepared) other->align(NULL, extends);
+            if (shapes.size() == 0) return false;
+            if (other && !other->prepared && !other->align(NULL, extends)) other = NULL;
 
             chartHeight = timeRangeArea.getHeight() - 
                 (timeRangeArea.getMargin()->top + timeRangeArea.getMargin()->bottom);
             chartWidth = timeRangeArea.getWidth() - 
                 (timeRangeArea.getMargin()->left + timeRangeArea.getMargin()->right);
 
-            if (other && other->prepared) {
+            if (other) {
                 timeRangeArea.getTimeRange().begin = min(
                     timeRangeArea.getTimeRange().begin,
                     other->timeRangeArea.getTimeRange().begin
@@ -414,7 +414,7 @@ namespace madlib::graph {
             chartBegin = timeRangeArea.getTimeRange().begin;
             chartEnd = timeRangeArea.getTimeRange().end;
             chartInterval = chartEnd - chartBegin;
-            if (other && other->prepared) {
+            if (other) {
                 other->chartBegin = chartBegin;
                 other->chartEnd = chartEnd;
                 other->chartInterval = chartInterval;
@@ -422,47 +422,16 @@ namespace madlib::graph {
             
             shapesValueMin = INFINITY;
             shapesValueMax = -INFINITY;
-            if (other && other->prepared && extends) {
+            if (other && extends) {
                 shapesValueMin = other->shapesValueMin;
                 shapesValueMax = other->shapesValueMax;
             }
 
-
-            // TODO: 
-            // ---------- new 
-
-            // size_t shapesSize = shapes.size();
-            // ms_t firstAt = shapes[0]->getTimeRange().begin;
-            // ms_t lastAt = shapes[shapesSize - 1]->getTimeRange().end;
-            // shapeIndexFrom = (size_t)(
-            //     ((lastAt - firstAt) * (ms_t)shapesSize) / chartBegin
-            // );
-            // if (shapeIndexFrom >= shapesSize) return prepared = false;
-            // shapeIndexTo = shapeIndexFrom;
-            // while (1) {
-            //     const Shape* shape = shapes[shapeIndexTo];
-            //     if (shape->getTimeRange().begin > chartEnd) break;
-            //     MinMax<double> valueMinMax = shape->getValueMinMax();
-            //     if (shapesValueMin > valueMinMax.min) shapesValueMin = valueMinMax.min;
-            //     if (shapesValueMax < valueMinMax.max) shapesValueMax = valueMinMax.max;
-            //     shapeIndexTo++;
-            //     if (shapeIndexTo >= shapesSize - 1) break;
-            // }
-            // if (shapeIndexTo == shapeIndexFrom) return prepared = false;
-            // shapesValueDiff = shapesValueMax - shapesValueMin;
-            // if (other && other->prepared && extends) {
-            //     other->shapesValueMin = shapesValueMin;
-            //     other->shapesValueMax = shapesValueMax;
-            //     other->shapesValueDiff = shapesValueDiff;
-            // }
-            
-            // ------------- slow
-
+            // TODO: binary search to get the first index
             shapeIndexFrom = __SIZE_MAX__;
-            shapeIndexTo = __SIZE_MAX__;
-
-            for (const Shape* shape: shapes) {
-                shapeIndexTo++;
+            const size_t shapesLastIndex = shapes.size() - 1;
+            for (shapeIndexTo = 0; shapeIndexTo < shapesLastIndex; shapeIndexTo++) {
+                Shape* shape = shapes[shapeIndexTo];
 
                 TimeRange shapeTimeRange = shape->getTimeRange();
                 if (shapeTimeRange.end < chartBegin) continue;
@@ -475,16 +444,15 @@ namespace madlib::graph {
                 if (shapesValueMax < valueMinMax.max) shapesValueMax = valueMinMax.max;
 
             }
+            if (shapeIndexFrom == __SIZE_MAX__) return false;
+
             shapesValueDiff = shapesValueMax - shapesValueMin;
-            if (other && other->prepared && extends) {
+            if (other && extends) {
                 other->shapesValueMin = shapesValueMin;
                 other->shapesValueMax = shapesValueMax;
                 other->shapesValueDiff = shapesValueDiff;
             }
             
-            if (shapeIndexFrom == __SIZE_MAX__) return prepared = false;
-
-
             return prepared = true;
         }
     };
@@ -621,6 +589,8 @@ namespace madlib::graph {
                     chartHeight - high, 
                     chartHeight - low
                 );
+
+                if (step > 1) continue;
                 
                 int left = translateX(candle->begin());
                 int right = translateX(candle->end());
