@@ -7,6 +7,7 @@
 #include "includes/madlib/trading/strategy/ACandleStrategy.hpp"
 
 using namespace std;
+using namespace madlib::graph;
 using namespace madlib::trading;
 using namespace madlib::trading::bitstamp;
 using namespace madlib::trading::strategy;
@@ -16,7 +17,7 @@ class BitstampHistoryApplication: public FrameApplication {
 protected:
 
     const string symbol = "BTCUSD";
-    const ms_t startTime = datetime_to_ms("2015-09-25 00:50:00");
+    const ms_t startTime = datetime_to_ms("2021-09-25 00:50:00");
     const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
     const ms_t period = period_to_ms("1m");
     BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);

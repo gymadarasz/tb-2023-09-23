@@ -426,7 +426,38 @@ namespace madlib::graph {
                 shapesValueMin = other->shapesValueMin;
                 shapesValueMax = other->shapesValueMax;
             }
+
+
+            // TODO: 
+            // ---------- new 
+
+            // size_t shapesSize = shapes.size();
+            // ms_t firstAt = shapes[0]->getTimeRange().begin;
+            // ms_t lastAt = shapes[shapesSize - 1]->getTimeRange().end;
+            // shapeIndexFrom = (size_t)(
+            //     ((lastAt - firstAt) * (ms_t)shapesSize) / chartBegin
+            // );
+            // if (shapeIndexFrom >= shapesSize) return prepared = false;
+            // shapeIndexTo = shapeIndexFrom;
+            // while (1) {
+            //     const Shape* shape = shapes[shapeIndexTo];
+            //     if (shape->getTimeRange().begin > chartEnd) break;
+            //     MinMax<double> valueMinMax = shape->getValueMinMax();
+            //     if (shapesValueMin > valueMinMax.min) shapesValueMin = valueMinMax.min;
+            //     if (shapesValueMax < valueMinMax.max) shapesValueMax = valueMinMax.max;
+            //     shapeIndexTo++;
+            //     if (shapeIndexTo >= shapesSize - 1) break;
+            // }
+            // if (shapeIndexTo == shapeIndexFrom) return prepared = false;
+            // shapesValueDiff = shapesValueMax - shapesValueMin;
+            // if (other && other->prepared && extends) {
+            //     other->shapesValueMin = shapesValueMin;
+            //     other->shapesValueMax = shapesValueMax;
+            //     other->shapesValueDiff = shapesValueDiff;
+            // }
             
+            // ------------- slow
+
             shapeIndexFrom = __SIZE_MAX__;
             shapeIndexTo = __SIZE_MAX__;
 
@@ -835,10 +866,6 @@ namespace madlib::graph {
         }
 
         virtual ~Chart() {
-            clear();
-        }
-
-        void clear() {
             vector_destroy(pointSeriesProjectors);
             vector_destroy(candleSeriesProjectors);
             vector_destroy(labelSeriesProjectors);
@@ -848,6 +875,18 @@ namespace madlib::graph {
             vector_destroy(candleShapes);
             vector_destroy(labelShapes);
             alignments.clear();
+        }
+
+        void clearProjectorsShapes() {
+            vector_destroy(pointShapes);
+            for (PointSeries* pointSeriesProjector: pointSeriesProjectors)
+                pointSeriesProjector->getShapes().clear();
+            vector_destroy(candleShapes);
+            for (CandleSeries* candleSeriesProjector: candleSeriesProjectors)
+                candleSeriesProjector->getShapes().clear();
+            vector_destroy(labelShapes);
+            for (LabelSeries* labelSeriesProjector: labelSeriesProjectors)
+                labelSeriesProjector->getShapes().clear();
         };
 
         void join(MultiChart* multiChart) {
@@ -1019,5 +1058,10 @@ namespace madlib::graph {
             multiChart.attach(*chart);
             return chart;
         }
+
+        void clearCharts() {
+            for (Chart* chart: charts) chart->clearProjectorsShapes();
+        }
+        
     };
 }

@@ -951,14 +951,16 @@ namespace madlib::trading {
 
             // **** backtest ****
 
+            clearCharts();
+
             vector<Candle> candles = history.getCandles();
             vector<Shape*>& balanceQuotedAtCloses = balanceQuotedScale->getShapes();
             vector<Shape*>& balanceQuotedFullAtCloses = balanceQuotedFullScale->getShapes();
             vector<Shape*>& balanceBaseAtCloses = balanceBaseScale->getShapes();
             vector<Shape*>& balanceBaseFullAtCloses = balanceBaseFullScale->getShapes();
+
             Pair& pair = testExchange.getPairAt(symbol);
             
-
             size_t n = candles.size();
             ms_t t = now();
             LOG("Backtest starts of ", n, " candles...");
