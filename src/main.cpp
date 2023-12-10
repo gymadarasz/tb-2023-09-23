@@ -4,13 +4,11 @@
 #include "includes/madlib/madlib.hpp"
 #include "includes/madlib/trading/trading.hpp"
 #include "includes/madlib/trading/bitstamp/bitstamp.hpp"
-#include "includes/madlib/trading/strategy/ACandleStrategy.hpp"
 
 using namespace std;
 using namespace madlib::graph;
 using namespace madlib::trading;
 using namespace madlib::trading::bitstamp;
-using namespace madlib::trading::strategy;
 
 
 class BitstampHistoryApplication: public FrameApplication {
@@ -37,8 +35,9 @@ protected:
         {"symbol", Strategy::Parameter(symbol)},
     };
     
-    ACandleStrategy strategy = ACandleStrategy(
-        testExchange, strategyParameters
+    CandleStrategy* strategy = (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
+        "build/src/shared/trading/strategy", "ACandleStrategy", 
+        { testExchange, strategyParameters}
     );
 
     const int multiChartAccordionLeft = 10;
@@ -54,7 +53,7 @@ protected:
         multiChartAccordionWidth, 
         multiChartAccordionFramesHeight,
         startTime, endTime,
-        history, testExchange, strategy, symbol
+        history, testExchange, *strategy, symbol
     );
 
 public:
