@@ -725,13 +725,16 @@ namespace madlib::graph {
             ) return;
 
             Chart* chart = (Chart*)context;
-            const int partialWidth = chart->width / 5;
             bool zoomAtLeft = true;
             bool zoomAtRight = true;
-            if (x <= partialWidth * 2) zoomAtRight = false;
-            if (x >= partialWidth * 3) zoomAtLeft = false;
+            if (x <= chart->width * .2) zoomAtRight = false;
+            if (x >= chart->width * .8) zoomAtLeft = false;
             if (chart->timeRange->begin < chart->timeRangeFull->begin) zoomAtLeft = true;
             if (chart->timeRange->end > chart->timeRangeFull->end) zoomAtRight = true;
+            if (button == Theme::zoomOutScrollButton) {
+                if (chart->timeRange->begin == chart->timeRangeFull->begin) zoomAtLeft = true;
+                if (chart->timeRange->end == chart->timeRangeFull->end) zoomAtRight = true;
+            }
             
             double origDiff = (double)(chart->timeRange->end - chart->timeRange->begin);
             double interval = origDiff;

@@ -332,7 +332,7 @@ namespace madlib::graph {
         static const int touchButton = Button1;
         static const int zoomInScrollButton = Button4;
         static const int zoomOutScrollButton = Button5;
-        static constexpr double zoomInRatio = 1.25;
+        static constexpr double zoomInRatio = 1.1;
         static constexpr double zoomOutRatio = .8;
         static constexpr double zoomRatioMax = INFINITY;
         static constexpr double zoomRatioMin = 1;
