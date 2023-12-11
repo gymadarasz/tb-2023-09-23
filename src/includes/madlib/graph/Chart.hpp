@@ -299,15 +299,15 @@ namespace madlib::graph {
             Area::point(x + margin.left, y + margin.top);
         }
 
-        void rect(int x1, int y1, int x2, int y2) override {
+        void rect(int x1, int y1, int x2, int y2) override final {
             Area::rect(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
         }
 
-        void fRect(int x1, int y1, int x2, int y2) override {
+        void fRect(int x1, int y1, int x2, int y2) override final {
             Area::fRect(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
         }
 
-        void line(int x1, int y1, int x2, int y2) override {
+        void line(int x1, int y1, int x2, int y2) override final {
             Area::line(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
         }
 
@@ -315,11 +315,11 @@ namespace madlib::graph {
             Area::hLine(x1 + margin.left, y1 + margin.top, x2 + margin.left);
         }
 
-        void vLine(int x1, int y1, int y2) override {
+        void vLine(int x1, int y1, int y2) override final {
             Area::vLine(x1 + margin.left, y1 + margin.top, y2 + margin.top);
         }
 
-        void write(int x, int y, const string& text) override {
+        void write(int x, int y, const string& text) override final {
             Area::write(x + margin.left, y + margin.top, text);
         }
     };
@@ -513,7 +513,7 @@ namespace madlib::graph {
             color(color)
         {}
 
-        virtual ~PointSeries() {}
+        virtual ~PointSeries() final {}
 
         void project() override {
             const PointShape* first = (const PointShape*)shapes[shapeIndexFrom];
@@ -590,7 +590,7 @@ namespace madlib::graph {
             colorDown(colorDown)
         {}
 
-        virtual ~CandleSeries() {}
+        virtual ~CandleSeries() final {}
 
         void project() override {
             size_t step = (shapeIndexTo - shapeIndexFrom) / (size_t)chartWidth;
@@ -652,7 +652,7 @@ namespace madlib::graph {
 
         using Projector::Projector;
 
-        virtual ~LabelSeries() {}
+        virtual ~LabelSeries() final {}
 
         void project() override {
             if (shapeIndexTo - shapeIndexFrom > maxLabelsToShow) return;
@@ -900,7 +900,7 @@ namespace madlib::graph {
             this->multiChart = multiChart;
         }
 
-        void draw() override {
+        void draw() override final {
             TimeRangeArea::draw();
         
             for (const Alignment& alignment: alignments)

@@ -29,9 +29,13 @@ public:
         "-Wlogical-op -Wfloat-conversion -Wdouble-promotion "
         "-Wsign-conversion -Wsign-promo -Wcast-qual "
         "-Wdisabled-optimization -Werror=return-type -Werror=main "
-        "-Wsuggest-final-methods -std=c++17";
+        "-std=c++17";
     const string flagsLibs = "-lX11 -ldl";
-    const string optimizationFlag = " -O0";
+
+    // NOTE: keep it the highest (-O3)
+    // NOTE: add -Wsuggest-final-methods only if no overrides in dynamic libraries
+    const string optimizationFlag = " -O3";
+
     // const string flagsShared = "-shared -fPIC";
     const string cppExtension = ".cpp";
     bool executeMain = true;

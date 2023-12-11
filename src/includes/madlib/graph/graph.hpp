@@ -1332,7 +1332,7 @@ namespace madlib::graph {
             gfx.writeText(x, y, text);
         }
 
-        virtual TextSize getTextSize(const string& text) const override {
+        TextSize getTextSize(const string& text) const override final {
             TextSize textSize;
             gfx.getTextSize(text, textSize.width, textSize.height);
             return textSize;
@@ -1725,6 +1725,8 @@ namespace madlib::graph {
             addMoveHandler(Area::moveHandler);
             addTouchHandler(Painter::zoomHandler);
         }
+
+        virtual ~Frame() final {}
     };
 
 

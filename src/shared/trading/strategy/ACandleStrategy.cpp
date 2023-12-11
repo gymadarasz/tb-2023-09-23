@@ -13,7 +13,7 @@ namespace madlib::trading::strategy {
 
         using CandleStrategy::CandleStrategy;
 
-        virtual ~ACandleStrategy() {}
+        virtual ~ACandleStrategy() final {}
 
         void onCandleClose(const Candle& candle) override {
             const string symbol = parameters.at("symbol").getString();

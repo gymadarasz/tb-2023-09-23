@@ -632,6 +632,10 @@ namespace madlib {
     bool map_has(const map<string, T>& m, string key) {
         return map_has<string, T>(m, key);
     }
+    template<typename T>
+    bool map_has(const map<const string, T>& m, string key) {
+        return map_has<const string, T>(m, key);
+    }
 
     template <typename KeyT, typename T>
     vector<KeyT> map_keys(const map<KeyT, T>& m) {
@@ -696,6 +700,9 @@ namespace madlib {
 
     class Shared {
     public:
+        struct Args {
+            void* context = nullptr;
+        };
         explicit Shared(void* = nullptr) {}
     };
 
@@ -825,42 +832,57 @@ namespace madlib {
     };
 
 
-    #define EXPORT_CLASS(class) \
-        extern "C" class* create##class(void* context = nullptr) { \
-            return new class(context); \
+    #define EXPORT_CLASS(clazz) \
+        extern "C" clazz* create##clazz(void* context = nullptr) { \
+            return new clazz(context); \
         } \
-        extern "C" void destroy##class(class* instance) { \
-            delete instance; \
+        extern "C" void destroy##clazz(void* instance, void* context) { \
+            if (instance) delete (clazz*)instance; \
+            if (context) delete (clazz::Args*)context; \
         }
 
         
     class SharedFactory {
     protected:
+        
+        typedef struct { void* instance; void* context; } InstanceAndContext;
+
         typedef void* (*SharedCreator)(void*);
-        typedef void (*SharedDestroyer)(void*);
+        typedef void (*SharedDestroyer)(void*, void*);
 
         typedef struct {
-            void* library = NULL;
+            vector<InstanceAndContext> instanceAndContexts;
             void* handle = NULL;
+            SharedCreator creator;
             SharedDestroyer destroyer;
         } SharedInstance;
 
-        vector<SharedInstance> instances;
+        map<const string, SharedInstance> imports;
 
     public:
 
         SharedFactory() {} 
 
         virtual ~SharedFactory() {
-            for (const SharedInstance& instance: instances) {
-                if (instance.destroyer) instance.destroyer(instance.library);
-                if (instance.handle) dlclose(instance.handle);
+            for (const auto& pair: imports) {
+                const SharedInstance& import = pair.second;
+                for (const InstanceAndContext& ic: import.instanceAndContexts) {
+                    if (import.destroyer) import.destroyer(ic.instance, ic.context);
+                }
+                if (import.handle) dlclose(import.handle);
             }
         }
 
-        template<typename A = void*>
-        void* create(const string& path, const string& clazz, A context = NULL) {
+        // template<typename A = void*>
+        void* create(const string& path, const string& clazz, void* context = NULL) {
             const string source = path_normalize(path + "/" + clazz + ".so");
+
+            if (map_has(imports, source)) {
+                void* instance = imports[source].creator(context);
+                imports[source].instanceAndContexts.push_back({ instance, context });
+                return instance;
+            }
+
             const string create = "create" + clazz;
             const string destroy = "destroy" + clazz;
 
@@ -872,12 +894,12 @@ namespace madlib {
 
             SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
             
-            void* library = creator(&context);
-            if (!library) throw ERROR("Unable to instanciate: " + clazz);
+            void* instance = creator(context);
+            if (!instance) throw ERROR("Unable to instanciate: " + clazz);
 
-            instances.push_back({ library, handle, destroyer });
+            imports[source] =  {{ { instance, context } }, handle, creator, destroyer };
 
-            return instances.at(instances.size() - 1).library;
+            return instance;
         }
 
     };

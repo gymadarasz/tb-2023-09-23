@@ -57,14 +57,14 @@ protected:
         {"symbol", Strategy::Parameter(Config::symbol)},
     };
 
-    TestExchange* testExchange = (TestExchange*)sharedFactory.create<TestExchange::Args>(
+    TestExchange* testExchange = (TestExchange*)sharedFactory.create(
         "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
-        { Config::symbols, Config::pairs, Config::balances }
+        new TestExchange::Args({ Config::symbols, Config::pairs, Config::balances })
     );
     
-    CandleStrategy* strategy = (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
+    CandleStrategy* strategy = (CandleStrategy*)sharedFactory.create(
         "build/src/shared/trading/strategy", "ACandleStrategy", 
-        { *testExchange, strategyParameters}
+        new CandleStrategy::Args({ *testExchange, strategyParameters})
     );
 
     const int multiChartAccordionLeft = 10;

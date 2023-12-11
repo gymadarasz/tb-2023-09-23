@@ -52,9 +52,9 @@ protected:
     const vector<string> symbols = {
         "MONTECARLO"
     };
-    TestExchange* testExchange = (TestExchange*)sharedFactory.create<TestExchange::Args>(
+    TestExchange* testExchange = (TestExchange*)sharedFactory.create(
         "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
-        { symbols, pairs, balances }
+        new TestExchange::Args({ symbols, pairs, balances })
     );
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
@@ -63,10 +63,10 @@ protected:
     const bool showBalanceQuotedScale = true;
 
     CandleStrategy* candleStrategy = 
-        (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
+        (CandleStrategy*)sharedFactory.create(
             "build/src/shared/trading/strategy",
             "ACandleStrategy", 
-            { *testExchange, strategyParameters }
+            new CandleStrategy::Args({ *testExchange, strategyParameters })
         );
     
     CandleStrategyBacktesterMultiChart backtester = CandleStrategyBacktesterMultiChart(
