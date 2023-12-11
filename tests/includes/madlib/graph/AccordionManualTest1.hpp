@@ -17,7 +17,6 @@ protected:
         Button* btn = (Button*) context;
         AccordionManualTest1* app = (AccordionManualTest1*)btn->getGFX().getContext();
         app->accordion.setSingle(btn->isPushed(), true);
-        DBG("SINGLE: ", app->accordion.isSingle());
     }
 
     // static void oneBtnClick(void* /*context*/, unsigned int, int, int) {

@@ -49,7 +49,13 @@ protected:
         { "MONTE", Balance(10) },
         { "CARLO", Balance(100000) },
     };
-    TestExchange testExchange = TestExchange(pairs, balances);
+    const vector<string> symbols = {
+        "MONTECARLO"
+    };
+    TestExchange* testExchange = (TestExchange*)sharedFactory.create<TestExchange::Args>(
+        "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
+        { symbols, pairs, balances }
+    );
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
     };
@@ -60,15 +66,15 @@ protected:
         (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
             "build/src/shared/trading/strategy",
             "ACandleStrategy", 
-            { testExchange, strategyParameters }
+            { *testExchange, strategyParameters }
         );
     
-    CandleStrategyBacktester backtester = CandleStrategyBacktester(
+    CandleStrategyBacktesterMultiChart backtester = CandleStrategyBacktesterMultiChart(
         gfx, 10, 50, 1000, 340,
         startTime, endTime,
         // multiChartAccordion,
         history, // tradeHistoryChart,
-        testExchange, *candleStrategy, symbol, 
+        *testExchange, *candleStrategy, symbol, 
         // multiChartAccordionFramesHeight,
         showBalanceQuotedScale
     );

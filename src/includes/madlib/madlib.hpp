@@ -860,12 +860,12 @@ namespace madlib {
 
         template<typename A = void*>
         void* create(const string& path, const string& clazz, A context = NULL) {
-            const string soPath = path_normalize(path + "/" + clazz + ".so");
+            const string source = path_normalize(path + "/" + clazz + ".so");
             const string create = "create" + clazz;
             const string destroy = "destroy" + clazz;
 
-            void* handle = dlopen((soPath).c_str(), RTLD_LAZY);
-            if (!handle) throw ERROR("Unable to open: " + soPath + " - " + dlerror());
+            void* handle = dlopen((source).c_str(), RTLD_LAZY);
+            if (!handle) throw ERROR("Unable to open: " + source + " - " + dlerror());
 
             SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
             if (!creator) throw ERROR("Unable to create: " + clazz + " - " + dlerror());

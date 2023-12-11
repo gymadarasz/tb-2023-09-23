@@ -45,7 +45,9 @@ const map<string, Balance> Config::balances = {
 class BitstampHistoryApplication: public FrameApplication {
 protected:
 
-    const ms_t startTime = datetime_to_ms("2014-01-01 00:00:00");
+    static BitstampHistoryApplication* app;
+
+    const ms_t startTime = datetime_to_ms("2023-01-01 00:00:00");
     const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
     const ms_t period = period_to_ms("1m");
     BitstampHistory history = BitstampHistory(Config::symbol, startTime, endTime, period);
@@ -87,7 +89,6 @@ protected:
 
     static void symbolInputTouchHandler(void* context, unsigned int, int, int) {
         Input* symbolInput = (Input*)context;
-        BitstampHistoryApplication* app = (BitstampHistoryApplication*)symbolInput->getParent();
         const string selection = zenity_combo(
             "Select", "Select", "Symbol", 
             app->testExchange->getSymbols()      
@@ -98,14 +99,14 @@ protected:
 
 public:
 
-    BitstampHistoryApplication(): FrameApplication() {}
+    using FrameApplication::FrameApplication;
 
     virtual ~BitstampHistoryApplication() {}
 
     void init() override {
         FrameApplication::init();
         gui.setTitle("Bitstamp History Backtest");
-
+        app = this;
 
         symbolInput.addTouchHandler(symbolInputTouchHandler);
 
@@ -119,6 +120,7 @@ public:
         mainFrame.child(symbolInput);
     }
 };
+BitstampHistoryApplication* BitstampHistoryApplication::app = NULL;
 
 int help(int, const char* argv[]) {
     cout <<
