@@ -430,7 +430,11 @@ namespace madlib::graph {
             // TODO: binary search to get the first index
             shapeIndexFrom = __SIZE_MAX__;
             const size_t shapesLastIndex = shapes.size() - 1;
-            for (shapeIndexTo = 0; shapeIndexTo < shapesLastIndex; shapeIndexTo++) {
+            for (
+                shapeIndexTo = guessFirstShapeIndex(shapesLastIndex);
+                shapeIndexTo < shapesLastIndex;
+                shapeIndexTo++
+            ) {
                 Shape* shape = shapes[shapeIndexTo];
 
                 TimeRange shapeTimeRange = shape->getTimeRange();
@@ -454,6 +458,22 @@ namespace madlib::graph {
             }
             
             return prepared = true;
+        }
+
+        // Recursive binary search with linear interpolation, 
+        // assuming a uniform distribution for evenly distributed time series data.
+        size_t guessFirstShapeIndex(size_t shapesLastIndex) const {
+            double shape0Begin = (double)shapes[0]->getTimeRange().begin;
+            long guess = (long)(
+                (((double)chartBegin - shape0Begin) * (double)shapesLastIndex) / 
+                ((double)shapes[shapesLastIndex]->getTimeRange().end - shape0Begin)
+            ) - 1;
+            if (guess < 1) return 0;
+            size_t guessedFirstShapeIndex = (size_t)guess;
+            if (guessedFirstShapeIndex >= shapesLastIndex) return shapesLastIndex;
+            if (shapes[guessedFirstShapeIndex]->getTimeRange().end >= chartBegin) 
+                return guessFirstShapeIndex(guessedFirstShapeIndex);
+            return guessedFirstShapeIndex;
         }
     };
 
