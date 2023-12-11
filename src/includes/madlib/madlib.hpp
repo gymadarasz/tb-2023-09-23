@@ -37,7 +37,7 @@ namespace madlib {
     #define COLOR_SUCCESS "\033[32m"
     #define COLOR_DEBUG "\033[35m"
     #define COLOR_FILENAME "\033[90m"
-    #define COLOR_DATETIME COLOR_INFO
+    #define COLOR_DATETIME "\033[90m"
 
     #define QUOTEME_1(x) #x
     #define QUOTEME(x) QUOTEME_1(x)
@@ -47,7 +47,7 @@ namespace madlib {
     #define __FILE_LINE__ COLOR_FILENAME + madlib::path_normalize(__FILE__) + ":" + to_string(__LINE__) + COLOR_DEFAULT
     #define __DATE_TIME__ COLOR_DATETIME "[" + madlib::ms_to_datetime() + "] " COLOR_DEFAULT
 
-    #define ERROR(msg) runtime_error(__FILE_LINE__ + " " + string(msg)); 
+    #define ERROR(msg) runtime_error(COLOR_ERROR "Error: " __FILE_LINE__ + " " + string(msg)); 
     #define ERR_UNIMP ERROR("Unimplemented");
     #define ERR_MISSING ERROR("Missing");
     #define ERR_INVALID ERROR("Invalid");
@@ -98,12 +98,28 @@ namespace madlib {
         return result;
     }
 
-    bool str_starts_with(const std::string& prefix, const std::string& str) {
+    const string str_sanitizer_default_allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ";
+    typedef string (*str_sanitizer_func_t)(const string&, const string&);
+
+    string str_sanitize(const string& input, const string& allowed = str_sanitizer_default_allowed_chars) {
+    
+        // Replace disallowed characters with a safe character (e.g., '_')
+        string sanitized = input;
+        for (char& c : sanitized) {
+            if (allowed.find(c) == string::npos) {
+                c = '_'; // Replace with a safe character
+            }
+        }
+
+        return sanitized;
+    }
+
+    bool str_starts_with(const string& prefix, const string& str) {
         return str.length() >= prefix.length() && 
             str.compare(0, prefix.length(), prefix) == 0;
     }
 
-    bool str_ends_with(const std::string& suffix, const std::string& str) {
+    bool str_ends_with(const string& suffix, const string& str) {
         return suffix.length() <= str.length() && 
             str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
     }
@@ -260,12 +276,12 @@ namespace madlib {
     inline void rand_init() {
         if (rand_gen) rand_close();
         random_device rd; 
-        rand_gen = new std::mt19937(rd());
+        rand_gen = new mt19937(rd());
     }
 
     inline void rand_init_seed(unsigned int seed) {
         if (rand_gen) rand_close();
-        rand_gen = new std::mt19937(seed);
+        rand_gen = new mt19937(seed);
     }
 
     inline double randd(double min, double max) {
@@ -445,14 +461,14 @@ namespace madlib {
             // Create the directory and its parent directories (if they don't exist)
             filesystem::create_directories(pathToCreate);
         } catch (const exception& e) {
-            throw ERROR("Error creating directory: " + string(e.what()));
+            throw ERROR("Unable to create folder: " + string(e.what()));
         }
     }
 
     time_t file_get_mtime(const string& filePath) {
         struct stat fileInfo;
         if (stat(filePath.c_str(), &fileInfo) != 0) {
-            throw ERROR("Error getting file information.");
+            throw ERROR("Unable to get file information.");
         }
         
         return fileInfo.st_mtime;
@@ -461,18 +477,18 @@ namespace madlib {
     void file_put_contents(const string& filename, const string& data, bool append = false) {
         // Check if the file is a symlink
         if (filesystem::is_symlink(filename))
-            throw ERROR("Error: Symlink detected. Refusing to open: " + filename);
+            throw ERROR("Symlink detected. Refusing to open: " + filename);
 
         // Check if the file is a special file (e.g., character or block device)
         if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
-            throw ERROR("Error: Special file detected. Refusing to open: " + filename);
+            throw ERROR("Special file detected. Refusing to open: " + filename);
             
         ofstream file;
         // FlawFinder: ignore
         file.open(filename, append ? ios::out | ios::app : ios::out);
 
         if (!file.is_open())
-            throw ERROR("Error: Unable to open file for writing: " + filename);
+            throw ERROR("Unable to open file for writing: " + filename);
 
         file << data;
         file.close();
@@ -481,7 +497,7 @@ namespace madlib {
     string file_get_contents(const string& filename) {
         ifstream file(filename);
         if (!file.is_open()) {
-            throw ERROR("Error: Unable to open file for reading: " + filename);
+            throw ERROR("Unable to open file for reading: " + filename);
         }
 
         string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));
@@ -490,11 +506,19 @@ namespace madlib {
         return content;
     }
 
-    string vector_concat(const vector<string>& strings, const string& separator = " ") {
+    string vector_concat(
+        const vector<string>& strings, 
+        const string& separator = " ", 
+        str_sanitizer_func_t sanitizer = NULL, 
+        const string& allowed_chars = str_sanitizer_default_allowed_chars
+    ) {
         string result;
         
         for (size_t i = 0; i < strings.size(); ++i) {
-            result += strings[i];
+            result += 
+                sanitizer 
+                    ? sanitizer(strings[i], allowed_chars) 
+                    : strings[i];
             
             // Add the separator unless it's the last element
             if (i < strings.size() - 1) result += separator;
@@ -520,7 +544,7 @@ namespace madlib {
     template<typename T>
     vector<T> vector_load(const string &filename) {
         ifstream file(filename, ios::binary);
-        if (!file.is_open()) throw ERROR("Error opening file for reading: " + filename);
+        if (!file.is_open()) throw ERROR("Unable to open file for reading: " + filename);
         T item;
         vector<T> data;
         while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
@@ -534,7 +558,7 @@ namespace madlib {
     template<typename T>
     vector<T>& vector_load(const string &filename, vector<T>& data) {
         ifstream file(filename, ios::binary);
-        if (!file.is_open()) throw ERROR("Error opening file for reading: " + filename);
+        if (!file.is_open()) throw ERROR("Unable to open file for reading: " + filename);
         data.clear();
         T item;
         while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
@@ -629,14 +653,6 @@ namespace madlib {
         return map_key_exists<string, T>(m, key);
     }
 
-    string zenity(const string& args, const string& err = "/dev/null") {
-        return trim(exec("echo $(zenity " + args + " 2>" + err + ")"));
-    }
-
-    string zenity_file_selection(const string& title = "", const string& err = "/dev/null") {
-        return zenity("--file-selection --title '" + title + "'", err);
-    }
-
     typedef map<const string, string> args_t;
     typedef map<const char, string> args_shortcuts_t;
 
@@ -729,6 +745,40 @@ namespace madlib {
         }
 
     } logger;
+
+
+    string zenity(const string& args, const string& err = "/dev/null") {
+        return trim(exec("echo $(zenity " + args + " 2>" + err + ")"));
+    }
+
+    string zenity_combo(
+        const string& title, 
+        const string& text,
+        const string& label, 
+        const vector<string>& items,
+        const string& err = "/dev/null"
+    ) {
+        const string cmd = 
+            str_replace(
+                "--forms "
+                    "--title='{title}' "
+                    "--text='{text}' "
+                    "--add-combo='{label}' "
+                    "--combo-values='{items}' ",
+                {
+                    { "{title}", str_sanitize(title) },
+                    { "{text}", str_sanitize(text) },
+                    { "{label}", str_sanitize(label) },
+                    { "{items}", vector_concat(items, "|", str_sanitize) },
+                }
+            );
+
+        return zenity(cmd, err);
+    }
+
+    string zenity_file_selection(const string& title = "", const string& err = "/dev/null") {
+        return zenity("--file-selection --title '" + title + "'", err);
+    }
 
     template <typename T>
     class Factory {

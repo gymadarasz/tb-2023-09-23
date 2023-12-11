@@ -11,33 +11,54 @@ using namespace madlib::trading;
 using namespace madlib::trading::bitstamp;
 
 
+
+
+struct Config {
+    static const string symbol;
+
+    static constexpr const double feeMarketPc = 0.04; //0.4;
+    static constexpr const double feeLimitPc = 0.03;
+    static const Fees fees;
+    static const vector<string> symbols;
+    static const map<string, Pair> pairs;
+    static const map<string, Balance> balances;
+    static TestExchange testExchange;
+};
+const string Config::symbol = "BTCUSD";
+const Fees Config::fees = Fees(
+    Config::feeMarketPc, Config::feeMarketPc, 
+    Config::feeLimitPc, Config::feeLimitPc
+);
+const vector<string> Config::symbols = {
+    "BTCUSD", "ETHUSD", "DOGEUSD"
+};
+const map<string, Pair> Config::pairs = {
+    { Config::symbol, Pair("BTC", "USD", Config::fees, 38000) },
+};
+const map<string, Balance> Config::balances = {
+    { "BTC", Balance(1) },
+    { "USD", Balance(10000) },
+};
+TestExchange Config::testExchange = TestExchange(Config::symbols, pairs, balances);
+
+
+
 class BitstampHistoryApplication: public FrameApplication {
 protected:
 
-    const string symbol = "BTCUSD";
-    const ms_t startTime = datetime_to_ms("2021-09-25 00:50:00");
+    const ms_t startTime = datetime_to_ms("2014-01-01 00:00:00");
     const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
     const ms_t period = period_to_ms("1m");
-    BitstampHistory history = BitstampHistory(symbol, startTime, endTime, period);
+    BitstampHistory history = BitstampHistory(Config::symbol, startTime, endTime, period);
 
-    const double feeMarketPc = 0.04; //0.4;
-    const double feeLimitPc = 0.03;
-    const Fees fees = Fees(feeMarketPc, feeMarketPc, feeLimitPc, feeLimitPc);
-    const map<string, Pair> pairs = {
-        { symbol, Pair("BTC", "USD", fees, 38000) },
-    };
-    const map<string, Balance> balances = {
-        { "BTC", Balance(1) },
-        { "USD", Balance(10000) },
-    };
-    TestExchange testExchange = TestExchange(pairs, balances);
+
     map<string, Strategy::Parameter> strategyParameters = {
-        {"symbol", Strategy::Parameter(symbol)},
+        {"symbol", Strategy::Parameter(Config::symbol)},
     };
     
     CandleStrategy* strategy = (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
         "build/src/shared/trading/strategy", "ACandleStrategy", 
-        { testExchange, strategyParameters}
+        { Config::testExchange, strategyParameters}
     );
 
     const int multiChartAccordionLeft = 10;
@@ -46,26 +67,51 @@ protected:
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
     
-    CandleStrategyBacktester tester = CandleStrategyBacktester(
+    CandleStrategyBacktesterMultiChart tester = CandleStrategyBacktesterMultiChart(
         gfx, 
         multiChartAccordionLeft, 
         multiChartAccordionTop, 
         multiChartAccordionWidth, 
         multiChartAccordionFramesHeight,
         startTime, endTime,
-        history, testExchange, *strategy, symbol
+        history, Config::testExchange, *strategy, Config::symbol
     );
 
+    Label symbolLabel = Label(gfx, 10, 10, 90, 20, "Symbol:");
+    Input symbolInput = Input(gfx, 100, 10, 100, 20, Config::symbol);
+
+
+    static void symbolInputTouchHandler(void* context, unsigned int, int, int) {
+        Input* symbolInput = (Input*)context;
+        const string selection = zenity_combo(
+            "Select", "Select", "Symbol", 
+            Config::testExchange.getSymbols()      
+        );
+        if (!selection.empty()) symbolInput->setText(selection);
+        symbolInput->draw();
+    }
+
 public:
+
+    BitstampHistoryApplication(): FrameApplication() {}
+
+    virtual ~BitstampHistoryApplication() {}
+
     void init() override {
         FrameApplication::init();
         gui.setTitle("Bitstamp History Backtest");
+
+
+        symbolInput.addTouchHandler(symbolInputTouchHandler);
 
         tester.backtest();
 
         // ----------------
 
         mainFrame.child(tester);
+
+        mainFrame.child(symbolLabel);
+        mainFrame.child(symbolInput);
     }
 };
 
@@ -125,20 +171,21 @@ int download_bitstamp_csv(int argc, const char* argv[]) {
 
 int bitstamp_history(int, const char* []) {
     // TODO: pass arguments
-    (new BitstampHistoryApplication)->run();
+    delete (new BitstampHistoryApplication)->run();
     return 0;
 }
 
 int main(int argc, const char* argv[])
 {
-    LOG("Start...");
-    // return (TradingApplication(argc, argv)).getResult();
-    try {
+    LOG("Main thread started.");
+    try { 
         if (argv[1] && !strcmp(argv[1], "test-command")) return test(argc, argv);
         if (argv[1] && !strcmp(argv[1], "download-bitstamp-csv")) return download_bitstamp_csv(argc, argv);
         if (argv[1] && !strcmp(argv[1], "bitstamp-history")) return bitstamp_history(argc, argv);
     } catch (exception &e) {
-        cout << "Error: " << e.what() << endl;
+        const string errmsg = "Exception in main thread: " + string(e.what());
+        LOG(errmsg);
+        cout << errmsg << endl;
         cout << "Use '$ " << argv[0] << " help' for more info..." << endl;
         return 1;
     }

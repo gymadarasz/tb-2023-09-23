@@ -14,18 +14,6 @@ using namespace madlib::graph;
 
 namespace madlib::trading {
 
-    struct Theme: public madlib::graph::Theme {
-        static const Color defaultTradeHistoryChartPriceColor;
-        static const Color defaultTradeHistoryChartVolumeColor;
-        static const Color defaultTradeLabelBuyColor;
-        static const Color defaultTradeLabelSellColor;
-        static const Color defaultTradeLabelErrorColor;
-    };
-    const Color Theme::defaultTradeHistoryChartPriceColor = orange;
-    const Color Theme::defaultTradeHistoryChartVolumeColor = darkGray;
-    const Color Theme::defaultTradeLabelBuyColor = red;
-    const Color Theme::defaultTradeLabelSellColor = green;
-    const Color Theme::defaultTradeLabelErrorColor = gray;
 
     ms_t period_to_ms(const string &period) {
         map<const string, ms_t> periods = {
@@ -439,6 +427,12 @@ namespace madlib::trading {
 
         Exchange() {}
 
+        virtual ~Exchange() {}
+
+        virtual vector<string> getSymbols() const {
+            throw ERR_UNIMP;
+        }
+
         Pair& getPairAt(const string& symbol) {
             if (pairs.count(symbol) == 1) return pairs.at(symbol);
             throw ERROR("No symbol: " + symbol);
@@ -506,6 +500,8 @@ namespace madlib::trading {
     class TestExchange: public Exchange {
     protected:
 
+        vector<string> symbols;
+
         ms_t currentTime = 0;
         double currentPrice = 0;
 
@@ -530,11 +526,19 @@ namespace madlib::trading {
 
     public:
         TestExchange(
+            const vector<string>& symbols,
             const map<string, Pair>& pairs,
             const map<string, Balance>& balances
-        ): Exchange() {
+        ): 
+            Exchange(), 
+            symbols(symbols)
+        {
             this->pairs = pairs;
             this->balances = balances;
+        }
+
+        virtual vector<string> getSymbols() const override {
+            return symbols;
         }
 
         void setCurrentTime(ms_t currentTime) {
@@ -874,7 +878,7 @@ namespace madlib::trading {
         }
     };
 
-    class CandleStrategyBacktester: public MultiChartAccordion {
+    class CandleStrategyBacktesterMultiChart: public MultiChartAccordion {
     protected:
         const TradeHistory& history;
         TestExchange& testExchange;
@@ -902,7 +906,7 @@ namespace madlib::trading {
         
     public:
 
-        CandleStrategyBacktester(
+        CandleStrategyBacktesterMultiChart(
             GFX& gfx, int left, int top, int width,
             const int multiChartAccordionFramesHeight,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
@@ -962,7 +966,7 @@ namespace madlib::trading {
             openAll(false);
         }
 
-        virtual ~CandleStrategyBacktester() {}
+        virtual ~CandleStrategyBacktesterMultiChart() {}
 
         void backtest() {
 
@@ -980,11 +984,11 @@ namespace madlib::trading {
             
             size_t n = candles.size();
             ms_t t = now();
-            LOG("Backtest starts of ", n, " candles...");
+            LOG("Backtest starts with ", n, " candles...");
             for (const Candle& candle: candles) {
                 if (now() - t > second) {
                     t = now();
-                    LOG("Backtest in progress: ", n, " candles left...");
+                    LOG("Backtest in progress: ", n, " candles remaining...");
                 }
                 n--; 
 

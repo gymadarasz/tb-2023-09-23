@@ -574,9 +574,24 @@ namespace madlib::graph {
 
         void project() override {
             size_t step = (shapeIndexTo - shapeIndexFrom) / (size_t)chartWidth;
+            double prevClose = 0;
             if (step < 1) step = 1;
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i += step) {
                 const CandleShape* candle = (const CandleShape*)shapes[i];
+
+                if (step > 1) { 
+                    double candleClose = candle->close();
+                    if (!prevClose) prevClose = candleClose;
+                    Color color = prevClose > candleClose ? colorDown : colorUp;
+                    timeRangeArea.brush(color);
+                    int x = translateX(candle->end());
+                    int y1 = chartHeight - translateY(prevClose);
+                    int y2 = chartHeight - translateY(candleClose);
+                    timeRangeArea.vLine(x, y1, y2);
+                    prevClose = candleClose;
+                    continue;
+                }
+
                 Color color = candle->open() > candle->close() ? colorDown : colorUp;
                 timeRangeArea.brush(color);
 
@@ -584,13 +599,12 @@ namespace madlib::graph {
                 int wick = translateX(mid);
                 int high = translateY(candle->high());
                 int low = translateY(candle->low());
+
                 timeRangeArea.vLine(
                     wick, 
                     chartHeight - high, 
                     chartHeight - low
                 );
-
-                if (step > 1) continue;
                 
                 int left = translateX(candle->begin());
                 int right = translateX(candle->end());

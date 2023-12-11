@@ -289,6 +289,8 @@ namespace madlib::graph {
         static const Color defaultAreaBorderColor = gray;
         static const Color defaultAreaTextColor = black;
 
+        static const Color defaultInputBackgroundColor = white;
+
         static const Border defaultFrameBorder = PUSHED;
         static const Color defaultFrameBackgroundColor = gray;
 
@@ -304,7 +306,6 @@ namespace madlib::graph {
         static const Border defaultLabelBorder = NONE;
 
         static const int defaultBarThickness = 20;
-
 
         static const int defaultTimeRangeAreMarginTop = 0;
         static const int defaultTimeRangeAreMarginLeft = 150;
@@ -336,13 +337,28 @@ namespace madlib::graph {
         static constexpr double zoomOutRatio = .8;
         static constexpr double zoomRatioMax = INFINITY;
         static constexpr double zoomRatioMin = 1;
+        
+        // ==== trading ====
+        static const Color defaultTradeHistoryChartPriceColor;
+        static const Color defaultTradeHistoryChartVolumeColor;
+        static const Color defaultTradeLabelBuyColor;
+        static const Color defaultTradeLabelSellColor;
+        static const Color defaultTradeLabelErrorColor;
     };
     const char* Theme::defaultWindowTitle = "graph";
-    const char* Theme::defaultWindowFont = "10x20";
+    const char* Theme::defaultWindowFont = "7x14";
     const Color Theme::defaultChartDotScaleContext = darkGray;
     const Color Theme::defaultChartLineScaleContext = darkGray;
     const Color Theme::defaultChartBoxScaleContext = darkGray;
     const Color Theme::defaultChartFilledScaleContext = darkGray;
+
+    // ==== trading ====
+    const Color Theme::defaultTradeHistoryChartPriceColor = orange;
+    const Color Theme::defaultTradeHistoryChartVolumeColor = darkGray;
+    const Color Theme::defaultTradeLabelBuyColor = red;
+    const Color Theme::defaultTradeLabelSellColor = green;
+    const Color Theme::defaultTradeLabelErrorColor = gray;
+
 
     class EventHandler {
     public:
@@ -622,10 +638,34 @@ namespace madlib::graph {
             fontInfo = XLoadQueryFont(display, font);
             if (!fontInfo)
             {
-                LOG("Unable to load font: %s\n", font);
+                LOG("Unable to load font: " + string(font) 
+                    // Note: uncomment the following line to see awailable fonts:
+                    // + "\nAvailable fonts:\n\t" + vector_concat(getAvailableFonts(), "\n\t")
+                );
                 throw ERROR("Unable to load font.\n");
             }
             XSetFont(display, gc, fontInfo->fid);
+        }
+        
+        vector<string> getAvailableFonts() {
+            vector<string> fonts;
+
+            int nFonts;
+            char** fontNames = XListFonts(display, "*", 1000, &nFonts);
+
+            if (fontNames == NULL) {
+                fprintf(stderr, "Unable to list fonts.\n");
+                return fonts;
+            }
+
+            for (int i = 0; i < nFonts; i++) {
+                fonts.push_back(fontNames[i]);
+            }
+
+            XFreeFontNames(fontNames);
+            XCloseDisplay(display);
+
+            return fonts;
         }
         
         void writeText(int x, int y, const string& text) {
@@ -1142,7 +1182,7 @@ namespace madlib::graph {
         GFX& gfx;
 
         int left, top;
-        const string text;
+        string text;
         const Align textAlign;
         Border border;
         Color backgroundColor;
@@ -1380,6 +1420,10 @@ namespace madlib::graph {
 
         string getText() const {
             return text;
+        }
+
+        void setText(const string& text) {
+            this->text = text;
         }
 
         Align getTextAlign() const {
@@ -1783,6 +1827,30 @@ namespace madlib::graph {
         {}
     };
 
+    class Input: public Area {
+    public:
+        Input(
+            GFX& gfx, 
+            int left, int top, 
+            int width, int height,
+            const string& text = "",
+            // TODO: add style (can we use style structure for each element so pass only one argument per element?)
+            void* eventContext = NULL
+        ): 
+            Area(
+                gfx, left, top, width, height, 
+                true, true, text, LEFT, PUSHED, 
+                Theme::defaultInputBackgroundColor, 
+                0, Theme::defaultAreaTextMargin, 
+                Theme::defaultAreaBorderColor, 
+                Theme::defaultAreaTextColor, 
+                eventContext
+            )
+        {}
+
+        virtual ~Input() {}
+    };
+
 
     enum Direction { HORIZONTAL, VERTICAL };
 
@@ -2112,7 +2180,7 @@ namespace madlib::graph {
                 containerIndex(containerIndex)
             {
                 // sticky = container.getAccordion().isSticky();
-                addTouchHandler(toggleHandler);
+                addTouchHandler(toggleHandler); // TODO: unify handler names
             }
 
             virtual ~Toggler() {}
@@ -2390,7 +2458,7 @@ namespace madlib::graph {
                 gui.loop();
             } catch (exception& e) {
                 LOG("Exception: " + string(e.what()));
-                throw ERROR("Application error, see more at log...");
+                throw ERROR("Application error");
             }
             return this;
         }
