@@ -22,7 +22,6 @@ struct Config {
     static const vector<string> symbols;
     static const map<string, Pair> pairs;
     static const map<string, Balance> balances;
-    static TestExchange testExchange;
 };
 const string Config::symbol = "BTCUSD";
 const Fees Config::fees = Fees(
@@ -39,7 +38,7 @@ const map<string, Balance> Config::balances = {
     { "BTC", Balance(1) },
     { "USD", Balance(10000) },
 };
-TestExchange Config::testExchange = TestExchange(Config::symbols, pairs, balances);
+// TestExchange Config::testExchange = TestExchange(Config::symbols, pairs, balances);
 
 
 
@@ -55,10 +54,15 @@ protected:
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(Config::symbol)},
     };
+
+    TestExchange* testExchange = (TestExchange*)sharedFactory.create<TestExchange::Args>(
+        "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
+        { Config::symbols, Config::pairs, Config::balances }
+    );
     
     CandleStrategy* strategy = (CandleStrategy*)sharedFactory.create<CandleStrategy::Args>(
         "build/src/shared/trading/strategy", "ACandleStrategy", 
-        { Config::testExchange, strategyParameters}
+        { *testExchange, strategyParameters}
     );
 
     const int multiChartAccordionLeft = 10;
@@ -74,7 +78,7 @@ protected:
         multiChartAccordionWidth, 
         multiChartAccordionFramesHeight,
         startTime, endTime,
-        history, Config::testExchange, *strategy, Config::symbol
+        history, *testExchange, *strategy, Config::symbol
     );
 
     Label symbolLabel = Label(gfx, 10, 10, 90, 20, "Symbol:");
@@ -83,9 +87,10 @@ protected:
 
     static void symbolInputTouchHandler(void* context, unsigned int, int, int) {
         Input* symbolInput = (Input*)context;
+        BitstampHistoryApplication* app = (BitstampHistoryApplication*)symbolInput->getParent();
         const string selection = zenity_combo(
             "Select", "Select", "Symbol", 
-            Config::testExchange.getSymbols()      
+            app->testExchange->getSymbols()      
         );
         if (!selection.empty()) symbolInput->setText(selection);
         symbolInput->draw();

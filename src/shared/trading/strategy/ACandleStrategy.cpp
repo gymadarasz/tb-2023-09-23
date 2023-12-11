@@ -11,11 +11,7 @@ namespace madlib::trading::strategy {
         double exitAt = 0;
     public:
 
-        explicit ACandleStrategy(void* context): CandleStrategy(
-            ((Args*)context)->exchange,
-            ((Args*)context)->parameters,
-            ((Args*)context)->labelSeries
-        ) {}
+        using CandleStrategy::CandleStrategy;
 
         virtual ~ACandleStrategy() {}
 

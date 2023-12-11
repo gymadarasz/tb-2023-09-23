@@ -525,16 +525,18 @@ namespace madlib::trading {
         }
 
     public:
-        TestExchange(
-            const vector<string>& symbols,
-            const map<string, Pair>& pairs,
-            const map<string, Balance>& balances
-        ): 
+        struct Args {
+            const vector<string>& symbols;
+            const map<string, Pair>& pairs;
+            const map<string, Balance>& balances;
+        };
+        
+        explicit TestExchange(void* context): 
             Exchange(), 
-            symbols(symbols)
+            symbols(((Args*)context)->symbols)
         {
-            this->pairs = pairs;
-            this->balances = balances;
+            pairs = ((Args*)context)->pairs;
+            balances = ((Args*)context)->balances;
         }
 
         virtual vector<string> getSymbols() const override {
@@ -664,15 +666,16 @@ namespace madlib::trading {
         LabelSeries* labelSeries;
 
     public:
+        struct Args {
+            Exchange& exchange;
+            const map<string, Parameter>& parameters;
+            LabelSeries* labelSeries = NULL;
+        };
 
-        Strategy(
-            Exchange& exchange,
-            const map<string, Parameter>& parameters,
-            LabelSeries* labelSeries = NULL
-        ):
-            exchange(exchange),
-            parameters(parameters),
-            labelSeries(labelSeries)
+        explicit Strategy(void* context):
+            exchange(((Args*)context)->exchange),
+            parameters(((Args*)context)->parameters),
+            labelSeries(((Args*)context)->labelSeries)
         {}
         
         virtual ~Strategy() {}
@@ -746,11 +749,6 @@ namespace madlib::trading {
 
     class CandleStrategy: public Strategy {
     public:
-        struct Args {
-            Exchange& exchange;
-            const map<string, Parameter>& parameters;
-            LabelSeries* labelSeries = NULL;
-        };
         
         using Strategy::Strategy;
 
