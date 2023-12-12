@@ -72,8 +72,10 @@ protected:
     //     new Strategy::Args({ *testExchange, strategyParameters})
     // );
 
+    const int settingsTop = 50;
+
     const int multiChartAccordionLeft = 10;
-    const int multiChartAccordionTop = 50;
+    const int multiChartAccordionTop = settingsTop + 50;
     const int multiChartAccordionWidth = 1000;
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
@@ -123,11 +125,15 @@ protected:
         app->candleStrategyBacktesterMultiChart->draw();
     }
 
+    void createHistorySelect() {
+        // TODO
+    }
+
     void createExchangeSelect() {
         DBG("creating exchange select...");
         vector<string> values = getExchangeClasses();
         string defval = values.size() == 1 ? values[0] : "";
-        exchangeSelect = new Select(mainFrame, 10, 10, "Exchange", values, defval);
+        exchangeSelect = new Select(mainFrame, 10, settingsTop, "Exchange", values, defval);
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
         if (!defval.empty()) loadExchange();
@@ -135,7 +141,7 @@ protected:
 
     void createSymbolSelect() {
         DBG("creating symbol select...");
-        symbolSelect = new Select(mainFrame, 300, 10, "Symbol", {}, "", 80);
+        symbolSelect = new Select(mainFrame, 300, settingsTop, "Symbol", {}, "", 80);
         Input* symbolInput = symbolSelect->getInput();
         symbolInput->addTouchHandler(onSymbolSelected);
         loadSymbols();
@@ -145,14 +151,14 @@ protected:
         DBG("creating strategy select...");
         vector<string> values = getStrategyClasses();
         string defval = values.size() == 1 ? values[0] : "";
-        candleStrategySelect = new Select(mainFrame, 500, 10, "Strategy", values, defval);
+        candleStrategySelect = new Select(mainFrame, 500, settingsTop, "Strategy", values, defval);
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategyInput->addTouchHandler(onCandleStrategySelected);
         if (!defval.empty()) loadStrategy();
     }
 
     void createStartButton() {
-        startButton = new Button(gfx, 800, 10, 100, 20, "Start");
+        startButton = new Button(gfx, 800, settingsTop, 100, 20, "Start");
         mainFrame.child(*startButton);
         startButton->addTouchHandler(onStartPushed);
     }
@@ -232,6 +238,7 @@ public:
         gui.setTitle("Bitstamp History Backtest");
         app = this;
 
+        createHistorySelect();
         createExchangeSelect();
         createSymbolSelect();
         createStrategySelect();

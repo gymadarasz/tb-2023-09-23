@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <poll.h>
 
 using namespace std;
 using namespace chrono;
@@ -478,10 +479,23 @@ namespace madlib {
         return pipe;
     }
 
+    bool pipe_is_closed(FILE* pipe) {
+        // Get the file descriptor associated with the FILE*
+        pollfd pfd = { fileno(pipe), POLLOUT, 0 };
+
+        if (poll(&pfd, 1, 1) < 0) {
+            return false;
+        }
+
+        return pfd.revents & POLLERR;
+    }
+
     bool pipe_send(FILE* pipe, const string& updates) {
         // Check writing to the pipe failed (possibly closed by user), return false
-        if (fprintf(pipe, "%s\n", updates.c_str()) < 0) return false;
-        if (fflush(pipe) != 0) return false;
+        if (pipe_is_closed(pipe)) return false;
+        fprintf(pipe, "%s\n", updates.c_str());
+        if (pipe_is_closed(pipe)) return false;
+        fflush(pipe);
         return true;
 
     }
@@ -846,7 +860,7 @@ namespace madlib {
     }
 
     int zenity_progress_close(FILE* pipe) {
-        zenity_progress_update(pipe, 100);
+        if (!zenity_progress_update(pipe, 100)) return 0;
         return pipe_close(pipe);
     }
 

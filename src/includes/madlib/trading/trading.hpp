@@ -966,8 +966,10 @@ namespace madlib::trading {
         Strategy& candleStrategy;
         const string& symbol;
         const bool showBalanceQuotedScale;
-        const bool showProgress;
         const bool logProgress; // TODO: progress callbacks 
+        const bool showProgress;
+        const ms_t showProgressAfterMs;
+        const ms_t showProgressFreqMs;
 
         // **** tradeHistoryChart ****
         
@@ -1012,7 +1014,7 @@ namespace madlib::trading {
 
             if (that->showProgress || that->logProgress) {
                 that->progressState.candlesSize = that->progressState.candlesRemaining = that->history.getCandles().size();
-                that->progressState.progressUpdatedAt = now();
+                that->progressState.progressUpdatedAt = now() + that->showProgressAfterMs;
                 if (that->logProgress) 
                     LOG("Backtest starts with ", that->progressState.candlesRemaining, " candles...");
                 if (that->showProgress) 
@@ -1030,15 +1032,18 @@ namespace madlib::trading {
             // show zenity and log
 
             if (that->showProgress || that->logProgress) {
-                if (now() - that->progressState.progressUpdatedAt > second) {
+                if (now() - that->progressState.progressUpdatedAt > that->showProgressFreqMs) {
                     that->progressState.progressUpdatedAt = now();
                     int pc100 = (int)((1 - ((double)that->progressState.candlesRemaining / (double)that->progressState.candlesSize)) * 100);
                     if (that->logProgress) LOG("Backtest in progress: ", that->progressState.candlesRemaining, " candles remaining... (" + to_string(pc100) + "% done)");
                     if (that->showProgress) {
-                        if (!zenity_progress_update(that->progressState.progressZenityPipe, pc100)) 
+                        if (
+                            !zenity_progress_update(that->progressState.progressZenityPipe, pc100) ||
+                            !zenity_progress_update(that->progressState.progressZenityPipe, "Remaining candles: " + to_string(that->progressState.candlesRemaining))
+                        ) {
+                            LOG("User canceled.");
                             return false;
-                        if (!zenity_progress_update(that->progressState.progressZenityPipe, "Remaining: " + to_string(that->progressState.candlesRemaining))) 
-                            return false;
+                        }
                     }
                 }
                 that->progressState.candlesRemaining--; 
@@ -1099,8 +1104,10 @@ namespace madlib::trading {
             const string& symbol,
             const bool showBalanceQuotedScale = true, // TODO
 
-            const bool showProgress = true,
             const bool logProgress = true, // TODO
+            const bool showProgress = true,
+            const ms_t showProgressAfterMs = 5 * second,
+            const ms_t showProgressFreqMs = second,
 
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
@@ -1118,8 +1125,10 @@ namespace madlib::trading {
             candleStrategy(candleStrategy),
             symbol(symbol),
             showBalanceQuotedScale(showBalanceQuotedScale),
+            logProgress(logProgress),
             showProgress(showProgress),
-            logProgress(logProgress)
+            showProgressAfterMs(showProgressAfterMs),
+            showProgressFreqMs(showProgressFreqMs)
         {
 
             backtester = new CandleStrategyBacktester(
