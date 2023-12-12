@@ -1854,6 +1854,74 @@ namespace madlib::graph {
     };
 
 
+    class Select {
+    protected:
+
+        const string title = "Select";
+        const string prompt = "Select"; // TODO
+
+        
+        Label* label = NULL;
+        Input* input = NULL;
+        vector<string> values;
+        string defval;
+
+        static void onSelectTouchHandler(void* context, unsigned int, int, int) {
+            Area* that = (Area*)context;
+            Select* select = (Select*)that->getEventContext();
+            string selection = zenity_combo(
+                select->title,
+                select->prompt,
+                select->label->getText(),
+                select->values
+            );
+            if (selection.empty()) select->input->setText(select->defval);
+            else select->input->setText(selection);
+            select->input->draw();
+        }
+
+    public:
+        Select(
+            Area& parent,
+            int left, int top, 
+            const string& text, 
+            const vector<string>& values = {},
+            const string& defval = "",
+            const int inputWidth = 200,
+            const int labelWidth = 80, // TODO
+            const int height = 20 // TODO
+        ):
+            values(values), 
+            defval(defval)
+        {
+            GFX& gfx = parent.getGFX();
+            label = new Label(gfx, left, top, labelWidth, height, text);
+            input = new Input(gfx, left + labelWidth, top, inputWidth, height, defval);
+            parent.child(*label);
+            parent.child(*input);
+            input->setEventContext(this);
+            input->addTouchHandler(onSelectTouchHandler);
+        }
+
+        virtual ~Select() {
+            delete label;
+            delete input;
+        }
+
+        Input* getInput() {
+            return input;
+        }
+
+        void setDefval(const string& defval) {
+            this->defval = defval;
+        }
+
+        void setValues(const vector<string>& values) {
+            this->values = values;
+        }
+    };
+
+
     enum Direction { HORIZONTAL, VERTICAL };
 
     class SlideBar: public Area {
