@@ -170,6 +170,7 @@ protected:
         app->exchangeSelect->setDefval(app->exchangeSelect->getInput()->getText());
         app->loadExchange();
         app->loadSymbols();
+        app->symbolSelect->getInput()->draw();
     }
 
     static void onSymbolSelected(void*, unsigned int, int, int) {
@@ -189,8 +190,7 @@ protected:
         exchangeSelect = new Select(mainFrame, 10, 10, "Exchange", values, defval);
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
-        if (!exchangeInput->getText().empty())
-            loadExchange();        
+        loadExchange();        
     }
 
     void createSymbolSelect() {
@@ -198,9 +198,7 @@ protected:
         symbolSelect = new Select(mainFrame, 410, 10, "Symbol");
         Input* symbolInput = symbolSelect->getInput();
         symbolInput->addTouchHandler(onSymbolSelected);
-        Input* exchangeInput = exchangeSelect->getInput();
-        if (!exchangeInput->getText().empty())
-            loadSymbols();
+        loadSymbols();
     }
 
     void createStartButton() {
@@ -225,8 +223,7 @@ protected:
     void loadSymbols() {
         DBG("loading symbols...");        
         // If no exchange selected clear symbol selection
-        Input* exchangeInput = exchangeSelect->getInput();
-        if (exchangeInput->getText().empty()) {
+        if (!testExchange) {
             DBG("no exchange, remove symbols...");
             symbolSelect->setValues({});
             symbolSelect->setDefval("");
