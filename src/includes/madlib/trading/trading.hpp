@@ -883,8 +883,7 @@ namespace madlib::trading {
         public:
             
             void* context = NULL;
-            ms_t currentTime = 0;
-            Pair* pair = NULL;
+            const Candle* candle = NULL;
 
             ProgressContext() {}
 
@@ -894,8 +893,6 @@ namespace madlib::trading {
         typedef bool (*ProgressCallback)(ProgressContext&);
 
     protected:
-
-        ProgressContext* progressContext;
 
         void* context;
         const TradeHistory& history;
@@ -926,42 +923,34 @@ namespace madlib::trading {
             onProgressStart(onProgressStart),
             onProgressStep(onProgressStep),
             onProgressFinish(onProgressFinish)
-        {
-            progressContext = new ProgressContext();
-        }
+        {}
 
-        virtual ~Backtester() {
-            delete progressContext;
-        }
+        virtual ~Backtester() {}
 
         bool backtest() {
 
             // **** backtest ****
 
-            progressContext->context = context;
+            ProgressContext progressContext;
+            progressContext.context = context;
 
-            if (onProgressStart && !onProgressStart(*progressContext)) return false;
+            if (onProgressStart && !onProgressStart(progressContext)) return false;
 
             vector<Candle> candles = history.getCandles();
-            progressContext->pair = &testExchange.getPairAt(symbol);
+            Pair& pair = testExchange.getPairAt(symbol);
             for (const Candle& candle: candles) {
+                progressContext.candle = &candle;
 
                 testExchange.setCurrentTime(candle.getEnd());
-                progressContext->pair->setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
-            
-                progressContext->currentTime = candle.getEnd();
+                pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
 
-                if (progressContext->currentTime == 1388534519999) {
-                    cout << "FDFSf";
-                }
-
-                if (onProgressStep && !onProgressStep(*progressContext)) 
+                if (onProgressStep && !onProgressStep(progressContext)) 
                     return false;
                 
                 candleStrategy.onCandleClose(candle);
             }
 
-            if (onProgressFinish) return onProgressFinish(*progressContext);
+            if (onProgressFinish) return onProgressFinish(progressContext);
 
             return true;
         }
@@ -998,40 +987,39 @@ namespace madlib::trading {
         PointSeries* balanceBaseFullScale = NULL;
         PointSeries* balanceBaseScale = NULL;
 
-        class ProgressState {
-        public:
-            size_t n = 0, nmax = 0;
-            ms_t t = 0;
-            FILE* progress = NULL;
+        struct ProgressState {
+            // show log and zenity
+            size_t candlesRemaining = 0, candlesSize = 0;
+            ms_t progressUpdatedAt = 0;
+            FILE* progressZenityPipe = NULL;
+
+            // show results on charts:
             vector<Shape*>* balanceQuotedAtCloses = NULL;
             vector<Shape*>* balanceQuotedFullAtCloses = NULL;
             vector<Shape*>* balanceBaseAtCloses = NULL;
             vector<Shape*>* balanceBaseFullAtCloses = NULL;
-        
-            ProgressState() {}
-
-            virtual ~ProgressState() {}
-        };
-
-        ProgressState* progressState = NULL;
+            Pair* pair = NULL;
+        } progressState;
         
         static bool onProgressStart(Backtester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
 
             that->clearCharts();
-            that->progressState->balanceQuotedAtCloses = &that->balanceQuotedScale->getShapes();
-            that->progressState->balanceQuotedFullAtCloses = &that->balanceQuotedFullScale->getShapes();
-            that->progressState->balanceBaseAtCloses = &that->balanceBaseScale->getShapes();
-            that->progressState->balanceBaseFullAtCloses = &that->balanceBaseFullScale->getShapes();
+            that->progressState.balanceQuotedAtCloses = &that->balanceQuotedScale->getShapes();
+            that->progressState.balanceQuotedFullAtCloses = &that->balanceQuotedFullScale->getShapes();
+            that->progressState.balanceBaseAtCloses = &that->balanceBaseScale->getShapes();
+            that->progressState.balanceBaseFullAtCloses = &that->balanceBaseFullScale->getShapes();
 
             if (that->showProgress || that->logProgress) {
-                that->progressState->nmax = that->progressState->n = that->history.getCandles().size();
-                that->progressState->t = now();
+                that->progressState.candlesSize = that->progressState.candlesRemaining = that->history.getCandles().size();
+                that->progressState.progressUpdatedAt = now();
                 if (that->logProgress) 
-                    LOG("Backtest starts with ", that->progressState->n, " candles...");
+                    LOG("Backtest starts with ", that->progressState.candlesRemaining, " candles...");
                 if (that->showProgress) 
-                    that->progressState->progress = zenity_progress("Backtest");
+                    that->progressState.progressZenityPipe = zenity_progress("Backtest");
             }
+
+            that->progressState.pair = &that->testExchange.getPairAt(that->symbol);
 
             return true;
         }
@@ -1039,46 +1027,50 @@ namespace madlib::trading {
         static bool onProgressStep(Backtester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
 
+            // show zenity and log
+
             if (that->showProgress || that->logProgress) {
-                if (now() - that->progressState->t > second) {
-                    that->progressState->t = now();
-                    int pc100 = (int)((1 - ((double)that->progressState->n / (double)that->progressState->nmax)) * 100);
-                    if (that->logProgress) LOG("Backtest in progress: ", that->progressState->n, " candles remaining... (" + to_string(pc100) + "% done)");
+                if (now() - that->progressState.progressUpdatedAt > second) {
+                    that->progressState.progressUpdatedAt = now();
+                    int pc100 = (int)((1 - ((double)that->progressState.candlesRemaining / (double)that->progressState.candlesSize)) * 100);
+                    if (that->logProgress) LOG("Backtest in progress: ", that->progressState.candlesRemaining, " candles remaining... (" + to_string(pc100) + "% done)");
                     if (that->showProgress) {
-                        if (!zenity_progress_update(that->progressState->progress, pc100)) 
+                        if (!zenity_progress_update(that->progressState.progressZenityPipe, pc100)) 
                             return false;
-                        if (!zenity_progress_update(that->progressState->progress, "Remaining: " + to_string(that->progressState->n))) 
+                        if (!zenity_progress_update(that->progressState.progressZenityPipe, "Remaining: " + to_string(that->progressState.candlesRemaining))) 
                             return false;
                     }
                 }
-                that->progressState->n--; 
+                that->progressState.candlesRemaining--; 
             }
             
+            // collect data to charts
+
+            ms_t currentTime = progressContext.candle->getEnd();
+            Pair* pair = that->progressState.pair;
+
             // **** balanceQuotedChart ****
 
-            ms_t currentTime = progressContext.currentTime;
-            Pair* pair = progressContext.pair;
-
             if (that->showBalanceQuotedScale) {
-                that->progressState->balanceQuotedAtCloses->push_back(that->balanceQuotedChart->createPointShape(
+                that->progressState.balanceQuotedAtCloses->push_back(that->balanceQuotedChart->createPointShape(
                     currentTime,
                     that->testExchange.getBalanceQuoted(*pair)
                 ));
             }
             
-            that->progressState->balanceQuotedFullAtCloses->push_back(that->balanceQuotedChart->createPointShape(
+            that->progressState.balanceQuotedFullAtCloses->push_back(that->balanceQuotedChart->createPointShape(
                 currentTime,
                 that->testExchange.getBalanceQuotedFull(*pair)
             ));
 
             // **** balanceBaseChart ****
         
-            that->progressState->balanceBaseAtCloses->push_back(that->balanceBaseChart->createPointShape(
+            that->progressState.balanceBaseAtCloses->push_back(that->balanceBaseChart->createPointShape(
                 currentTime,
                 that->testExchange.getBalanceBase(*pair)
             ));
             
-            that->progressState->balanceBaseFullAtCloses->push_back(that->balanceBaseChart->createPointShape(
+            that->progressState.balanceBaseFullAtCloses->push_back(that->balanceBaseChart->createPointShape(
                 currentTime,
                 that->testExchange.getBalanceBaseFull(*pair)
             ));
@@ -1090,7 +1082,7 @@ namespace madlib::trading {
             CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
 
             if (that->logProgress) LOG("Backtest done.");
-            if (that->showProgress) zenity_progress_close(that->progressState->progress);
+            if (that->showProgress) zenity_progress_close(that->progressState.progressZenityPipe);
 
             return true;
         }
@@ -1135,8 +1127,6 @@ namespace madlib::trading {
                 onProgressStart, onProgressStep, onProgressFinish
             );
 
-            progressState = new ProgressState();
-
             // **** tradeHistoryChart ****
 
             createChartFrame(
@@ -1171,7 +1161,6 @@ namespace madlib::trading {
 
         virtual ~CandleStrategyBacktesterMultiChart() {
             delete backtester;
-            delete progressState;
         }
 
         // TODO: separated backtester class that can be reused from command line
