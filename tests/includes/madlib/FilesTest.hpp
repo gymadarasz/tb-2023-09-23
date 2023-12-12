@@ -90,6 +90,18 @@ public:
         assert(path_extract("") == "");
     }
 
+    static void testFiles_extractFilename() {
+        // Test extracting filename with extension
+        assert(filename_extract("path/to/file.txt") == "file.txt");
+        assert(filename_extract("file.txt") == "file.txt");
+        assert(filename_extract("") == "");
+
+        // Test extracting filename without extension
+        assert(filename_extract("path/to/file.txt", true) == "file");
+        assert(filename_extract("file.txt", true) == "file");
+        assert(filename_extract("", true) == "");
+    }
+
     static void testFiles_exists() {
         // Create some test files in the "testfiles" folder
         createTestFiles();

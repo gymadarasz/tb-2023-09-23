@@ -795,7 +795,7 @@ namespace madlib::graph {
     Display* GFX::display = NULL;
 
 
-    class Zoomable {
+    class Zoomable { // TODO: remove Zoomable, it's now YAGNI
     protected:
         const int defaultZoomCenterX = 0, defaultZoomCenterY = 0; // TODO
         const double defaultZoomRatioX = 1.0, defaultZoomRatioY = 1.0;

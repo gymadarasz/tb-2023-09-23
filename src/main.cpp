@@ -11,9 +11,78 @@ using namespace madlib::trading;
 using namespace madlib::trading::bitstamp;
 
 
+class Select {
+protected:
+
+    const string title = "Select";
+    const string prompt = "Select"; // TODO
+
+    
+    Label* label = NULL;
+    Input* input = NULL;
+    vector<string> values;
+    string defval;
+
+    static void onSelectTouchHandler(void* context, unsigned int, int, int) {
+        Area* that = (Area*)context;
+        Select* select = (Select*)that->getEventContext();
+        string selection = zenity_combo(
+            select->title,
+            select->prompt,
+            select->label->getText(),
+            select->values
+        );
+        if (selection.empty()) select->input->setText(select->defval);
+        else select->input->setText(selection);
+        select->input->draw();
+    }
+
+public:
+    Select(
+        Area& parent,
+        int left, int top, 
+        const string& text, 
+        const vector<string>& values = {},
+        const string& defval = "",
+        const int labelWidth = 100, // TODO
+        const int inputWidth = 200,
+        const int height = 20 // TODO
+    ):
+        values(values), 
+        defval(defval)
+    {
+        GFX& gfx = parent.getGFX();
+        label = new Label(gfx, left, top, labelWidth, height, text);
+        input = new Input(gfx, left + labelWidth, top, inputWidth, height, defval);
+        parent.child(*label);
+        parent.child(*input);
+        input->setEventContext(this);
+        input->addTouchHandler(onSelectTouchHandler);
+    }
+
+    virtual ~Select() {
+        delete label;
+        delete input;
+    }
+
+    Input* getInput() {
+        return input;
+    }
+
+    void setDefval(const string& defval) {
+        this->defval = defval;
+    }
+
+    void setValues(const vector<string>& values) {
+        this->values = values;
+    }
+};
+
 
 
 struct Config {
+    static const string testExchangePath;
+
     static const string symbol;
 
     static constexpr const double feeMarketPc = 0.04; //0.4;
@@ -23,6 +92,7 @@ struct Config {
     static const map<string, Pair> pairs;
     static const map<string, Balance> balances;
 };
+const string Config::testExchangePath = "build/src/shared/trading/exchange/test";
 const string Config::symbol = "BTCUSD";
 const Fees Config::fees = Fees(
     Config::feeMarketPc, Config::feeMarketPc, 
@@ -47,7 +117,7 @@ protected:
 
     static BitstampHistoryApplication* app;
 
-    const ms_t startTime = datetime_to_ms("2023-01-01 00:00:00");
+    const ms_t startTime = datetime_to_ms("2014-01-01 00:00:00");
     const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
     const ms_t period = period_to_ms("1m");
     BitstampHistory history = BitstampHistory(Config::symbol, startTime, endTime, period);
@@ -83,41 +153,124 @@ protected:
         history, *testExchange, *strategy, Config::symbol
     );
 
-    Label symbolLabel = Label(gfx, 10, 10, 90, 20, "Symbol:");
-    Input symbolInput = Input(gfx, 100, 10, 100, 20, Config::symbol);
+    Select* exchangeSelect = NULL;
+    Select* symbolSelect = NULL;
+    Button* startButton = NULL;
 
+    vector<string> getExchangeClasses() {
+        DBG("reading exchange files...");
+        vector<string> exchanges = file_find_by_extension(Config::testExchangePath, ".so");
+        for (string& exchange: exchanges)
+            exchange = filename_extract(exchange, true);
+        return exchanges;
+    }
 
-    static void symbolInputTouchHandler(void* context, unsigned int, int, int) {
-        Input* symbolInput = (Input*)context;
-        const string selection = zenity_combo(
-            "Select", "Select", "Symbol", 
-            app->testExchange->getSymbols()      
+    static void onExchangeSelected(void*, unsigned int, int, int) {
+        DBG("exchange selected.");
+        app->exchangeSelect->setDefval(app->exchangeSelect->getInput()->getText());
+        app->loadExchange();
+        app->loadSymbols();
+    }
+
+    static void onSymbolSelected(void*, unsigned int, int, int) {
+        DBG("symbol selected.");
+        app->symbolSelect->setDefval(app->symbolSelect->getInput()->getText());
+    }
+
+    static void onStartPushed(void*, unsigned int, int, int) {
+        app->tester.backtest();
+        app->tester.draw();
+    }
+
+    void createExchangeSelect() {
+        DBG("creating exchange select...");
+        vector<string> values = getExchangeClasses();
+        string defval = values.size() == 1 ? values[0] : "";
+        exchangeSelect = new Select(mainFrame, 10, 10, "Exchange", values, defval);
+        Input* exchangeInput = exchangeSelect->getInput();
+        exchangeInput->addTouchHandler(onExchangeSelected);
+        if (!exchangeInput->getText().empty())
+            loadExchange();        
+    }
+
+    void createSymbolSelect() {
+        DBG("creating symbol select...");
+        symbolSelect = new Select(mainFrame, 410, 10, "Symbol");
+        Input* symbolInput = symbolSelect->getInput();
+        symbolInput->addTouchHandler(onSymbolSelected);
+        Input* exchangeInput = exchangeSelect->getInput();
+        if (!exchangeInput->getText().empty())
+            loadSymbols();
+    }
+
+    void createStartButton() {
+        startButton = new Button(gfx, 800, 10, 100, 20, "Start");
+        mainFrame.child(*startButton);
+        startButton->addTouchHandler(onStartPushed);
+    }
+
+    void loadExchange() {
+        DBG("loading exchange...");
+        // load the selected exchange lib
+        Input* exchangeInput = exchangeSelect->getInput();
+        testExchange = (TestExchange*)sharedFactory.create(
+            Config::testExchangePath, exchangeInput->getText(), 
+            new TestExchange::Args(
+                // TODO: args from user with a settings form...??
+                { Config::symbols, Config::pairs, Config::balances }
+            )
         );
-        if (!selection.empty()) symbolInput->setText(selection);
-        symbolInput->draw();
+    }
+
+    void loadSymbols() {
+        DBG("loading symbols...");        
+        // If no exchange selected clear symbol selection
+        Input* exchangeInput = exchangeSelect->getInput();
+        if (exchangeInput->getText().empty()) {
+            DBG("no exchange, remove symbols...");
+            symbolSelect->setValues({});
+            symbolSelect->setDefval("");
+            symbolSelect->getInput()->setText("");
+            return;
+        }
+
+        DBG("updating symbols select...");
+        vector<string> symbols = testExchange->getSymbols();
+        const string defaultSymbol = symbols.size() > 0 ? symbols[0] : "";
+        symbolSelect->setValues(symbols);
+        symbolSelect->setDefval(defaultSymbol);
+        symbolSelect->getInput()->setText(defaultSymbol);
     }
 
 public:
 
     using FrameApplication::FrameApplication;
 
-    virtual ~BitstampHistoryApplication() {}
+    virtual ~BitstampHistoryApplication() {
+        delete exchangeSelect;
+        delete symbolSelect;
+        delete startButton;
+    }
 
     void init() override {
         FrameApplication::init();
         gui.setTitle("Bitstamp History Backtest");
         app = this;
 
-        symbolInput.addTouchHandler(symbolInputTouchHandler);
+        createExchangeSelect();
+        createSymbolSelect();
+        createStartButton();
 
-        tester.backtest();
+        // symbolInput.addTouchHandler(symbolInputTouchHandler);
+
+        // tester.backtest();
 
         // ----------------
 
         mainFrame.child(tester);
 
-        mainFrame.child(symbolLabel);
-        mainFrame.child(symbolInput);
+        // mainFrame.child(symbolLabel);
+        // mainFrame.child(symbolInput);
     }
 };
 BitstampHistoryApplication* BitstampHistoryApplication::app = NULL;

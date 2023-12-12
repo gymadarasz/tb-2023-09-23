@@ -80,6 +80,7 @@ int main() {
     Tester::run(FilesTest::testFiles_replaceExtension);
     Tester::run(FilesTest::testFiles_normalizePath);
     Tester::run(FilesTest::testFiles_extractPath);
+    Tester::run(FilesTest::testFiles_extractFilename);
     Tester::run(FilesTest::testFiles_exists);
     Tester::run(FilesTest::testFiles_createPath);
     Tester::run(FilesTest::testFiles_getLastModificationTime);

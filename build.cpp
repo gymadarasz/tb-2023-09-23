@@ -34,7 +34,7 @@ public:
 
     // NOTE: keep it the highest (-O3)
     // NOTE: add -Wsuggest-final-methods only if no overrides in dynamic libraries
-    const string optimizationFlag = " -O3";
+    const string optimizationFlag = " -O0";
 
     // const string flagsShared = "-shared -fPIC";
     const string cppExtension = ".cpp";

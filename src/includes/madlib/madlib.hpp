@@ -255,6 +255,33 @@ namespace madlib {
         return normalized;
     }
 
+    string filename_extract(const string& filepath, bool withoutExtension = false) {
+        size_t lastSlashPos = filepath.find_last_of('/');
+        size_t lastDotPos = filepath.find_last_of('.');
+
+        if (lastSlashPos != string::npos) {
+            // If there's a directory separator, return the substring after the last slash.
+            string filename = filepath.substr(lastSlashPos + 1);
+
+            // Check if withoutExtension is true and there's a dot in the entire path.
+            if (withoutExtension && lastDotPos != string::npos && lastDotPos > lastSlashPos) {
+                // Return the substring before the last dot.
+                return filename.substr(0, lastDotPos - (lastSlashPos + 1));
+            }
+
+            return filename;
+        }
+
+        // If there's no directory separator, return the whole path as the filename.
+        if (withoutExtension && lastDotPos != string::npos) {
+            // Return the substring before the last dot.
+            return filepath.substr(0, lastDotPos);
+        }
+
+        return filepath;
+    }
+
+
     string path_extract(const string& filepath) {
         size_t lastSlashPos = filepath.find_last_of('/');
         if (lastSlashPos != string::npos) return filepath.substr(0, lastSlashPos);
@@ -345,6 +372,81 @@ namespace madlib {
         return tokens;
     }
 
+    void file_put_contents(const string& filename, const string& data, bool append = false) {
+        // Check if the file is a symlink
+        if (filesystem::is_symlink(filename))
+            throw ERROR("Symlink detected. Refusing to open: " + filename);
+
+        // Check if the file is a special file (e.g., character or block device)
+        if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
+            throw ERROR("Special file detected. Refusing to open: " + filename);
+            
+        ofstream file;
+        // FlawFinder: ignore
+        file.open(filename, append ? ios::out | ios::app : ios::out);
+
+        if (!file.is_open())
+            throw ERROR("Unable to open file for writing: " + filename);
+
+        file << data;
+        file.close();
+    }
+
+    class Shared {
+    public:
+        struct Args {
+            void* context = nullptr;
+        };
+        explicit Shared(void* = nullptr) {}
+    };
+
+    class Printer: public Shared {
+    public:
+        using Shared::Shared;
+        virtual void print(const string& output) = 0;
+        void println(const string& output) {
+            print(output + "\n");
+        }
+        virtual ~Printer() {}
+    };
+
+    class Log: public Printer {
+    protected:
+        string filename;
+
+    public:
+        Log(const string& f = "app.log"): Printer(), filename(f) {}
+
+        Log& date() {
+            write(__DATE_TIME__);
+            return *this;
+        }
+
+        // Variadic template for writeln method
+        template <typename... Args>
+        Log& writeln(Args... args) {
+            // Concatenate all arguments into a single string
+            string message = concat(args...);
+            write(message + "\n");
+            return *this;
+        }
+
+        // Variadic template for writeln method
+        template <typename... Args>
+        Log& write(Args... args) {
+            // Concatenate all arguments into a single string
+            string message = concat(args...);
+            print(message);
+            
+            return *this;
+        }
+
+        void print(const string& message) override final {
+            file_put_contents(filename, message, true);
+        }
+
+    } logger;
+
     string exec(const string& command, bool captureOutput = true, bool showOutput = false) {
         array<char, 128> buffer;
         string result;
@@ -367,6 +469,26 @@ namespace madlib {
         pclose(pipe);
 
         return result;
+    }
+
+    FILE* pipe_exec(const string& command) {
+        // Execute the command in the background
+        FILE* pipe = popen(command.c_str(), "w");
+        if (!pipe) throw ERROR("Failed to open pipe for command execution.");
+        return pipe;
+    }
+
+    bool pipe_send(FILE* pipe, const string& updates) {
+        // Check writing to the pipe failed (possibly closed by user), return false
+        if (fprintf(pipe, "%s\n", updates.c_str()) < 0) return false;
+        if (fflush(pipe) != 0) return false;
+        return true;
+
+    }
+
+    int pipe_close(FILE* pipe) {
+        // Close the pipe
+        return pclose(pipe);
     }
 
     bool is_numeric(const string& str) {
@@ -472,26 +594,6 @@ namespace madlib {
         }
         
         return fileInfo.st_mtime;
-    }
-
-    void file_put_contents(const string& filename, const string& data, bool append = false) {
-        // Check if the file is a symlink
-        if (filesystem::is_symlink(filename))
-            throw ERROR("Symlink detected. Refusing to open: " + filename);
-
-        // Check if the file is a special file (e.g., character or block device)
-        if (filesystem::is_character_file(filename) || filesystem::is_block_file(filename))
-            throw ERROR("Special file detected. Refusing to open: " + filename);
-            
-        ofstream file;
-        // FlawFinder: ignore
-        file.open(filename, append ? ios::out | ios::app : ios::out);
-
-        if (!file.is_open())
-            throw ERROR("Unable to open file for writing: " + filename);
-
-        file << data;
-        file.close();
     }
 
     string file_get_contents(const string& filename) {
@@ -698,62 +800,6 @@ namespace madlib {
         return args_get(args, key, &defstr);
     }
 
-    class Shared {
-    public:
-        struct Args {
-            void* context = nullptr;
-        };
-        explicit Shared(void* = nullptr) {}
-    };
-
-    class Printer: public Shared {
-    public:
-        using Shared::Shared;
-        virtual void print(const string& output) = 0;
-        void println(const string& output) {
-            print(output + "\n");
-        }
-        virtual ~Printer() {}
-    };
-
-    class Log: public Printer {
-    protected:
-        string filename;
-
-    public:
-        Log(const string& f = "app.log"): Printer(), filename(f) {}
-
-        Log& date() {
-            write(__DATE_TIME__);
-            return *this;
-        }
-
-        // Variadic template for writeln method
-        template <typename... Args>
-        Log& writeln(Args... args) {
-            // Concatenate all arguments into a single string
-            string message = concat(args...);
-            write(message + "\n");
-            return *this;
-        }
-
-        // Variadic template for writeln method
-        template <typename... Args>
-        Log& write(Args... args) {
-            // Concatenate all arguments into a single string
-            string message = concat(args...);
-            print(message);
-            
-            return *this;
-        }
-
-        void print(const string& message) override final {
-            file_put_contents(filename, message, true);
-        }
-
-    } logger;
-
-
     string zenity(const string& args, const string& err = "/dev/null") {
         return trim(exec("echo $(zenity " + args + " 2>" + err + ")"));
     }
@@ -784,7 +830,24 @@ namespace madlib {
     }
 
     string zenity_file_selection(const string& title = "", const string& err = "/dev/null") {
-        return zenity("--file-selection --title '" + title + "'", err);
+        return zenity("--file-selection --title=\"" + str_sanitize(title) + "\"", err);
+    }
+
+    FILE* zenity_progress(const string& title) {
+        return pipe_exec("zenity --progress --auto-close --title=\"" + str_sanitize(title) + "\"");
+    }
+
+    bool zenity_progress_update(FILE* pipe, int percent) {
+        return pipe_send(pipe, to_string(percent));
+    }
+
+    bool zenity_progress_update(FILE* pipe, const string& status) {
+        return pipe_send(pipe, "# " + status);
+    }
+
+    int zenity_progress_close(FILE* pipe) {
+        zenity_progress_update(pipe, 100);
+        return pipe_close(pipe);
     }
 
     template <typename T>

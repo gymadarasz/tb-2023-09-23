@@ -876,13 +876,109 @@ namespace madlib::trading {
         }
     };
 
+    class Backtester {
+    public:
+
+        class ProgressContext {
+        public:
+            
+            void* context = NULL;
+            ms_t currentTime = 0;
+            Pair* pair = NULL;
+
+            ProgressContext() {}
+
+            virtual ~ProgressContext() {}
+        };
+
+        typedef bool (*ProgressCallback)(ProgressContext&);
+
+    protected:
+
+        ProgressContext* progressContext;
+
+        void* context;
+        const TradeHistory& history;
+        TestExchange& testExchange;
+        CandleStrategy& candleStrategy;
+        const string& symbol;
+        ProgressCallback onProgressStart = NULL;
+        ProgressCallback onProgressStep = NULL;
+        ProgressCallback onProgressFinish = NULL;
+        
+    public:
+
+        Backtester(
+            void* context,
+            const TradeHistory& history,
+            TestExchange& testExchange,
+            CandleStrategy& candleStrategy,
+            const string& symbol,
+            const ProgressCallback onProgressStart = NULL,
+            const ProgressCallback onProgressStep = NULL,
+            const ProgressCallback onProgressFinish = NULL
+        ):
+            context(context),
+            history(history),
+            testExchange(testExchange),
+            candleStrategy(candleStrategy),
+            symbol(symbol),
+            onProgressStart(onProgressStart),
+            onProgressStep(onProgressStep),
+            onProgressFinish(onProgressFinish)
+        {
+            progressContext = new ProgressContext();
+        }
+
+        virtual ~Backtester() {
+            delete progressContext;
+        }
+
+        bool backtest() {
+
+            // **** backtest ****
+
+            progressContext->context = context;
+
+            if (onProgressStart && !onProgressStart(*progressContext)) return false;
+
+            vector<Candle> candles = history.getCandles();
+            progressContext->pair = &testExchange.getPairAt(symbol);
+            for (const Candle& candle: candles) {
+
+                testExchange.setCurrentTime(candle.getEnd());
+                progressContext->pair->setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
+            
+                progressContext->currentTime = candle.getEnd();
+
+                if (progressContext->currentTime == 1388534519999) {
+                    cout << "FDFSf";
+                }
+
+                if (onProgressStep && !onProgressStep(*progressContext)) 
+                    return false;
+                
+                candleStrategy.onCandleClose(candle);
+            }
+
+            if (onProgressFinish) return onProgressFinish(*progressContext);
+
+            return true;
+        }
+    };
+
     class CandleStrategyBacktesterMultiChart: public MultiChartAccordion {
     protected:
+
+        Backtester* backtester;
+
         const TradeHistory& history;
         TestExchange& testExchange;
         CandleStrategy& candleStrategy;
         const string& symbol;
         const bool showBalanceQuotedScale;
+        const bool showProgress;
+        const bool logProgress; // TODO: progress callbacks 
 
         // **** tradeHistoryChart ****
         
@@ -901,7 +997,104 @@ namespace madlib::trading {
         Chart* balanceBaseChart = NULL;
         PointSeries* balanceBaseFullScale = NULL;
         PointSeries* balanceBaseScale = NULL;
+
+        class ProgressState {
+        public:
+            size_t n = 0, nmax = 0;
+            ms_t t = 0;
+            FILE* progress = NULL;
+            vector<Shape*>* balanceQuotedAtCloses = NULL;
+            vector<Shape*>* balanceQuotedFullAtCloses = NULL;
+            vector<Shape*>* balanceBaseAtCloses = NULL;
+            vector<Shape*>* balanceBaseFullAtCloses = NULL;
         
+            ProgressState() {}
+
+            virtual ~ProgressState() {}
+        };
+
+        ProgressState* progressState = NULL;
+        
+        static bool onProgressStart(Backtester::ProgressContext& progressContext) {
+            CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
+
+            that->clearCharts();
+            that->progressState->balanceQuotedAtCloses = &that->balanceQuotedScale->getShapes();
+            that->progressState->balanceQuotedFullAtCloses = &that->balanceQuotedFullScale->getShapes();
+            that->progressState->balanceBaseAtCloses = &that->balanceBaseScale->getShapes();
+            that->progressState->balanceBaseFullAtCloses = &that->balanceBaseFullScale->getShapes();
+
+            if (that->showProgress || that->logProgress) {
+                that->progressState->nmax = that->progressState->n = that->history.getCandles().size();
+                that->progressState->t = now();
+                if (that->logProgress) 
+                    LOG("Backtest starts with ", that->progressState->n, " candles...");
+                if (that->showProgress) 
+                    that->progressState->progress = zenity_progress("Backtest");
+            }
+
+            return true;
+        }
+        
+        static bool onProgressStep(Backtester::ProgressContext& progressContext) {
+            CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
+
+            if (that->showProgress || that->logProgress) {
+                if (now() - that->progressState->t > second) {
+                    that->progressState->t = now();
+                    int pc100 = (int)((1 - ((double)that->progressState->n / (double)that->progressState->nmax)) * 100);
+                    if (that->logProgress) LOG("Backtest in progress: ", that->progressState->n, " candles remaining... (" + to_string(pc100) + "% done)");
+                    if (that->showProgress) {
+                        if (!zenity_progress_update(that->progressState->progress, pc100)) 
+                            return false;
+                        if (!zenity_progress_update(that->progressState->progress, "Remaining: " + to_string(that->progressState->n))) 
+                            return false;
+                    }
+                }
+                that->progressState->n--; 
+            }
+            
+            // **** balanceQuotedChart ****
+
+            ms_t currentTime = progressContext.currentTime;
+            Pair* pair = progressContext.pair;
+
+            if (that->showBalanceQuotedScale) {
+                that->progressState->balanceQuotedAtCloses->push_back(that->balanceQuotedChart->createPointShape(
+                    currentTime,
+                    that->testExchange.getBalanceQuoted(*pair)
+                ));
+            }
+            
+            that->progressState->balanceQuotedFullAtCloses->push_back(that->balanceQuotedChart->createPointShape(
+                currentTime,
+                that->testExchange.getBalanceQuotedFull(*pair)
+            ));
+
+            // **** balanceBaseChart ****
+        
+            that->progressState->balanceBaseAtCloses->push_back(that->balanceBaseChart->createPointShape(
+                currentTime,
+                that->testExchange.getBalanceBase(*pair)
+            ));
+            
+            that->progressState->balanceBaseFullAtCloses->push_back(that->balanceBaseChart->createPointShape(
+                currentTime,
+                that->testExchange.getBalanceBaseFull(*pair)
+            ));
+
+            return true;
+        }
+        
+        static bool onProgressFinish(Backtester::ProgressContext& progressContext) {
+            CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
+
+            if (that->logProgress) LOG("Backtest done.");
+            if (that->showProgress) zenity_progress_close(that->progressState->progress);
+
+            return true;
+        }
+
     public:
 
         CandleStrategyBacktesterMultiChart(
@@ -913,6 +1106,9 @@ namespace madlib::trading {
             CandleStrategy& candleStrategy,
             const string& symbol,
             const bool showBalanceQuotedScale = true, // TODO
+
+            const bool showProgress = true,
+            const bool logProgress = true, // TODO
 
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
@@ -929,11 +1125,20 @@ namespace madlib::trading {
             testExchange(testExchange),
             candleStrategy(candleStrategy),
             symbol(symbol),
-            showBalanceQuotedScale(showBalanceQuotedScale)
+            showBalanceQuotedScale(showBalanceQuotedScale),
+            showProgress(showProgress),
+            logProgress(logProgress)
         {
+
+            backtester = new Backtester(
+                this, history, testExchange, candleStrategy, symbol, 
+                onProgressStart, onProgressStep, onProgressFinish
+            );
+
+            progressState = new ProgressState();
+
             // **** tradeHistoryChart ****
 
-            // TODO: BUG: after zoom(out then in..) the charts drag-scroll top limit doesnt stops - lines (shapes) can scrolled out totally at the bottom
             createChartFrame(
                 "History", tradeHistoryChart, multiChartAccordionFramesHeight
             );
@@ -964,68 +1169,18 @@ namespace madlib::trading {
             openAll(false);
         }
 
-        virtual ~CandleStrategyBacktesterMultiChart() {}
+        virtual ~CandleStrategyBacktesterMultiChart() {
+            delete backtester;
+            delete progressState;
+        }
 
+        // TODO: separated backtester class that can be reused from command line
         void backtest() {
 
-            // **** backtest ****
-
-            clearCharts();
-
-            vector<Candle> candles = history.getCandles();
-            vector<Shape*>& balanceQuotedAtCloses = balanceQuotedScale->getShapes();
-            vector<Shape*>& balanceQuotedFullAtCloses = balanceQuotedFullScale->getShapes();
-            vector<Shape*>& balanceBaseAtCloses = balanceBaseScale->getShapes();
-            vector<Shape*>& balanceBaseFullAtCloses = balanceBaseFullScale->getShapes();
-
-            Pair& pair = testExchange.getPairAt(symbol);
-            
-            size_t n = candles.size();
-            ms_t t = now();
-            LOG("Backtest starts with ", n, " candles...");
-            for (const Candle& candle: candles) {
-                if (now() - t > second) {
-                    t = now();
-                    LOG("Backtest in progress: ", n, " candles remaining...");
-                }
-                n--; 
-
-                testExchange.setCurrentTime(candle.getEnd());
-                pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
-            
-                ms_t currentTime = candle.getEnd();
-
-                // **** balanceQuotedChart ****
-
-                if (showBalanceQuotedScale) {
-                    balanceQuotedAtCloses.push_back(balanceQuotedChart->createPointShape(
-                        currentTime,
-                        testExchange.getBalanceQuoted(pair)
-                    ));
-                }
-                
-                balanceQuotedFullAtCloses.push_back(balanceQuotedChart->createPointShape(
-                    currentTime,
-                    testExchange.getBalanceQuotedFull(pair)
-                ));
-
-                // **** balanceBaseChart ****
-            
-                balanceBaseAtCloses.push_back(balanceBaseChart->createPointShape(
-                    currentTime,
-                    testExchange.getBalanceBase(pair)
-                ));
-                
-                balanceBaseFullAtCloses.push_back(balanceBaseChart->createPointShape(
-                    currentTime,
-                    testExchange.getBalanceBaseFull(pair)
-                ));
-
-                // **** backtest ****
-                
-                candleStrategy.onCandleClose(candle);
+            if (!backtester->backtest()) {
+                LOG("Backtest failed"); // TODO
             }
-            LOG("Backtest done.");
+
         }
     };
 
