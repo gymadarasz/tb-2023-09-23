@@ -876,7 +876,7 @@ namespace madlib::trading {
         }
     };
 
-    class Backtester {
+    class CandleStrategyBacktester {
     public:
 
         class ProgressContext {
@@ -905,7 +905,7 @@ namespace madlib::trading {
         
     public:
 
-        Backtester(
+        CandleStrategyBacktester(
             void* context,
             const TradeHistory& history,
             TestExchange& testExchange,
@@ -925,7 +925,7 @@ namespace madlib::trading {
             onProgressFinish(onProgressFinish)
         {}
 
-        virtual ~Backtester() {}
+        virtual ~CandleStrategyBacktester() {}
 
         bool backtest() {
 
@@ -959,11 +959,11 @@ namespace madlib::trading {
     class CandleStrategyBacktesterMultiChart: public MultiChartAccordion {
     protected:
 
-        Backtester* backtester;
+        CandleStrategyBacktester* backtester;
 
         const TradeHistory& history;
         TestExchange& testExchange;
-        CandleStrategy& candleStrategy;
+        Strategy& candleStrategy;
         const string& symbol;
         const bool showBalanceQuotedScale;
         const bool showProgress;
@@ -1001,7 +1001,7 @@ namespace madlib::trading {
             Pair* pair = NULL;
         } progressState;
         
-        static bool onProgressStart(Backtester::ProgressContext& progressContext) {
+        static bool onProgressStart(CandleStrategyBacktester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
 
             that->clearCharts();
@@ -1024,7 +1024,7 @@ namespace madlib::trading {
             return true;
         }
         
-        static bool onProgressStep(Backtester::ProgressContext& progressContext) {
+        static bool onProgressStep(CandleStrategyBacktester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
 
             // show zenity and log
@@ -1078,7 +1078,7 @@ namespace madlib::trading {
             return true;
         }
         
-        static bool onProgressFinish(Backtester::ProgressContext& progressContext) {
+        static bool onProgressFinish(CandleStrategyBacktester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
 
             if (that->logProgress) LOG("Backtest done.");
@@ -1122,7 +1122,7 @@ namespace madlib::trading {
             logProgress(logProgress)
         {
 
-            backtester = new Backtester(
+            backtester = new CandleStrategyBacktester(
                 this, history, testExchange, candleStrategy, symbol, 
                 onProgressStart, onProgressStep, onProgressFinish
             );

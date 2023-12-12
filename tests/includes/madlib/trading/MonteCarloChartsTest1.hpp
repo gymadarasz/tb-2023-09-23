@@ -64,7 +64,7 @@ protected:
 
     CandleStrategy* candleStrategy = 
         (CandleStrategy*)sharedFactory.create(
-            "build/src/shared/trading/strategy",
+            "build/src/shared/trading/strategy/candles",
             "ACandleStrategy", 
             new CandleStrategy::Args({ *testExchange, strategyParameters })
         );

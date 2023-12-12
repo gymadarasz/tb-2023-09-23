@@ -44,8 +44,8 @@ public:
         const string& text, 
         const vector<string>& values = {},
         const string& defval = "",
-        const int labelWidth = 100, // TODO
         const int inputWidth = 200,
+        const int labelWidth = 80, // TODO
         const int height = 20 // TODO
     ):
         values(values), 
@@ -82,6 +82,7 @@ public:
 
 struct Config {
     static const string testExchangePath;
+    static const string candleStrategyPath;
 
     static const string symbol;
 
@@ -93,6 +94,7 @@ struct Config {
     static const map<string, Balance> balances;
 };
 const string Config::testExchangePath = "build/src/shared/trading/exchange/test";
+const string Config::candleStrategyPath = "build/src/shared/trading/strategy/candles";
 const string Config::symbol = "BTCUSD";
 const Fees Config::fees = Fees(
     Config::feeMarketPc, Config::feeMarketPc, 
@@ -127,15 +129,17 @@ protected:
         {"symbol", Strategy::Parameter(Config::symbol)},
     };
 
-    TestExchange* testExchange = (TestExchange*)sharedFactory.create(
-        "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
-        new TestExchange::Args({ Config::symbols, Config::pairs, Config::balances })
-    );
+    TestExchange* testExchange = NULL;
+    // (TestExchange*)sharedFactory.create(
+    //     "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
+    //     new TestExchange::Args({ Config::symbols, Config::pairs, Config::balances })
+    // );
     
-    CandleStrategy* strategy = (CandleStrategy*)sharedFactory.create(
-        "build/src/shared/trading/strategy", "ACandleStrategy", 
-        new CandleStrategy::Args({ *testExchange, strategyParameters})
-    );
+    CandleStrategy* candleStrategy = NULL;
+    // (Strategy*)sharedFactory.create(
+    //     "build/src/shared/trading/strategy", "ACandleStrategy", 
+    //     new Strategy::Args({ *testExchange, strategyParameters})
+    // );
 
     const int multiChartAccordionLeft = 10;
     const int multiChartAccordionTop = 50;
@@ -143,26 +147,25 @@ protected:
     const int multiChartAccordionFramesHeight = 340;
     const bool showBalanceQuotedScale = true;
     
-    CandleStrategyBacktesterMultiChart tester = CandleStrategyBacktesterMultiChart(
-        gfx, 
-        multiChartAccordionLeft, 
-        multiChartAccordionTop, 
-        multiChartAccordionWidth, 
-        multiChartAccordionFramesHeight,
-        startTime, endTime,
-        history, *testExchange, *strategy, Config::symbol
-    );
 
     Select* exchangeSelect = NULL;
     Select* symbolSelect = NULL;
+    Select* candleStrategySelect = NULL;
     Button* startButton = NULL;
+    CandleStrategyBacktesterMultiChart* candleStrategyBacktesterMultiChart = NULL;
 
     vector<string> getExchangeClasses() {
         DBG("reading exchange files...");
-        vector<string> exchanges = file_find_by_extension(Config::testExchangePath, ".so");
-        for (string& exchange: exchanges)
-            exchange = filename_extract(exchange, true);
-        return exchanges;
+        vector<string> exchangeFiles = file_find_by_extension(Config::testExchangePath, ".so");
+        for (string& exchangeFile: exchangeFiles) exchangeFile = filename_extract(exchangeFile, true);
+        return exchangeFiles;
+    }
+
+    vector<string> getStrategyClasses() {
+        DBG("reading strategy files...");
+        vector<string> strategyFiles = file_find_by_extension(Config::candleStrategyPath, ".so");
+        for (string& strategyFile: strategyFiles) strategyFile = filename_extract(strategyFile, true);
+        return strategyFiles;
     }
 
     static void onExchangeSelected(void*, unsigned int, int, int) {
@@ -178,9 +181,15 @@ protected:
         app->symbolSelect->setDefval(app->symbolSelect->getInput()->getText());
     }
 
+    static void onCandleStrategySelected(void*, unsigned int, int, int) {
+        DBG("strategy selected.");
+        app->candleStrategySelect->setDefval(app->candleStrategySelect->getInput()->getText());
+        app->loadStrategy();
+    }
+
     static void onStartPushed(void*, unsigned int, int, int) {
-        app->tester.backtest();
-        app->tester.draw();
+        app->candleStrategyBacktesterMultiChart->backtest();
+        app->candleStrategyBacktesterMultiChart->draw();
     }
 
     void createExchangeSelect() {
@@ -190,21 +199,44 @@ protected:
         exchangeSelect = new Select(mainFrame, 10, 10, "Exchange", values, defval);
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
-        loadExchange();        
+        if (!defval.empty()) loadExchange();
     }
 
     void createSymbolSelect() {
         DBG("creating symbol select...");
-        symbolSelect = new Select(mainFrame, 410, 10, "Symbol");
+        symbolSelect = new Select(mainFrame, 300, 10, "Symbol", {}, "", 80);
         Input* symbolInput = symbolSelect->getInput();
         symbolInput->addTouchHandler(onSymbolSelected);
         loadSymbols();
+    }
+
+    void createStrategySelect() {
+        DBG("creating strategy select...");
+        vector<string> values = getStrategyClasses();
+        string defval = values.size() == 1 ? values[0] : "";
+        candleStrategySelect = new Select(mainFrame, 500, 10, "Strategy", values, defval);
+        Input* candleStrategyInput = candleStrategySelect->getInput();
+        candleStrategyInput->addTouchHandler(onCandleStrategySelected);
+        if (!defval.empty()) loadStrategy();
     }
 
     void createStartButton() {
         startButton = new Button(gfx, 800, 10, 100, 20, "Start");
         mainFrame.child(*startButton);
         startButton->addTouchHandler(onStartPushed);
+    }
+
+    void createCandleStrategyBacktesterMultiChart() {
+        candleStrategyBacktesterMultiChart = new CandleStrategyBacktesterMultiChart(
+            gfx, 
+            multiChartAccordionLeft, 
+            multiChartAccordionTop, 
+            multiChartAccordionWidth, 
+            multiChartAccordionFramesHeight,
+            startTime, endTime,
+            history, *testExchange, *candleStrategy, Config::symbol
+        );
+        mainFrame.child(*candleStrategyBacktesterMultiChart);
     }
 
     void loadExchange() {
@@ -216,6 +248,19 @@ protected:
             new TestExchange::Args(
                 // TODO: args from user with a settings form...??
                 { Config::symbols, Config::pairs, Config::balances }
+            )
+        );
+    }
+
+    void loadStrategy() {
+        DBG("loading strategy...");
+        // load the selected strategy lib
+        Input* candleStrategyInput = candleStrategySelect->getInput();
+        candleStrategy = (CandleStrategy*)sharedFactory.create(
+            Config::candleStrategyPath, candleStrategyInput->getText(), 
+            new CandleStrategy::Args(
+                // TODO: args from user with a settings form...??
+                { *testExchange, strategyParameters }
             )
         );
     }
@@ -246,7 +291,9 @@ public:
     virtual ~BitstampHistoryApplication() {
         delete exchangeSelect;
         delete symbolSelect;
+        delete candleStrategySelect;
         delete startButton;
+        delete candleStrategyBacktesterMultiChart;
     }
 
     void init() override {
@@ -256,18 +303,9 @@ public:
 
         createExchangeSelect();
         createSymbolSelect();
+        createStrategySelect();
         createStartButton();
-
-        // symbolInput.addTouchHandler(symbolInputTouchHandler);
-
-        // tester.backtest();
-
-        // ----------------
-
-        mainFrame.child(tester);
-
-        // mainFrame.child(symbolLabel);
-        // mainFrame.child(symbolInput);
+        createCandleStrategyBacktesterMultiChart();
     }
 };
 BitstampHistoryApplication* BitstampHistoryApplication::app = NULL;
