@@ -92,9 +92,8 @@ namespace madlib {
     string str_replace(const string& str, const map<string, string>& vals) {
         string result = str;
 
-        for (const auto& entry : vals) {
+        for (const auto& entry : vals)
             result = str_replace(result, entry.first, entry.second);
-        }
 
         return result;
     }
@@ -106,11 +105,9 @@ namespace madlib {
     
         // Replace disallowed characters with a safe character (e.g., '_')
         string sanitized = input;
-        for (char& c : sanitized) {
-            if (allowed.find(c) == string::npos) {
+        for (char& c : sanitized)
+            if (allowed.find(c) == string::npos)
                 c = '_'; // Replace with a safe character
-            }
-        }
 
         return sanitized;
     }
@@ -129,15 +126,11 @@ namespace madlib {
     string trim(const string& str) {
         // Find the first non-whitespace character from the beginning
         size_t start = 0;
-        while (start < str.length() && isspace(str[start])) {
-            start++;
-        }
+        while (start < str.length() && isspace(str[start])) start++;
 
         // Find the first non-whitespace character from the end
         size_t end = str.length();
-        while (end > start && isspace(str[end - 1])) {
-            end--;
-        }
+        while (end > start && isspace(str[end - 1])) end--;
 
         // Extract the trimmed substring
         return str.substr(start, end - start);
@@ -150,9 +143,8 @@ namespace madlib {
             if (matches != nullptr) {
                 // Clear the vector before adding more matches
                 matches->clear();
-                for (unsigned int i = 0; i < m.size(); i++) {
+                for (unsigned int i = 0; i < m.size(); i++)
                     matches->push_back(m[i].str());
-                }
             }
             return 1;
         }
@@ -164,9 +156,8 @@ namespace madlib {
         const string trimed = trim(datetime);
 
         const size_t trimedLength = trimed.length();
-        for (size_t i = 0; i < trimedLength; i++) {
+        for (size_t i = 0; i < trimedLength; i++) 
             tpl[i] = trimed[i];
-        }
 
         return tpl;
     }
@@ -207,19 +198,13 @@ namespace madlib {
         long mil = ms % 1000;
 
         struct tm converted_time;
-        if (local) {
-            localtime_r(&sec, &converted_time);
-        }
-        else {
-            gmtime_r(&sec, &converted_time);
-        }
+        if (local) localtime_r(&sec, &converted_time);
+        else gmtime_r(&sec, &converted_time);
 
         ostringstream oss;
         oss << put_time(&converted_time, fmt);
 
-        if (millis) {
-            oss << "." << setfill('0') << setw(3) << mil;
-        }
+        if (millis) oss << "." << setfill('0') << setw(3) << mil;
 
         return oss.str();
     }
@@ -233,11 +218,9 @@ namespace madlib {
         while (getline(iss, token, '/')) {
             if (token == "..") {
                 // Handle '..' by popping the last component if possible
-                if (!components.empty() && components.back() != "..") {
+                if (!components.empty() && components.back() != "..")
                     components.pop_back();
-                } else {
-                    components.push_back("..");
-                }
+                else components.push_back("..");
             } else if (token != ".") {
                 // Skip '.' components and add other components
                 components.push_back(token);
@@ -247,9 +230,7 @@ namespace madlib {
         // Reconstruct the normalized path
         string normalized;
         for (const string& component : components) {
-            if (!normalized.empty()) {
-                normalized += "/";
-            }
+            if (!normalized.empty()) normalized += "/";
             normalized += component;
         }
 
@@ -265,19 +246,17 @@ namespace madlib {
             string filename = filepath.substr(lastSlashPos + 1);
 
             // Check if withoutExtension is true and there's a dot in the entire path.
-            if (withoutExtension && lastDotPos != string::npos && lastDotPos > lastSlashPos) {
-                // Return the substring before the last dot.
+            // then return the substring before the last dot.
+            if (withoutExtension && lastDotPos != string::npos && lastDotPos > lastSlashPos)
                 return filename.substr(0, lastDotPos - (lastSlashPos + 1));
-            }
 
             return filename;
         }
 
-        // If there's no directory separator, return the whole path as the filename.
-        if (withoutExtension && lastDotPos != string::npos) {
-            // Return the substring before the last dot.
+        // If there's no directory separator, return the whole path as the filename,
+        // then return the substring before the last dot.
+        if (withoutExtension && lastDotPos != string::npos)
             return filepath.substr(0, lastDotPos);
-        }
 
         return filepath;
     }
@@ -454,15 +433,12 @@ namespace madlib {
 
         // Open the command for reading, redirecting stderr to stdout
         FILE* pipe = popen((command + " 2>&1").c_str(), "r");
-        if (!pipe) {
-            throw ERROR("Failed to execute command.");
-        }
+        if (!pipe) throw ERROR("Failed to execute command.");
 
         // Read the output (if requested)
         if (captureOutput || showOutput) {
-            while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+            while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
                 result += buffer.data();
-            }
             if (showOutput) cout << result;
         }
 
@@ -482,11 +458,7 @@ namespace madlib {
     bool pipe_is_closed(FILE* pipe) {
         // Get the file descriptor associated with the FILE*
         pollfd pfd = { fileno(pipe), POLLOUT, 0 };
-
-        if (poll(&pfd, 1, 1) < 0) {
-            return false;
-        }
-
+        if (poll(&pfd, 1, 1) < 0) return false;
         return pfd.revents & POLLERR;
     }
 
@@ -508,16 +480,14 @@ namespace madlib {
     bool is_numeric(const string& str) {
         // Regular expression pattern for numeric strings
         regex pattern(R"(\s*[-+]?\d+\s*|\s*[-+]?(\d*\.\d+|\d+\.\d*)([eE][-+]?\d+)?\s*)");
-        
         return regex_match(str, pattern);
     }
 
     string str_to_lower(const string& str) {
         string ret = "";
-        for (size_t i = 0; i < str.length(); i++) {
+        for (size_t i = 0; i < str.length(); i++)
             if (isupper(str[i])) ret += (char)tolower(str[i]);
             else ret += str[i];
-        }
         return ret;
     }
 
@@ -577,10 +547,10 @@ namespace madlib {
         // Find the position of the last dot (.) in the file name
         size_t lastDotPos = filename.find_last_of('.');
 
-        if (lastDotPos != string::npos) {
-            // Create a string with the part before the last dot and the extension
+        // Create a string with the part before the last dot and the extension
+        if (lastDotPos != string::npos)
             return filename.substr(0, lastDotPos) + "." + extension;
-        } 
+        
         // If there's no dot in the file name, simply append the extension
         return filename + "." + extension;
     }
@@ -603,18 +573,16 @@ namespace madlib {
 
     time_t file_get_mtime(const string& filePath) {
         struct stat fileInfo;
-        if (stat(filePath.c_str(), &fileInfo) != 0) {
+        if (stat(filePath.c_str(), &fileInfo) != 0)
             throw ERROR("Unable to get file information.");
-        }
         
         return fileInfo.st_mtime;
     }
 
     string file_get_contents(const string& filename) {
         ifstream file(filename);
-        if (!file.is_open()) {
+        if (!file.is_open())
             throw ERROR("Unable to open file for reading: " + filename);
-        }
 
         string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>()));
         file.close();
@@ -779,17 +747,16 @@ namespace madlib {
     args_t args_parse(int argc, const char* argv[], const args_shortcuts_t* shorts = NULL) {
         args_t args;
         for (int i = 1; i < argc; i++) {
-            if (argv[i][0] == '-') {
-                string key = string(argv[i]).substr(argv[i][1] == '-' ? 2 : 1);
-                if (key.empty()) throw ERROR("Empty argument key");
-                if (argv[i][1] != '-') {
-                    if (key.length() != 1) 
-                        throw ERROR("Invalid argument key: " + string(argv[i]));
-                    if (shorts && shorts->count(key[0])) key = shorts->at(key[0]);
-                }
-                string value = i < argc - 1 && argv[i + 1][0] != '-' ? argv[i + 1] : "";
-                args[key] = value;
+            if (argv[i][0] != '-') continue;
+            string key = string(argv[i]).substr(argv[i][1] == '-' ? 2 : 1);
+            if (key.empty()) throw ERROR("Empty argument key");
+            if (argv[i][1] != '-') {
+                if (key.length() != 1) 
+                    throw ERROR("Invalid argument key: " + string(argv[i]));
+                if (shorts && shorts->count(key[0])) key = shorts->at(key[0]);
             }
+            string value = i < argc - 1 && argv[i + 1][0] != '-' ? argv[i + 1] : "";
+            args[key] = value;
         }
         return args;
     }
@@ -884,10 +851,9 @@ namespace madlib {
 
         void destroy(T* instance) {
             auto it = find(instances.begin(), instances.end(), instance);
-            if (it != instances.end()) {
-                delete *it;
-                instances.erase(it);
-            }
+            if (it == instances.end()) return;
+            delete *it;
+            instances.erase(it);
         }
 
         void destroy() {
@@ -943,9 +909,8 @@ namespace madlib {
         virtual ~SharedFactory() {
             for (const auto& pair: imports) {
                 const SharedInstance& import = pair.second;
-                for (const InstanceAndContext& ic: import.instanceAndContexts) {
+                for (const InstanceAndContext& ic: import.instanceAndContexts)
                     if (import.destroyer) import.destroyer(ic.instance, ic.context);
-                }
                 if (import.handle) dlclose(import.handle);
             }
         }
