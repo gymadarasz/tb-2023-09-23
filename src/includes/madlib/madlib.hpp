@@ -374,10 +374,12 @@ namespace madlib {
 
     class Shared {
     public:
-        struct Args {
-            void* context = nullptr;
-        };
+        struct Args {};
         explicit Shared(void* = nullptr) {}
+        virtual ~Shared() {}
+        virtual void init(void* = nullptr) {
+            throw ERR_UNIMP;
+        }
     };
 
     class Printer: public Shared {
@@ -404,7 +406,7 @@ namespace madlib {
 
         // Variadic template for writeln method
         template <typename... Args>
-        Log& writeln(Args... args) {
+        Log& writeln(const Args&... args) {
             // Concatenate all arguments into a single string
             string message = concat(args...);
             write(message + "\n");
@@ -413,7 +415,7 @@ namespace madlib {
 
         // Variadic template for writeln method
         template <typename... Args>
-        Log& write(Args... args) {
+        Log& write(const Args&... args) {
             // Concatenate all arguments into a single string
             string message = concat(args...);
             print(message);
@@ -877,7 +879,9 @@ namespace madlib {
 
     #define EXPORT_CLASS(clazz) \
         extern "C" clazz* create##clazz(void* context = nullptr) { \
-            return new clazz(context); \
+            clazz* obj = new clazz(context); \
+            obj->init(context); \
+            return obj; \
         } \
         extern "C" void destroy##clazz(void* instance, void* context) { \
             if (instance) delete (clazz*)instance; \
@@ -890,7 +894,7 @@ namespace madlib {
         
         typedef struct { void* instance; void* context; } InstanceAndContext;
 
-        typedef void* (*SharedCreator)(void*);
+        typedef Shared* (*SharedCreator)(void*);
         typedef void (*SharedDestroyer)(void*, void*);
 
         typedef struct {
@@ -920,7 +924,7 @@ namespace madlib {
             const string source = path_normalize(path + "/" + clazz + ".so");
 
             if (map_has(imports, source)) {
-                void* instance = imports[source].creator(context);
+                Shared* instance = imports[source].creator(context);
                 imports[source].instanceAndContexts.push_back({ instance, context });
                 return instance;
             }
@@ -936,7 +940,7 @@ namespace madlib {
 
             SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
             
-            void* instance = creator(context);
+            Shared* instance = creator(context);
             if (!instance) throw ERROR("Unable to instanciate: " + clazz);
 
             imports[source] =  {{ { instance, context } }, handle, creator, destroyer };

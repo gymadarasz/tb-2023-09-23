@@ -1,4 +1,4 @@
-#include "../../../../includes/madlib/trading/trading.hpp"
+#include "../../../includes/madlib/trading/trading.hpp"
 
 namespace madlib::trading::strategy {
 
@@ -14,6 +14,8 @@ namespace madlib::trading::strategy {
         using CandleStrategy::CandleStrategy;
 
         virtual ~ACandleStrategy() final {}
+
+        virtual void init(void*) override {}
 
         void onCandleClose(const Candle& candle) override {
             const string symbol = parameters.at("symbol").getString();

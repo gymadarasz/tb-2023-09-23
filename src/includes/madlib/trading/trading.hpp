@@ -112,21 +112,78 @@ namespace madlib::trading {
         ms_t timestamp;
     };
 
-    class TradeHistory {
+    class History: public Shared {
     protected:
 
         const string& symbol;
         const ms_t startTime;
         const ms_t endTime;
         const ms_t period;
-        vector<Trade> trades;
+
+    public:
+        struct Args {
+            const string symbol;
+            const ms_t startTime; 
+            const ms_t endTime;
+            const ms_t period;
+        };
+        explicit History(void* context): 
+            symbol(((Args*)context)->symbol),
+            startTime(((Args*)context)->startTime),
+            endTime(((Args*)context)->endTime),
+            period(((Args*)context)->period)
+        {}
+
+        virtual ~History() {}
+
+        ms_t getStartTime() const {
+            return startTime;
+        }
+
+        ms_t getEndTime() const {
+            return endTime;
+        }
+    };
+
+    class CandleHistory: public History {
+    protected:
+
         vector<Candle> candles;
 
-        virtual void initTrades() {
-            throw ERR_UNIMP;
-        };
+    public:
+        using History::History;
 
-        virtual void initCandles() {
+        virtual ~CandleHistory() {}
+
+        virtual vector<Trade> getTrades() const {
+            throw ERR_UNIMP;
+        }
+
+        virtual vector<Candle> getCandles() const {
+            return candles;
+        }
+        
+        // TODO: yagni?
+        // virtual void saveCandles(const string &filename, const vector<Candle>& candles) const {
+        //     vector_save<Candle>(filename, candles);
+        // }
+        
+        // virtual vector<Candle> loadCandles(const string &filename) const {
+        //     return vector_load<Candle>(filename);
+        // }
+        
+        // virtual vector<Candle>& loadCandles(const string &filename, vector<Candle>& data) const {
+        //     return vector_load<Candle>(filename, data);
+        // }
+    };
+
+    class TradeCandleHistory: public CandleHistory {
+    protected:
+        vector<Trade> trades;
+
+        // TODO: yagni??
+        void convertToCandles() {
+
             auto tradeEventIter = trades.begin();
             
             ms_t currentStart = startTime;
@@ -157,56 +214,19 @@ namespace madlib::trading {
             }
         }
 
-        void init() {
-            initTrades();
-            initCandles();
-        }
-
     public:
 
-        TradeHistory(
-            const string& symbol, 
-            const ms_t startTime, 
-            const ms_t endTime, 
-            const ms_t period
-        ): 
-            symbol(symbol), 
-            startTime(startTime), 
-            endTime(endTime), 
-            period(period)
-        {}
+        using CandleHistory::CandleHistory;
 
-        ms_t getStartTime() const {
-            return startTime;
-        }
+        virtual ~TradeCandleHistory() {}
 
-        ms_t getEndTime() const {
-            return endTime;
-        }
-
-        virtual vector<Trade> getTrades() const final {
+        virtual vector<Trade> getTrades() const override {
             return trades;
-        }
-
-        virtual vector<Candle> getCandles() const final {
-            return candles;
-        }
-        
-        virtual void saveCandles(const string &filename, const vector<Candle>& candles) const {
-            vector_save<Candle>(filename, candles);
-        }
-        
-        virtual vector<Candle> loadCandles(const string &filename) const {
-            return vector_load<Candle>(filename);
-        }
-        
-        virtual vector<Candle>& loadCandles(const string &filename, vector<Candle>& data) const {
-            return vector_load<Candle>(filename, data);
         }
     };
 
 
-    class MonteCarloHistory: public TradeHistory {
+    class MonteCarloHistory: public TradeCandleHistory {
     protected:
         double volumeMean;
         double volumeStdDeviation;
@@ -216,14 +236,13 @@ namespace madlib::trading {
         mt19937 gen;
 
         // Function to init events within a specified time range
-        void initTrades() override {
+        void generateTrades() {
             ms_t previousTime = startTime;
             double previousPrice = priceMean;
             double previousVolume = volumeMean;
 
             while (previousTime < endTime) {
                 Trade trade;
-
 
                 // Generate elapsed time using exponential distribution
                 exponential_distribution<double> timeDistribution(1.0 / timeLambda);
@@ -259,24 +278,23 @@ namespace madlib::trading {
         }
 
     public:
-        MonteCarloHistory(
-            const string& symbol, 
-            ms_t startTime, ms_t endTime, ms_t period,  
-            double volumeMean, double volumeStdDeviation, 
-            double priceMean, double priceStdDeviation,
-            double timeLambda,
-            unsigned int seed = random_device()() // TODO: Add a seed parameter with a default value
-        ):
-            TradeHistory(
-            symbol, 
-            startTime, endTime, period),
-            volumeMean(volumeMean), volumeStdDeviation(volumeStdDeviation),
-            priceMean(priceMean), priceStdDeviation(priceStdDeviation),
-            timeLambda(timeLambda),
-            gen(seed)
-        {
-            init();
-        }
+        struct Args: public TradeCandleHistory::Args {
+            double volumeMean;
+            double volumeStdDeviation;
+            double priceMean;
+            double priceStdDeviation;
+            double timeLambda;
+            unsigned int seed = random_device()(); // TODO: Add a seed parameter with a default value
+        };
+        explicit MonteCarloHistory(void* context): 
+            TradeCandleHistory(context),
+            volumeMean(((Args*)context)->volumeMean),
+            volumeStdDeviation(((Args*)context)->volumeStdDeviation),
+            priceMean(((Args*)context)->priceMean),
+            priceStdDeviation(((Args*)context)->priceStdDeviation),
+            timeLambda(((Args*)context)->timeLambda),
+            gen(((Args*)context)->seed)
+        {}
         
         virtual ~MonteCarloHistory() {}
 
@@ -417,7 +435,7 @@ namespace madlib::trading {
         }
     };
 
-    class Exchange {
+    class Exchange: public Shared {
     protected:
         
         map<string, Pair> pairs;
@@ -539,6 +557,10 @@ namespace madlib::trading {
             balances = ((Args*)context)->balances;
         }
 
+        virtual void init(void*) override {
+
+        }
+
         virtual vector<string> getSymbols() const override {
             return symbols;
         }
@@ -578,7 +600,7 @@ namespace madlib::trading {
         // }
     };
 
-    class Strategy {
+    class Strategy: public Shared {
     public:
 
         template<typename T>
@@ -760,9 +782,9 @@ namespace madlib::trading {
     };
 
 
-    class TradeHistoryChart: public Chart {
+    class CandleHistoryChart: public Chart {
     protected:
-        const TradeHistory& history;
+        const CandleHistory& candleHistory;
         LabelSeries* labelSeries = NULL;
         const Color& priceColor;
         const Color& volumeColor;
@@ -775,10 +797,10 @@ namespace madlib::trading {
 
     public:
 
-        TradeHistoryChart(
+        CandleHistoryChart(
             GFX& gfx, int left, int top, int width, int height,
             // ms_t timeRangeBegin, ms_t timeRangeEnd,
-            const TradeHistory& history,
+            const CandleHistory& candleHistory,
             LabelSeries* labelSeries = NULL,
             const bool showCandles = true, // TODO
             const bool showPrices = true, // TODO
@@ -791,13 +813,14 @@ namespace madlib::trading {
         ):  
             Chart(
                 gfx, left, top, width, height,
-                history.getStartTime(), history.getEndTime(),
+                candleHistory.getStartTime(), 
+                candleHistory.getEndTime(),
                 Theme::defaultChartBorder,
                 Theme::defaultChartBackgroundColor,
                 Theme::defaultChartBorderColor,
                 eventContext
             ),
-            history(history),
+            candleHistory(candleHistory),
             labelSeries(labelSeries),
             priceColor(priceColor),
             volumeColor(volumeColor)
@@ -817,7 +840,7 @@ namespace madlib::trading {
             if (generate) this->generate();
         }
 
-        virtual ~TradeHistoryChart() {}
+        virtual ~CandleHistoryChart() {}
 
         LabelSeries* getTextSeries() const {
             return textSeries;
@@ -826,7 +849,7 @@ namespace madlib::trading {
         void generate() {
             
             if (candleSeries) {
-                vector<Candle> candles = history.getCandles();
+                vector<Candle> candles = candleHistory.getCandles();
                 vector<Shape*>& candleShapes = candleSeries->getShapes();
                 for (const Candle& candle: candles) {
                     candleShapes.push_back(createCandleShape(
@@ -841,7 +864,7 @@ namespace madlib::trading {
             }
 
             if (priceSeries || volumeSeries) {
-                vector<Trade> trades = history.getTrades();
+                vector<Trade> trades = candleHistory.getTrades();
                 if (trades.size()) {
                     mainProjector = priceSeries;
                     for (const Trade& trade: trades) {
@@ -895,7 +918,7 @@ namespace madlib::trading {
     protected:
 
         void* context;
-        const TradeHistory& history;
+        const CandleHistory& candleHistory;
         TestExchange& testExchange;
         CandleStrategy& candleStrategy;
         const string& symbol;
@@ -907,7 +930,7 @@ namespace madlib::trading {
 
         CandleStrategyBacktester(
             void* context,
-            const TradeHistory& history,
+            const CandleHistory& candleHistory,
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
             const string& symbol,
@@ -916,7 +939,7 @@ namespace madlib::trading {
             const ProgressCallback onProgressFinish = NULL
         ):
             context(context),
-            history(history),
+            candleHistory(candleHistory),
             testExchange(testExchange),
             candleStrategy(candleStrategy),
             symbol(symbol),
@@ -936,7 +959,7 @@ namespace madlib::trading {
 
             if (onProgressStart && !onProgressStart(progressContext)) return false;
 
-            vector<Candle> candles = history.getCandles();
+            vector<Candle> candles = candleHistory.getCandles();
             Pair& pair = testExchange.getPairAt(symbol);
             for (const Candle& candle: candles) {
                 progressContext.candle = &candle;
@@ -961,7 +984,7 @@ namespace madlib::trading {
 
         CandleStrategyBacktester* backtester;
 
-        const TradeHistory& history;
+        const CandleHistory& candleHistory;
         TestExchange& testExchange;
         Strategy& candleStrategy;
         const string& symbol;
@@ -973,8 +996,9 @@ namespace madlib::trading {
 
         // **** tradeHistoryChart ****
         
-        TradeHistoryChart tradeHistoryChart = TradeHistoryChart(
-            gfx, 0, 0, 0, 0, history, candleStrategy.getLabelSeries()
+        CandleHistoryChart candleHistoryChart = CandleHistoryChart(
+            gfx, 0, 0, 0, 0, candleHistory, candleStrategy.getLabelSeries(),
+            true, false, false
         );
 
         // **** balanceQuotedChart ****
@@ -1001,6 +1025,8 @@ namespace madlib::trading {
             vector<Shape*>* balanceBaseAtCloses = NULL;
             vector<Shape*>* balanceBaseFullAtCloses = NULL;
             Pair* pair = NULL;
+
+            bool showProgressStarted = false;
         } progressState;
         
         static bool onProgressStart(CandleStrategyBacktester::ProgressContext& progressContext) {
@@ -1013,12 +1039,12 @@ namespace madlib::trading {
             that->progressState.balanceBaseFullAtCloses = &that->balanceBaseFullScale->getShapes();
 
             if (that->showProgress || that->logProgress) {
-                that->progressState.candlesSize = that->progressState.candlesRemaining = that->history.getCandles().size();
+                that->progressState.candlesSize = that->progressState.candlesRemaining = that->candleHistory.getCandles().size();
                 that->progressState.progressUpdatedAt = now() + that->showProgressAfterMs;
                 if (that->logProgress) 
                     LOG("Backtest starts with ", that->progressState.candlesRemaining, " candles...");
-                if (that->showProgress) 
-                    that->progressState.progressZenityPipe = zenity_progress("Backtest");
+                if (that->showProgress)
+                    that->progressState.showProgressStarted = false;
             }
 
             that->progressState.pair = &that->testExchange.getPairAt(that->symbol);
@@ -1032,11 +1058,17 @@ namespace madlib::trading {
             // show zenity and log
 
             if (that->showProgress || that->logProgress) {
-                if (now() - that->progressState.progressUpdatedAt > that->showProgressFreqMs) {
+                if (now() - that->progressState.progressUpdatedAt >= that->showProgressFreqMs) {
                     that->progressState.progressUpdatedAt = now();
                     int pc100 = (int)((1 - ((double)that->progressState.candlesRemaining / (double)that->progressState.candlesSize)) * 100);
                     if (that->logProgress) LOG("Backtest in progress: ", that->progressState.candlesRemaining, " candles remaining... (" + to_string(pc100) + "% done)");
                     if (that->showProgress) {
+
+                        if (!that->progressState.showProgressStarted) {
+                            that->progressState.progressZenityPipe = zenity_progress("Backtest");
+                            that->progressState.showProgressStarted = true;
+                        }
+
                         if (
                             !zenity_progress_update(that->progressState.progressZenityPipe, pc100) ||
                             !zenity_progress_update(that->progressState.progressZenityPipe, "Remaining candles: " + to_string(that->progressState.candlesRemaining))
@@ -1098,7 +1130,7 @@ namespace madlib::trading {
             GFX& gfx, int left, int top, int width,
             const int multiChartAccordionFramesHeight,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
-            const TradeHistory& history,
+            const CandleHistory& candleHistory,
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
             const string& symbol,
@@ -1106,7 +1138,7 @@ namespace madlib::trading {
 
             const bool logProgress = true, // TODO
             const bool showProgress = true,
-            const ms_t showProgressAfterMs = 5 * second,
+            const ms_t showProgressAfterMs = 0,
             const ms_t showProgressFreqMs = second,
 
             bool single = false,
@@ -1120,7 +1152,7 @@ namespace madlib::trading {
                 single, border, backgroundColor, 
                 eventContext
             ),
-            history(history),
+            candleHistory(candleHistory),
             testExchange(testExchange),
             candleStrategy(candleStrategy),
             symbol(symbol),
@@ -1132,22 +1164,22 @@ namespace madlib::trading {
         {
 
             backtester = new CandleStrategyBacktester(
-                this, history, testExchange, candleStrategy, symbol, 
+                this, candleHistory, testExchange, candleStrategy, symbol, 
                 onProgressStart, onProgressStep, onProgressFinish
             );
 
-            // **** tradeHistoryChart ****
+            // **** tradeCandleHistoryChart ****
 
             createChartFrame(
-                "History", tradeHistoryChart, multiChartAccordionFramesHeight
+                "History", candleHistoryChart, multiChartAccordionFramesHeight
             );
 
             if (!candleStrategy.getLabelSeries())
                 candleStrategy.setLabelSeries(
-                    tradeHistoryChart.getTextSeries()
+                    candleHistoryChart.getTextSeries()
                 );
 
-            multiChart.attach(tradeHistoryChart);
+            multiChart.attach(candleHistoryChart);
 
             // **** balanceQuotedChart ****
 

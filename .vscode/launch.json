@@ -33,7 +33,7 @@
             // "args": [],
             // "args": ["test-command"],  // Optional: Specify program arguments here            
             // "args": ["download-bitstamp-csv", "BTCUSD", "2014", "2023", "minute"],
-            "args": ["bitstamp-history"], 
+            "args": ["backtest"], 
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [{ "name": "GTK_PATH", "value": null }],

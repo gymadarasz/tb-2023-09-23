@@ -10,7 +10,6 @@ protected:
     //     // Button* btn = (Button*) context;
     //     // AccordionManualTest1* app = (AccordionManualTest1*)btn->getGFX().getContext();
     //     // app->accordion.setSticky(btn->isPushed());
-    //     // DBG("STICKY: ", app->accordion.isSticky());
     // }
 
     static void singleBtnClick(void* context, unsigned int, int, int) {

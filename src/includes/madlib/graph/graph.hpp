@@ -638,11 +638,9 @@ namespace madlib::graph {
             fontInfo = XLoadQueryFont(display, font);
             if (!fontInfo)
             {
-                LOG("Unable to load font: " + string(font) 
-                    // Note: uncomment the following line to see awailable fonts:
-                    // + "\nAvailable fonts:\n\t" + vector_concat(getAvailableFonts(), "\n\t")
-                );
-                throw ERROR("Unable to load font.\n");
+                // Note: uncomment the following line to see awailable fonts:
+                // LOG("Available fonts:\n\t" + vector_concat(getAvailableFonts(), "\n\t"));
+                throw ERROR("Unable to load font:" + string(font));
             }
             XSetFont(display, gc, fontInfo->fid);
         }
@@ -2527,8 +2525,7 @@ namespace madlib::graph {
                 gui.draw();
                 gui.loop();
             } catch (exception& e) {
-                LOG("Exception: " + string(e.what()));
-                throw ERROR("Application error");
+                throw ERROR("Application error: " + string(e.what()));
             }
             return this;
         }
