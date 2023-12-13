@@ -22,6 +22,7 @@ struct Config {
     static constexpr const double feeMarketPc = 0.04; //0.4;
     static constexpr const double feeLimitPc = 0.03;
     static const Fees fees;
+    static const vector<string> periods;
     static const vector<string> symbols;
     static const map<string, Pair> pairs;
     static const map<string, Balance> balances;
@@ -37,6 +38,9 @@ const Fees Config::fees = Fees(
     Config::feeMarketPc, Config::feeMarketPc, 
     Config::feeLimitPc, Config::feeLimitPc
 );
+const vector<string> Config::periods = {
+    "1m", "1h", "1d"
+};
 const vector<string> Config::symbols = {
     "BTCUSD", "ETHUSD", "DOGEUSD"
 };
@@ -58,7 +62,7 @@ protected:
 
     const ms_t startTime = datetime_to_ms("2014-01-01 00:00:00");
     const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
-    const ms_t period = period_to_ms("1m");
+    // const ms_t period = period_to_ms("1m");
     // History::Args args = { Config::symbol, startTime, endTime, period };
     // CandleHistory* candleHistory = NULL; // = BitstampCandleHistory(&args);
 
@@ -82,7 +86,9 @@ protected:
     CandleStrategy* candleStrategy = NULL;
 
     Select* historySelect = NULL;
+    DateRange* historyDateRange = NULL;
     Select* exchangeSelect = NULL;
+    Select* periodSelect = NULL;
     Select* symbolSelect = NULL;
     Select* candleStrategySelect = NULL;
     Button* startButton = NULL;
@@ -107,24 +113,38 @@ protected:
     }
 
     static void onHistorySelected(void*, unsigned int, int, int) {
-        app->historySelect->setDefval(app->historySelect->getInput()->getText());
+        app->historySelect->setValue(app->historySelect->getInput()->getText());
         app->loadHistory();
         app->historySelect->getInput()->draw();
     }
 
+    static void onHistoryBeginTouchHandler(void*, unsigned int, int, int) {
+        DBG("onHistoryBeginTouchHandler");
+    }
+
+    static void onHistoryEndTouchHandler(void*, unsigned int, int, int) {
+        DBG("onHistoryEndTouchHandler");
+    }
+
     static void onExchangeSelected(void*, unsigned int, int, int) {
-        app->exchangeSelect->setDefval(app->exchangeSelect->getInput()->getText());
+        app->exchangeSelect->setValue(app->exchangeSelect->getInput()->getText());
         app->loadExchange();
+        app->loadPeriods();
         app->loadSymbols();
+        app->periodSelect->getInput()->draw();
         app->symbolSelect->getInput()->draw();
     }
 
+    static void onPeriodSelected(void*, unsigned int, int, int) {
+        app->periodSelect->setValue(app->periodSelect->getInput()->getText());
+    }
+
     static void onSymbolSelected(void*, unsigned int, int, int) {
-        app->symbolSelect->setDefval(app->symbolSelect->getInput()->getText());
+        app->symbolSelect->setValue(app->symbolSelect->getInput()->getText());
     }
 
     static void onCandleStrategySelected(void*, unsigned int, int, int) {
-        app->candleStrategySelect->setDefval(app->candleStrategySelect->getInput()->getText());
+        app->candleStrategySelect->setValue(app->candleStrategySelect->getInput()->getText());
         app->loadStrategy();
     }
 
@@ -142,6 +162,12 @@ protected:
         if (!defval.empty()) loadHistory();
     }
 
+    void createHistoryDateRange() {
+        historyDateRange = new DateRange(mainFrame, 300, settingsTop, "Date", startTime, endTime);
+        historyDateRange->getFromInput()->addTouchHandler(onHistoryBeginTouchHandler);
+        historyDateRange->getToInput()->addTouchHandler(onHistoryEndTouchHandler);
+    }
+
     void createExchangeSelect() {
         vector<string> values = getExchangeClasses();
         string defval = values.size() == 1 ? values[0] : "";
@@ -149,6 +175,13 @@ protected:
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
         if (!defval.empty()) loadExchange();
+    }
+
+    void createPeriodSelect() {
+        periodSelect = new Select(mainFrame, 600, settingsTop, "Period", {}, "", 50);
+        Input* periodInput = periodSelect->getInput();
+        periodInput->addTouchHandler(onPeriodSelected);
+        loadPeriods();
     }
 
     void createSymbolSelect() {
@@ -161,14 +194,14 @@ protected:
     void createStrategySelect() {
         vector<string> values = getStrategyClasses();
         string defval = values.size() == 1 ? values[0] : "";
-        candleStrategySelect = new Select(mainFrame, 500, settingsTop + settingsRowHeight, "Strategy", values, defval);
+        candleStrategySelect = new Select(mainFrame, 600, settingsTop + settingsRowHeight, "Strategy", values, defval);
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategyInput->addTouchHandler(onCandleStrategySelected);
         if (!defval.empty()) loadStrategy();
     }
 
     void createStartButton() {
-        startButton = new Button(gfx, 800, settingsTop + settingsRowHeight, 100, 20, "Start");
+        startButton = new Button(gfx, 900, settingsTop + settingsRowHeight, 90, 20, "Start");
         mainFrame.child(*startButton);
         startButton->addTouchHandler(onStartPushed);
     }
@@ -187,13 +220,14 @@ protected:
     }
 
     void loadHistory() {
+        const string period = periodSelect->getInput()->getText();
         const string symbol = symbolSelect->getInput()->getText();
 
         Input* historyInput = historySelect->getInput();
         candleHistory = (CandleHistory*)sharedFactory.create(
             Config::candleHistoryPath, historyInput->getText(),
             new CandleHistory::Args(
-                { symbol, startTime, endTime, period }
+                { symbol, startTime, endTime, period_to_ms(period) }
             )
         );
     }
@@ -205,7 +239,7 @@ protected:
             Config::testExchangePath, exchangeInput->getText(), 
             new TestExchange::Args(
                 // TODO: args from user with a settings form...??
-                { Config::symbols, Config::pairs, Config::balances }
+                { Config::periods, Config::symbols, Config::pairs, Config::balances }
             )
         );
     }
@@ -222,11 +256,27 @@ protected:
         );
     }
 
+    void loadPeriods() {  
+        // If no exchange selected clear period selection
+        if (!testExchange) {
+            periodSelect->setValues({});
+            periodSelect->setValue("");
+            periodSelect->getInput()->setText("");
+            return;
+        }
+
+        vector<string> periods = testExchange->getPeriods();
+        const string defaultPeriod = periods.size() > 0 ? periods[0] : "";
+        periodSelect->setValues(periods);
+        periodSelect->setValue(defaultPeriod);
+        periodSelect->getInput()->setText(defaultPeriod);
+    }
+
     void loadSymbols() {     
         // If no exchange selected clear symbol selection
         if (!testExchange) {
             symbolSelect->setValues({});
-            symbolSelect->setDefval("");
+            symbolSelect->setValue("");
             symbolSelect->getInput()->setText("");
             return;
         }
@@ -234,7 +284,7 @@ protected:
         vector<string> symbols = testExchange->getSymbols();
         const string defaultSymbol = symbols.size() > 0 ? symbols[0] : "";
         symbolSelect->setValues(symbols);
-        symbolSelect->setDefval(defaultSymbol);
+        symbolSelect->setValue(defaultSymbol);
         symbolSelect->getInput()->setText(defaultSymbol);
     }
 
@@ -244,7 +294,9 @@ public:
 
     virtual ~BitstampHistoryApplication() {
         delete historySelect;
+        delete historyDateRange;
         delete exchangeSelect;
+        delete periodSelect;
         delete symbolSelect;
         delete candleStrategySelect;
         delete startButton;
@@ -255,12 +307,13 @@ public:
         FrameApplication::init();
         gui.setTitle("Bitstamp History Backtest");
         app = this;
-        // candleHistory.init(NULL);
 
         createExchangeSelect();
-        createSymbolSelect();
         createStrategySelect();
+        createPeriodSelect();
+        createSymbolSelect();
         createHistorySelect();
+        createHistoryDateRange();
         createStartButton();
         createCandleStrategyBacktesterMultiChart();
     }

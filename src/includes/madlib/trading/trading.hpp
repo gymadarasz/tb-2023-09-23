@@ -447,6 +447,10 @@ namespace madlib::trading {
 
         virtual ~Exchange() {}
 
+        virtual vector<string> getPeriods() const {
+            throw ERR_UNIMP;
+        }
+
         virtual vector<string> getSymbols() const {
             throw ERR_UNIMP;
         }
@@ -518,6 +522,7 @@ namespace madlib::trading {
     class TestExchange: public Exchange {
     protected:
 
+        vector<string> periods;
         vector<string> symbols;
 
         ms_t currentTime = 0;
@@ -544,6 +549,7 @@ namespace madlib::trading {
 
     public:
         struct Args {
+            const vector<string>& periods;
             const vector<string>& symbols;
             const map<string, Pair>& pairs;
             const map<string, Balance>& balances;
@@ -551,6 +557,7 @@ namespace madlib::trading {
         
         explicit TestExchange(void* context): 
             Exchange(), 
+            periods(((Args*)context)->periods),
             symbols(((Args*)context)->symbols)
         {
             pairs = ((Args*)context)->pairs;
@@ -559,6 +566,10 @@ namespace madlib::trading {
 
         virtual void init(void*) override {
 
+        }
+
+        virtual vector<string> getPeriods() const override {
+            return periods;
         }
 
         virtual vector<string> getSymbols() const override {

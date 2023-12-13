@@ -1855,25 +1855,25 @@ namespace madlib::graph {
     class Select {
     protected:
 
-        const string title = "Select";
+        // const string title = "Select";
         const string prompt = "Select"; // TODO
-
         
         Label* label = NULL;
         Input* input = NULL;
+
         vector<string> values;
-        string defval;
+        string value;
 
         static void onSelectTouchHandler(void* context, unsigned int, int, int) {
             Area* that = (Area*)context;
             Select* select = (Select*)that->getEventContext();
             string selection = zenity_combo(
-                select->title,
+                select->label->getText(),
                 select->prompt,
                 select->label->getText(),
                 select->values
             );
-            if (selection.empty()) select->input->setText(select->defval);
+            if (selection.empty()) select->input->setText(select->value);
             else select->input->setText(selection);
             select->input->draw();
         }
@@ -1882,19 +1882,19 @@ namespace madlib::graph {
         Select(
             Area& parent,
             int left, int top, 
-            const string& text, 
+            const string& title = "Select", 
             const vector<string>& values = {},
-            const string& defval = "",
+            const string& value = "",
             const int inputWidth = 200,
-            const int labelWidth = 80, // TODO
+            const int labelWidth = 90, // TODO
             const int height = 20 // TODO
         ):
             values(values), 
-            defval(defval)
+            value(value)
         {
             GFX& gfx = parent.getGFX();
-            label = new Label(gfx, left, top, labelWidth, height, text);
-            input = new Input(gfx, left + labelWidth, top, inputWidth, height, defval);
+            label = new Label(gfx, left, top, labelWidth, height, title);
+            input = new Input(gfx, left + labelWidth, top, inputWidth, height, value);
             parent.child(*label);
             parent.child(*input);
             input->setEventContext(this);
@@ -1910,12 +1910,98 @@ namespace madlib::graph {
             return input;
         }
 
-        void setDefval(const string& defval) {
-            this->defval = defval;
+        void setValue(const string& value) {
+            this->value = value;
         }
 
         void setValues(const vector<string>& values) {
             this->values = values;
+        }
+    };
+
+    class DateRange {
+    protected:
+        const string prompt = "Select a date"; // TODO
+
+        Label* fromLabel = NULL;
+        Input* fromInput = NULL;
+        Label* toLabel = NULL;
+        Input* toInput = NULL;
+
+        ms_t fromValue;
+        ms_t toValue;
+
+        static void onFromDateTouchHandler(void* context, unsigned int, int, int) {
+            Area* that = (Area*)context;
+            DateRange* dateRange = (DateRange*)that->getEventContext();
+            string selection = zenity_date(
+                dateRange->fromLabel->getText(),
+                dateRange->prompt
+            );
+            if (selection.empty()) dateRange->fromInput->setText(ms_to_date(dateRange->fromValue));
+            else dateRange->fromInput->setText(selection);
+            dateRange->fromInput->draw();
+        }
+
+        static void onToDateTouchHandler(void* context, unsigned int, int, int) {
+            Area* that = (Area*)context;
+            DateRange* dateRange = (DateRange*)that->getEventContext();
+            string selection = zenity_date(
+                dateRange->toLabel->getText(),
+                dateRange->prompt
+            );
+            if (selection.empty()) dateRange->toInput->setText(ms_to_date(dateRange->toValue));
+            else dateRange->toInput->setText(selection);
+            dateRange->toInput->draw();
+        }
+
+    public:
+        DateRange(
+            Area& parent,
+            const int left, 
+            const int top,
+            const string& title = "Period",
+            const ms_t fromValue = now() - day,
+            const ms_t toValue = now(),
+            const int inputWidth = 90,
+            const int labelWidth = 90, // TODO
+            const int height = 20 // TODO
+        ):
+            fromValue(fromValue),
+            toValue(toValue)
+        {
+            GFX& gfx = parent.getGFX();
+            int x = left, y = top;
+            fromLabel = new Label(gfx, x, y, labelWidth, height, title);
+            x += labelWidth;
+            fromInput = new Input(gfx, x, y, inputWidth, height, ms_to_date(fromValue));
+            x += inputWidth;
+            toLabel = new Label(gfx, x, y, 20, height, "-", CENTER);
+            x += 20;
+            toInput = new Input(gfx, x, y, inputWidth, height, ms_to_date(toValue));
+            parent.child(*fromLabel);
+            parent.child(*fromInput);
+            parent.child(*toLabel);
+            parent.child(*toInput);
+            fromInput->setEventContext(this);
+            toInput->setEventContext(this);
+            fromInput->addTouchHandler(onFromDateTouchHandler);
+            toInput->addTouchHandler(onToDateTouchHandler);
+        }
+
+        virtual ~DateRange() {
+            delete fromLabel;
+            delete fromInput;
+            delete toLabel;
+            delete toInput;
+        }
+
+        Input* getFromInput() {
+            return fromInput;
+        }
+
+        Input* getToInput() {
+            return toInput;
         }
     };
 

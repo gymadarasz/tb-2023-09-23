@@ -193,6 +193,10 @@ namespace madlib {
         return seconds * 1000 + milliseconds;
     }
 
+    ms_t date_to_ms(const string& date) {
+        return datetime_to_ms(date);
+    }
+
     string ms_to_datetime(ms_t ms = now(), const char* fmt = "%Y-%m-%d %H:%M:%S", bool millis = true, bool local = false) {
         long sec = ms / 1000;
         long mil = ms % 1000;
@@ -207,6 +211,10 @@ namespace madlib {
         if (millis) oss << "." << setfill('0') << setw(3) << mil;
 
         return oss.str();
+    }
+
+    string ms_to_date(ms_t ms = now(), const char* fmt = "%Y-%m-%d", bool local = false) {
+        return ms_to_datetime(ms, fmt, false, local);
     }
 
     string path_normalize(const string& filepath) {
@@ -806,6 +814,26 @@ namespace madlib {
                     { "{text}", str_sanitize(text) },
                     { "{label}", str_sanitize(label) },
                     { "{items}", vector_concat(items, "|", str_sanitize) },
+                }
+            );
+
+        return zenity(cmd, err);
+    }
+
+    string zenity_date(
+        const string& title, 
+        const string& text,
+        const string& err = "/dev/null"
+    ) {
+        const string cmd = 
+            str_replace(
+                "--calendar "
+                    "--title='{title}' "
+                    "--text='{text}' "
+                    "--date-format='%Y-%m-%d' ",
+                {
+                    { "{title}", str_sanitize(title) },
+                    { "{text}", str_sanitize(text) },
                 }
             );
 
