@@ -10,7 +10,7 @@ using namespace std;
 using namespace madlib;
 
 namespace madlib::trading::bitstamp {
-    
+    // TODO: remove this folder
 }
 
 

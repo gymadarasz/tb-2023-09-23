@@ -3,24 +3,28 @@
 namespace madlib::trading::history {
     
     class BitstampCandleHistory: public CandleHistory {
-    public:
+    protected:
 
         enum BitstampCandlesCsvField { UNIX = 0, DATE, SYMBOL, OPEN, HIGH, LOW, CLOSE, VOLUME_BASE, VOLUME_QUOTED };
         static const string datPath;
         static const string datFileTpl;
-
+        static const string csvPath;
+        static const string csvFileTpl;
+            
         static vector<Candle> bitstamp_read_candle_history_dat(const string& datFile) {
             return vector_load<Candle>(datFile);
         }
 
         static vector<Candle> bitstamp_parse_candle_history_csv(
+            Progress& progress,
             const string& csvFile,
             const string& datFile, 
             bool readOutFileIfExists = false,
             bool throwIfOutFileExists = false,
             bool skipIfOutFileIsNewer = true
         ) {
-            if (!file_exists(csvFile)) throw ERROR("File not found: " + csvFile);
+            if (!file_exists(csvFile)) 
+                throw ERROR("File not found: " + csvFile);
             if (file_exists(datFile)) {
                 if (throwIfOutFileExists) throw ERROR("File already exists: " + datFile);
                 if (skipIfOutFileIsNewer && file_get_mtime(csvFile) < file_get_mtime(datFile)) {
@@ -48,10 +52,16 @@ namespace madlib::trading::history {
             string secondDate = trim(secondSplits.at(BitstampCandlesCsvField::DATE));        
             ms_t period = datetime_to_ms(firstDate) - datetime_to_ms(secondDate);
 
+            ms_t t = now();
             for (size_t i = csvDataSize - 1; i >= headerLines; i--) {
                 string line = trim(csvData.at(i));
                 if (line.empty()) continue;
-                if (i % 1000 == 0) LOG("Parse CSV: [" + line + "]");
+                if (t < now() - 5 * second) {
+                    t = now();
+                    string msg = "Parse CSV: [" + line + "]";
+                    progress.update(msg);
+                    LOG(msg);
+                }
                 vector<string> fields = split(",", line);
                 if (!is_numeric(trim(fields.at(BitstampCandlesCsvField::UNIX)))) break;            
                 double open = parse<double>(trim(fields.at(BitstampCandlesCsvField::OPEN)));
@@ -74,6 +84,7 @@ namespace madlib::trading::history {
         }
 
         static void bitstamp_download_candle_history_csv_all(
+            Progress& progress,
             const string& symbol,
             int fromYear,
             int toYear,
@@ -92,9 +103,12 @@ namespace madlib::trading::history {
                 file_create_path(path);
             }
             for (int year = fromYear; year <= toYear; year++) {
+                progress.update(year, fromYear, toYear);
+                progress.update("Download data " + to_string(year) + "...");
                 const string filenameYear = str_replace(filename, "{year}", to_string(year));
                 const string filepath = path + filenameYear;
                 if (!overwrite && file_exists(filepath)) {
+                    progress.update("Download data " + to_string(year) + " (skip)");
                     LOG("File already exists: ", filepath, " (skiping...)");
                     continue;
                 }
@@ -113,40 +127,57 @@ namespace madlib::trading::history {
         }
 
         static void bitstamp_parse_candle_history_csv_all(
+            Progress& progress,
             const string& symbol,
-            int yearFrom,
-            int yearTo,
+            int fromYear,
+            int toYear,
             const string& period = "minute"
         ) {
-            const string csvPath = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
-            const string csvFileTpl = csvPath + "/Bitstamp_{symbol}_{year}_{period}.csv";
             const map<string, string> repl = {
                 {"{symbol}", symbol},
                 {"{period}", period},
             };
             string _datFileTpl = str_replace(datFileTpl, repl);
-            string _csvFileTpl = str_replace(csvFileTpl, repl);
-            for (int year = yearFrom; year <= yearTo; year++) {
+            string _csvFileTpl = str_replace(csvFileTpl, repl);            
+            for (int year = fromYear; year <= toYear; year++) {
+                progress.update(year, fromYear, toYear);
+                progress.update("Parse data " + to_string(year) + "...");
                 const string csvFile = str_replace(_csvFileTpl, "{year}", to_string(year));
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
-                bitstamp_parse_candle_history_csv(csvFile, datFile, false, false);
+                bitstamp_parse_candle_history_csv(progress, csvFile, datFile, false, false);
             }
         }
 
+    public:
+
         using CandleHistory::CandleHistory;
+
+        void init(void*) override {} 
         
         virtual ~BitstampCandleHistory() {};
 
-        void init(void*) override {
+        void load(Progress& progress) override {
             if (period != MS_PER_MIN) throw ERROR("Period works only on minutes charts"); // TODO: aggregate to other periods
-            int yearFrom = parse<int>(ms_to_datetime(startTime).substr(0, 4));
-            int yearTo = parse<int>(ms_to_datetime(endTime).substr(0, 4));
-            string _datFileTpl = str_replace(datFileTpl, {
+            int fromYear = parse<int>(ms_to_datetime(startTime).substr(0, 4));
+            int toYear = parse<int>(ms_to_datetime(endTime).substr(0, 4));
+            const map<string, string> repl = {
                 {"{symbol}", symbol},
                 {"{period}", "minute"},
-            });
-            for (int year = yearFrom; year <= yearTo; year++) {
+            };
+            string _datFileTpl = str_replace(datFileTpl, repl);
+            candles.clear();
+            for (int year = fromYear; year <= toYear; year++) {
+                progress.update(year, fromYear, toYear);
+                progress.update("Loading data " + to_string(year) + "...");
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
+                if (!file_exists(datFile)) {
+                    string _csvFileTpl = str_replace(csvFileTpl, repl);
+                    const string csvFile = str_replace(_csvFileTpl, "{year}", to_string(year));
+                    if (!file_exists(csvFile)) {
+                        bitstamp_download_candle_history_csv_all(progress, symbol, fromYear, toYear, "minute");
+                    }
+                    bitstamp_parse_candle_history_csv(progress, csvFile, datFile);
+                }
                 vector<Candle> yearCandles = bitstamp_read_candle_history_dat(datFile);
                 for (const Candle& candle: yearCandles) {
                     if (startTime <= candle.getStart() && endTime >= candle.getEnd())
@@ -155,9 +186,20 @@ namespace madlib::trading::history {
             }
         }
 
+        // Note: see more at https://www.cryptodatadownload.com/data/bitstamp/
+        void download(Progress& progress, bool override) override {
+            if (period != MS_PER_MIN) throw ERROR("Period works only on minutes charts"); // TODO: aggregate to other periods
+            int fromYear = parse<int>(ms_to_date(startTime).substr(0, 4));
+            int toYear = parse<int>(ms_to_date(endTime).substr(0, 4));
+            bitstamp_download_candle_history_csv_all(progress, symbol, fromYear, toYear, "minute", override);
+            bitstamp_parse_candle_history_csv_all(progress, symbol, fromYear, toYear, "minute");
+        }
+
     };
     const string BitstampCandleHistory::datPath = __DIR__ + "/data/";
     const string BitstampCandleHistory::datFileTpl = datPath + "{symbol}_{year}_{period}.dat";
-
+    const string BitstampCandleHistory::csvPath = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
+    const string BitstampCandleHistory::csvFileTpl = csvPath + "/Bitstamp_{symbol}_{year}_{period}.csv";
+            
     EXPORT_CLASS(BitstampCandleHistory);
 }

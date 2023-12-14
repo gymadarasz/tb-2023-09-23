@@ -69,7 +69,7 @@ protected:
             new CandleStrategy::Args({ *testExchange, strategyParameters })
         );
     
-    CandleStrategyBacktesterMultiChart backtester = CandleStrategyBacktesterMultiChart(
+    CandleStrategyBacktesterMultiChartAccordion backtester = CandleStrategyBacktesterMultiChartAccordion(
         gfx, 10, 50, 1000, 340,
         startTime, endTime,
         // multiChartAccordion,

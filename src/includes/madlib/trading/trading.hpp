@@ -14,7 +14,6 @@ using namespace madlib::graph;
 
 namespace madlib::trading {
 
-
     ms_t period_to_ms(const string &period) {
         map<const string, ms_t> periods = {
             {"1s", MS_PER_SEC},
@@ -115,15 +114,15 @@ namespace madlib::trading {
     class History: public Shared {
     protected:
 
-        const string& symbol;
-        const ms_t startTime;
-        const ms_t endTime;
-        const ms_t period;
+        string symbol;
+        ms_t startTime;
+        ms_t endTime;
+        ms_t period;
 
     public:
         struct Args {
             const string symbol;
-            const ms_t startTime; 
+            const ms_t startTime;
             const ms_t endTime;
             const ms_t period;
         };
@@ -136,12 +135,36 @@ namespace madlib::trading {
 
         virtual ~History() {}
 
+        void setSymbol(const string& symbol) {
+            this->symbol = symbol;
+        }
+
         ms_t getStartTime() const {
             return startTime;
         }
 
+        void setStartTime(ms_t startTime) {
+            this->startTime = startTime;
+        }
+
         ms_t getEndTime() const {
             return endTime;
+        }
+
+        void setEndTime(ms_t endTime) {
+            this->endTime = endTime;
+        }
+
+        void setPeriod(ms_t period) {
+            this->period = period;
+        }
+
+        virtual void download(Progress&, bool) {
+            throw ERR_UNIMP;
+        }
+
+        virtual void load(Progress&) {
+            throw ERR_UNIMP;
         }
     };
 
@@ -278,6 +301,7 @@ namespace madlib::trading {
         }
 
     public:
+        // TODO !@# make it module
         struct Args: public TradeCandleHistory::Args {
             double volumeMean;
             double volumeStdDeviation;
@@ -990,7 +1014,7 @@ namespace madlib::trading {
         }
     };
 
-    class CandleStrategyBacktesterMultiChart: public MultiChartAccordion {
+    class CandleStrategyBacktesterMultiChartAccordion: public MultiChartAccordion {
     protected:
 
         CandleStrategyBacktester* backtester;
@@ -1025,10 +1049,10 @@ namespace madlib::trading {
         PointSeries* balanceBaseScale = NULL;
 
         struct ProgressState {
-            // show log and zenity
+            // show log and progress
             size_t candlesRemaining = 0, candlesSize = 0;
             ms_t progressUpdatedAt = 0;
-            FILE* progressZenityPipe = NULL;
+            Progress* progress = NULL;
 
             // show results on charts:
             vector<Shape*>* balanceQuotedAtCloses = NULL;
@@ -1038,10 +1062,18 @@ namespace madlib::trading {
             Pair* pair = NULL;
 
             bool showProgressStarted = false;
+
+            void createProgress(const string& title) {
+                progress = new Progress(title);
+            }
+
+            virtual ~ProgressState() {
+                if (progress) delete progress;
+            }
         } progressState;
         
         static bool onProgressStart(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
+            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
 
             that->clearCharts();
             that->progressState.balanceQuotedAtCloses = &that->balanceQuotedScale->getShapes();
@@ -1064,9 +1096,9 @@ namespace madlib::trading {
         }
         
         static bool onProgressStep(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
+            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
 
-            // show zenity and log
+            // show progress and log
 
             if (that->showProgress || that->logProgress) {
                 if (now() - that->progressState.progressUpdatedAt >= that->showProgressFreqMs) {
@@ -1076,13 +1108,13 @@ namespace madlib::trading {
                     if (that->showProgress) {
 
                         if (!that->progressState.showProgressStarted) {
-                            that->progressState.progressZenityPipe = zenity_progress("Backtest");
+                            that->progressState.createProgress("Backtest...");
                             that->progressState.showProgressStarted = true;
                         }
 
                         if (
-                            !zenity_progress_update(that->progressState.progressZenityPipe, pc100) ||
-                            !zenity_progress_update(that->progressState.progressZenityPipe, "Remaining candles: " + to_string(that->progressState.candlesRemaining))
+                            !that->progressState.progress->update(pc100) ||
+                            !that->progressState.progress->update("Remaining candles: " + to_string(that->progressState.candlesRemaining))
                         ) {
                             LOG("User canceled.");
                             return false;
@@ -1126,18 +1158,22 @@ namespace madlib::trading {
             return true;
         }
         
-        static bool onProgressFinish(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChart* that = (CandleStrategyBacktesterMultiChart*)progressContext.context;
+        static bool onProgressFinish(
+            CandleStrategyBacktester::ProgressContext& progressContext
+        ) {
+            CandleStrategyBacktesterMultiChartAccordion* that = 
+                (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
 
             if (that->logProgress) LOG("Backtest done.");
-            if (that->showProgress) zenity_progress_close(that->progressState.progressZenityPipe);
+            if (that->showProgress && that->progressState.progress) 
+                that->progressState.progress->close();
 
             return true;
         }
 
     public:
 
-        CandleStrategyBacktesterMultiChart(
+        CandleStrategyBacktesterMultiChartAccordion(
             GFX& gfx, int left, int top, int width,
             const int multiChartAccordionFramesHeight,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
@@ -1211,7 +1247,7 @@ namespace madlib::trading {
             openAll(false);
         }
 
-        virtual ~CandleStrategyBacktesterMultiChart() {
+        virtual ~CandleStrategyBacktesterMultiChartAccordion() {
             delete backtester;
         }
 

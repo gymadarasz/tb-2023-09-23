@@ -97,17 +97,24 @@ namespace madlib {
 
         return result;
     }
+    string str_esc(const string& input, const string& chars = "'\\") {
+        string result;
+        for (char c : input) {
+            if (chars.find(c) != string::npos) result += '\\'; // Escape the character
+            result += c;
+        }
+        return result;
+    }
 
     const string str_sanitizer_default_allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ";
-    typedef string (*str_sanitizer_func_t)(const string&, const string&);
-
-    string str_sanitize(const string& input, const string& allowed = str_sanitizer_default_allowed_chars) {
+    typedef string (*str_sanitizer_func_t)(const string&, const string&, const char);
+    string str_sanitize(const string& input, const string& allowed = str_sanitizer_default_allowed_chars, const char replacement = '_') {
     
         // Replace disallowed characters with a safe character (e.g., '_')
         string sanitized = input;
         for (char& c : sanitized)
             if (allowed.find(c) == string::npos)
-                c = '_'; // Replace with a safe character
+                c = replacement; // Replace with a safe character
 
         return sanitized;
     }
@@ -136,7 +143,11 @@ namespace madlib {
         return str.substr(start, end - start);
     }
 
-    inline int reg_match(const string& pattern, const string& str, vector<string>* matches = nullptr) {
+    inline int reg_match(
+        const string& pattern, 
+        const string& str, 
+        vector<string>* matches = nullptr
+    ) {
         regex r(pattern);
         smatch m;
         if (regex_search(str, m, r)) {
@@ -384,10 +395,10 @@ namespace madlib {
     public:
         struct Args {};
         explicit Shared(void* = nullptr) {}
-        virtual ~Shared() {}
         virtual void init(void* = nullptr) {
             throw ERR_UNIMP;
         }
+        virtual ~Shared() {}
     };
 
     class Printer: public Shared {
@@ -437,7 +448,12 @@ namespace madlib {
 
     } logger;
 
-    string exec(const string& command, bool captureOutput = true, bool showOutput = false) {
+    int exec_last_exit_status = 0;
+    int exec_last_exit_code = 0;
+    string exec(const string& command, bool captureOutput = true, bool showOutput = false) {        
+        exec_last_exit_status = 0;
+        exec_last_exit_code = 0;
+
         array<char, 128> buffer;
         string result;
 
@@ -452,9 +468,15 @@ namespace madlib {
             if (showOutput) cout << result;
         }
 
-        // Close the pipe
-        pclose(pipe);
+        // Close the pipe and get the exit status
+        exec_last_exit_status = pclose(pipe);
 
+        // Check if the command exited normally
+        if (WIFEXITED(exec_last_exit_status)) 
+            exec_last_exit_code = WEXITSTATUS(exec_last_exit_status);
+        else
+            throw ERROR("Error occurred while closing the pipe.");
+        
         return result;
     }
 
@@ -604,14 +626,15 @@ namespace madlib {
         const vector<string>& strings, 
         const string& separator = " ", 
         str_sanitizer_func_t sanitizer = NULL, 
-        const string& allowed_chars = str_sanitizer_default_allowed_chars
+        const string& allowed_chars = str_sanitizer_default_allowed_chars,
+        const char replacement = '_'
     ) {
         string result;
         
         for (size_t i = 0; i < strings.size(); ++i) {
             result += 
                 sanitizer 
-                    ? sanitizer(strings[i], allowed_chars) 
+                    ? sanitizer(strings[i], allowed_chars, replacement) 
                     : strings[i];
             
             // Add the separator unless it's the last element
@@ -638,7 +661,8 @@ namespace madlib {
     template<typename T>
     vector<T> vector_load(const string &filename) {
         ifstream file(filename, ios::binary);
-        if (!file.is_open()) throw ERROR("Unable to open file for reading: " + filename);
+        if (!file.is_open()) 
+            throw ERROR("Unable to open file for reading: " + filename);
         T item;
         vector<T> data;
         while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
@@ -795,6 +819,21 @@ namespace madlib {
         return trim(exec("echo $(zenity " + args + " 2>" + err + ")"));
     }
 
+    FILE* zenity_pipe(const string& args) {
+        return pipe_exec("zenity " + args);
+    }
+
+    int zenity_result(const string& args) {
+        return system(string("zenity " + args).c_str());
+    }
+
+    string zenity_esc(const string& inp, const string& sanitize = str_sanitizer_default_allowed_chars + ".'\",;:=?/()[]", const char replacement = '_') {
+        string ret = inp;
+        ret = str_sanitize(ret, sanitize, replacement);
+        ret = str_esc(ret);
+        return "'" + ret + "'";
+    }
+
     string zenity_combo(
         const string& title, 
         const string& text,
@@ -805,15 +844,15 @@ namespace madlib {
         const string cmd = 
             str_replace(
                 "--forms "
-                    "--title='{title}' "
-                    "--text='{text}' "
-                    "--add-combo='{label}' "
-                    "--combo-values='{items}' ",
+                "  --title={title}"
+                "  --text={text}"
+                "  --add-combo={label}"
+                "  --combo-values={items}",
                 {
-                    { "{title}", str_sanitize(title) },
-                    { "{text}", str_sanitize(text) },
-                    { "{label}", str_sanitize(label) },
-                    { "{items}", vector_concat(items, "|", str_sanitize) },
+                    { "{title}", zenity_esc(title) },
+                    { "{text}", zenity_esc(text) },
+                    { "{label}", zenity_esc(label) },
+                    { "{items}", vector_concat(items, "|", zenity_esc) },
                 }
             );
 
@@ -827,25 +866,81 @@ namespace madlib {
     ) {
         const string cmd = 
             str_replace(
-                "--calendar "
-                    "--title='{title}' "
-                    "--text='{text}' "
-                    "--date-format='%Y-%m-%d' ",
+                "--calendar"
+                "  --title={title}"
+                "  --text={text}"
+                "  --date-format='%Y-%m-%d'",
                 {
-                    { "{title}", str_sanitize(title) },
-                    { "{text}", str_sanitize(text) },
+                    { "{title}", zenity_esc(title) },
+                    { "{text}", zenity_esc(text) },
                 }
             );
 
         return zenity(cmd, err);
     }
 
-    string zenity_file_selection(const string& title = "", const string& err = "/dev/null") {
-        return zenity("--file-selection --title=\"" + str_sanitize(title) + "\"", err);
+    bool zenity_question(
+        const string& title, 
+        const string& text,
+        const string& cancel = "No",
+        const string& ok = "Yes"
+    ) {
+        const string cmd = 
+            str_replace(
+                "--question"
+                "  --title={title}"
+                "  --text={text}"
+                "  --cancel-label={cancel}"
+                "  --ok-label={ok}",
+                {
+                    { "{title}", zenity_esc(title) },
+                    { "{text}", zenity_esc(text) },
+                    { "{cancel}", zenity_esc(cancel) },
+                    { "{ok}", zenity_esc(ok) },
+                }
+            );
+
+        return !zenity_result(cmd);
     }
 
-    FILE* zenity_progress(const string& title) {
-        return pipe_exec("zenity --progress --auto-close --title=\"" + str_sanitize(title) + "\"");
+    string zenity_file_selection(
+        const string& title = "", 
+        const string& err = "/dev/null"
+    ) {
+        const string cmd = 
+            str_replace(
+                "--file-selection"
+                "  --title={title}",
+                {
+                    { "{title}", zenity_esc(title) },
+                }
+            );
+
+        return zenity(cmd, err);
+    }
+
+    FILE* zenity_progress(
+        const string& title,
+        bool noCancel = false,
+        bool autoClose = true,
+        bool timeRemaining = true
+    ) {
+        const string cmd = 
+            str_replace(
+                "--progress"
+                "  --title={title}"
+                "{noCancel}"
+                "{autoClose}"
+                "{timeRemaining}",
+                {
+                    { "{title}", zenity_esc(title) },
+                    { "{noCancel}", noCancel ? "  --no-cancel" : "" },
+                    { "{autoClose}", autoClose ? "  --auto-close" : "" },
+                    { "{timeRemaining}", timeRemaining ? "  --time-remaining" : "" },
+                }
+            );
+
+        return zenity_pipe(cmd);
     }
 
     bool zenity_progress_update(FILE* pipe, int percent) {
@@ -860,6 +955,54 @@ namespace madlib {
         if (!zenity_progress_update(pipe, 100)) return 0;
         return pipe_close(pipe);
     }
+
+    class Progress {
+    protected:
+
+        bool closed = false;
+
+        FILE* pipe = NULL;
+
+    public:
+        
+        explicit Progress(
+            const string& title,
+            bool noCancel = false,
+            bool autoClose = true,
+            bool timeRemaining = true
+        ):  
+            pipe(
+                zenity_progress(
+                    title, 
+                    noCancel, 
+                    autoClose, 
+                    timeRemaining
+                )
+            ) {}
+        
+        virtual ~Progress() {
+            if (!closed) close();
+        }
+
+        bool update(int percent) {
+            return closed = zenity_progress_update(pipe, percent);
+        }
+
+        bool update(const string& status) {
+            return closed = zenity_progress_update(pipe, status);
+        }
+
+        bool update(double at, double from, double to) {
+            double ratio =  (at - from) / (to - from);
+            double percent = ratio * 100;
+            return update((int)percent);
+        }
+
+        int close() {
+            closed = true;
+            return zenity_progress_close(pipe);
+        }
+    };
 
     template <typename T>
     class Factory {
@@ -906,27 +1049,25 @@ namespace madlib {
 
 
     #define EXPORT_CLASS(clazz) \
-        extern "C" clazz* create##clazz(void* context = nullptr) { \
+        extern "C" clazz* create##clazz(clazz::Args* context = nullptr) { \
             clazz* obj = new clazz(context); \
             obj->init(context); \
+            if (context) delete (clazz::Args*)context; \
             return obj; \
         } \
-        extern "C" void destroy##clazz(void* instance, void* context) { \
-            if (instance) delete (clazz*)instance; \
-            if (context) delete (clazz::Args*)context; \
+        extern "C" void destroy##clazz(void* instance) { \
+            delete (clazz*)instance; \
         }
 
         
     class SharedFactory {
     protected:
-        
-        typedef struct { void* instance; void* context; } InstanceAndContext;
 
         typedef Shared* (*SharedCreator)(void*);
-        typedef void (*SharedDestroyer)(void*, void*);
+        typedef void (*SharedDestroyer)(void*);
 
         typedef struct {
-            vector<InstanceAndContext> instanceAndContexts;
+            vector<void*> instances;
             void* handle = NULL;
             SharedCreator creator;
             SharedDestroyer destroyer;
@@ -941,19 +1082,38 @@ namespace madlib {
         virtual ~SharedFactory() {
             for (const auto& pair: imports) {
                 const SharedInstance& import = pair.second;
-                for (const InstanceAndContext& ic: import.instanceAndContexts)
-                    if (import.destroyer) import.destroyer(ic.instance, ic.context);
+                for (void* instance: import.instances)
+                    if (import.destroyer) import.destroyer(instance);
                 if (import.handle) dlclose(import.handle);
             }
         }
 
-        // template<typename A = void*>
+        void* create(void* instance, const string& path, const string& clazz, void* context = NULL) {
+            if (instance) {
+                bool found = false;
+                for (const auto& import: imports) {
+                    for (const void* iinstance: import.second.instances) {
+                        if (iinstance == instance) {
+                            import.second.destroyer(instance);
+                            instance = NULL;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                if (!found)
+                    throw ERROR("Requested instance is not created before.");
+            }
+            return create(path, clazz, context);
+        }
+
         void* create(const string& path, const string& clazz, void* context = NULL) {
             const string source = path_normalize(path + "/" + clazz + ".so");
 
             if (map_has(imports, source)) {
                 Shared* instance = imports[source].creator(context);
-                imports[source].instanceAndContexts.push_back({ instance, context });
+                imports[source].instances.push_back(instance);
                 return instance;
             }
 
@@ -961,15 +1121,18 @@ namespace madlib {
             const string destroy = "destroy" + clazz;
 
             void* handle = dlopen((source).c_str(), RTLD_LAZY);
-            if (!handle) throw ERROR("Unable to open: " + source + " - " + dlerror());
+            if (!handle) 
+                throw ERROR("Unable to open: " + source + " - " + dlerror());
 
             SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
-            if (!creator) throw ERROR("Unable to create: " + clazz + " - " + dlerror());
+            if (!creator) 
+                throw ERROR("Unable to create: " + clazz + " - " + dlerror());
 
             SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
             
             Shared* instance = creator(context);
-            if (!instance) throw ERROR("Unable to instanciate: " + clazz);
+            if (!instance) 
+                throw ERROR("Unable to instanciate: " + clazz);
 
             imports[source] =  {{ { instance, context } }, handle, creator, destroyer };
 

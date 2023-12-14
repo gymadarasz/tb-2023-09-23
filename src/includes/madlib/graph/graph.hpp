@@ -2611,7 +2611,9 @@ namespace madlib::graph {
                 gui.draw();
                 gui.loop();
             } catch (exception& e) {
-                throw ERROR("Application error: " + string(e.what()));
+                string errmsg = "Application error: " + string(e.what());
+                LOG(errmsg);
+                throw ERROR(errmsg);
             }
             return this;
         }

@@ -3,13 +3,10 @@
 
 #include "includes/madlib/madlib.hpp"
 #include "includes/madlib/trading/trading.hpp"
-// #include "includes/madlib/trading/bitstamp/bitstamp.hpp"
-// #include "bitstamp.hpp"
 
 using namespace std;
 using namespace madlib::graph;
 using namespace madlib::trading;
-// using namespace madlib::trading::bitstamp;
 
 
 struct Config {
@@ -26,6 +23,9 @@ struct Config {
     static const vector<string> symbols;
     static const map<string, Pair> pairs;
     static const map<string, Balance> balances;
+    
+    static const ms_t startTime;
+    static const ms_t endTime;
 };
 const string Config::candleHistoryPath = "build/src/shared/trading/history";
 const string Config::testExchangePath = "build/src/shared/trading/exchange/test";
@@ -51,8 +51,8 @@ const map<string, Balance> Config::balances = {
     { "BTC", Balance(1) },
     { "USD", Balance(10000) },
 };
-// TestExchange Config::testExchange = TestExchange(Config::symbols, pairs, balances);
-
+const ms_t Config::startTime = datetime_to_ms("2017-01-01 00:00:00");
+const ms_t Config::endTime = datetime_to_ms("2023-10-25 05:00:00");
 
 
 class BitstampHistoryApplication: public FrameApplication {
@@ -60,11 +60,6 @@ protected:
 
     static BitstampHistoryApplication* app;
 
-    const ms_t startTime = datetime_to_ms("2014-01-01 00:00:00");
-    const ms_t endTime = datetime_to_ms("2023-10-25 05:00:00");
-    // const ms_t period = period_to_ms("1m");
-    // History::Args args = { Config::symbol, startTime, endTime, period };
-    // CandleHistory* candleHistory = NULL; // = BitstampCandleHistory(&args);
 
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(Config::symbol)},
@@ -79,7 +74,9 @@ protected:
     const int multiChartAccordionTop = settingsTop + settingsRowHeight * 2;
     const int multiChartAccordionWidth = 1000;
     const int multiChartAccordionFramesHeight = 340;
+
     const bool showBalanceQuotedScale = true;
+
     
     CandleHistory* candleHistory = NULL;
     TestExchange* testExchange = NULL;
@@ -91,8 +88,9 @@ protected:
     Select* periodSelect = NULL;
     Select* symbolSelect = NULL;
     Select* candleStrategySelect = NULL;
+    Button* downloadButton = NULL;
     Button* startButton = NULL;
-    CandleStrategyBacktesterMultiChart* candleStrategyBacktesterMultiChart = NULL;
+    CandleStrategyBacktesterMultiChartAccordion* candleStrategyBacktesterMultiChartAccordion = NULL;
 
     vector<string> getClasses(const string& path) {
         vector<string> files = file_find_by_extension(path, ".so");
@@ -114,21 +112,21 @@ protected:
 
     static void onHistorySelected(void*, unsigned int, int, int) {
         app->historySelect->setValue(app->historySelect->getInput()->getText());
-        app->loadHistory();
+        app->loadHistoryModule();
         app->historySelect->getInput()->draw();
     }
 
-    static void onHistoryBeginTouchHandler(void*, unsigned int, int, int) {
-        DBG("onHistoryBeginTouchHandler");
+    static void onHistoryDateRangeFromTouch(void*, unsigned int, int, int) {
+        app->loadHistoryData(); // TODO: !@# reset the multicharts date range too
     }
 
-    static void onHistoryEndTouchHandler(void*, unsigned int, int, int) {
-        DBG("onHistoryEndTouchHandler");
+    static void onHistoryDateRangeToTouch(void*, unsigned int, int, int) {
+        app->loadHistoryData(); // TODO: !@# reset the multicharts date range too + validate the interval in DateRange handlers (from can not be greater then to!!)
     }
 
     static void onExchangeSelected(void*, unsigned int, int, int) {
         app->exchangeSelect->setValue(app->exchangeSelect->getInput()->getText());
-        app->loadExchange();
+        app->loadExchangeModule();
         app->loadPeriods();
         app->loadSymbols();
         app->periodSelect->getInput()->draw();
@@ -145,12 +143,28 @@ protected:
 
     static void onCandleStrategySelected(void*, unsigned int, int, int) {
         app->candleStrategySelect->setValue(app->candleStrategySelect->getInput()->getText());
-        app->loadStrategy();
+        app->loadStrategyModule();
     }
 
-    static void onStartPushed(void*, unsigned int, int, int) {
-        app->candleStrategyBacktesterMultiChart->backtest();
-        app->candleStrategyBacktesterMultiChart->draw();
+    static void onDownloadTouch(void*, unsigned int, int, int) {
+        const string symbol = app->symbolSelect->getInput()->getText();        
+        const ms_t from = datetime_to_ms(app->historyDateRange->getFromInput()->getText());
+        const ms_t to = datetime_to_ms(app->historyDateRange->getToInput()->getText());
+        const ms_t period = period_to_ms(app->periodSelect->getInput()->getText());
+        const bool override = zenity_question("Override", "Do you want to override if data already exists?");
+        
+        app->candleHistory->setSymbol(symbol);
+        app->candleHistory->setStartTime(from);
+        app->candleHistory->setEndTime(to);
+        app->candleHistory->setPeriod(period);
+        Progress progress("Download history...", true);
+        app->candleHistory->download(progress, override);
+        progress.close();
+    }
+
+    static void onStartTouch(void*, unsigned int, int, int) {
+        app->candleStrategyBacktesterMultiChartAccordion->backtest();
+        app->candleStrategyBacktesterMultiChartAccordion->draw();
     }
 
     void createHistorySelect() {
@@ -159,13 +173,13 @@ protected:
         historySelect = new Select(mainFrame, 10, settingsTop, "History", values, defval);
         Input* historyInput = historySelect->getInput();
         historyInput->addTouchHandler(onHistorySelected);
-        if (!defval.empty()) loadHistory();
+        if (!defval.empty()) loadHistoryModule();
     }
 
     void createHistoryDateRange() {
-        historyDateRange = new DateRange(mainFrame, 300, settingsTop, "Date", startTime, endTime);
-        historyDateRange->getFromInput()->addTouchHandler(onHistoryBeginTouchHandler);
-        historyDateRange->getToInput()->addTouchHandler(onHistoryEndTouchHandler);
+        historyDateRange = new DateRange(mainFrame, 300, settingsTop, "Date", Config::startTime, Config::endTime);
+        historyDateRange->getFromInput()->addTouchHandler(onHistoryDateRangeFromTouch);
+        historyDateRange->getToInput()->addTouchHandler(onHistoryDateRangeToTouch);
     }
 
     void createExchangeSelect() {
@@ -174,7 +188,7 @@ protected:
         exchangeSelect = new Select(mainFrame, 10, settingsTop + settingsRowHeight, "Exchange", values, defval);
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
-        if (!defval.empty()) loadExchange();
+        if (!defval.empty()) loadExchangeModule();
     }
 
     void createPeriodSelect() {
@@ -197,17 +211,26 @@ protected:
         candleStrategySelect = new Select(mainFrame, 600, settingsTop + settingsRowHeight, "Strategy", values, defval);
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategyInput->addTouchHandler(onCandleStrategySelected);
-        if (!defval.empty()) loadStrategy();
+        if (!defval.empty()) loadStrategyModule();
+    }
+
+    void createDownloadButton() {
+        downloadButton = new Button(gfx, 910, settingsTop, 90, 20, "Download");
+        mainFrame.child(*downloadButton);
+        downloadButton->addTouchHandler(onDownloadTouch);
     }
 
     void createStartButton() {
-        startButton = new Button(gfx, 900, settingsTop + settingsRowHeight, 90, 20, "Start");
+        startButton = new Button(gfx, 910, settingsTop + settingsRowHeight, 90, 20, "Start");
         mainFrame.child(*startButton);
-        startButton->addTouchHandler(onStartPushed);
+        startButton->addTouchHandler(onStartTouch);
     }
 
-    void createCandleStrategyBacktesterMultiChart() {
-        candleStrategyBacktesterMultiChart = new CandleStrategyBacktesterMultiChart(
+    void createCandleStrategyBacktesterMultiChartAccordion() {
+        const ms_t startTime = datetime_to_ms(historyDateRange->getFromInput()->getText());
+        const ms_t endTime = datetime_to_ms(historyDateRange->getToInput()->getText());
+
+        candleStrategyBacktesterMultiChartAccordion = new CandleStrategyBacktesterMultiChartAccordion(
             gfx, 
             multiChartAccordionLeft, 
             multiChartAccordionTop, 
@@ -216,26 +239,48 @@ protected:
             startTime, endTime,
             *candleHistory, *testExchange, *candleStrategy, Config::symbol
         );
-        mainFrame.child(*candleStrategyBacktesterMultiChart);
+        mainFrame.child(*candleStrategyBacktesterMultiChartAccordion);
     }
 
-    void loadHistory() {
+    void loadHistoryModule() {
         const string period = periodSelect->getInput()->getText();
         const string symbol = symbolSelect->getInput()->getText();
+        const ms_t start = datetime_to_ms(historyDateRange->getFromInput()->getText());
+        const ms_t end = datetime_to_ms(historyDateRange->getToInput()->getText());
 
         Input* historyInput = historySelect->getInput();
+
         candleHistory = (CandleHistory*)sharedFactory.create(
+            candleHistory,
             Config::candleHistoryPath, historyInput->getText(),
             new CandleHistory::Args(
-                { symbol, startTime, endTime, period_to_ms(period) }
+                { symbol, start, end, period_to_ms(period) }
             )
         );
+
+        loadHistoryData();
     }
 
-    void loadExchange() {
+    void loadHistoryData() {
+        const ms_t startTime = datetime_to_ms(historyDateRange->getFromInput()->getText());
+        const ms_t endTime = datetime_to_ms(historyDateRange->getToInput()->getText());
+        const string symbol = symbolSelect->getInput()->getText();
+        const ms_t period = period_to_ms(periodSelect->getInput()->getText());
+        
+        candleHistory->setStartTime(startTime);
+        candleHistory->setEndTime(endTime);
+        candleHistory->setSymbol(symbol);
+        candleHistory->setPeriod(period);
+        Progress progress("Loading history...", true);
+        candleHistory->load(progress);
+        progress.close();
+    }
+
+    void loadExchangeModule() {
         // load the selected exchange lib
         Input* exchangeInput = exchangeSelect->getInput();
         testExchange = (TestExchange*)sharedFactory.create(
+            testExchange,
             Config::testExchangePath, exchangeInput->getText(), 
             new TestExchange::Args(
                 // TODO: args from user with a settings form...??
@@ -244,10 +289,11 @@ protected:
         );
     }
 
-    void loadStrategy() {
+    void loadStrategyModule() {
         // load the selected strategy lib
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategy = (CandleStrategy*)sharedFactory.create(
+            candleStrategy,
             Config::candleStrategyPath, candleStrategyInput->getText(), 
             new CandleStrategy::Args(
                 // TODO: args from user with a settings form...??
@@ -299,8 +345,9 @@ public:
         delete periodSelect;
         delete symbolSelect;
         delete candleStrategySelect;
+        delete downloadButton;
         delete startButton;
-        delete candleStrategyBacktesterMultiChart;
+        delete candleStrategyBacktesterMultiChartAccordion;
     }
 
     void init() override {
@@ -312,50 +359,14 @@ public:
         createStrategySelect();
         createPeriodSelect();
         createSymbolSelect();
-        createHistorySelect();
         createHistoryDateRange();
+        createHistorySelect();
+        createDownloadButton();
         createStartButton();
-        createCandleStrategyBacktesterMultiChart();
+        createCandleStrategyBacktesterMultiChartAccordion();
     }
 };
 BitstampHistoryApplication* BitstampHistoryApplication::app = NULL;
-
-
-
-// int test(int argc, const char* argv[]) {
-//     const args_t args = args_parse(argc, argv);
-//     cout << "Hello Test!" << endl;
-//     cout << "Your argument(s): " << endl;
-//     for (const auto& arg : args) {
-//         cout << "   [" << arg.first << "] => \"" << arg.second << "\"" << endl;
-//     }
-//     return 0;
-// }
-
-// int download_bitstamp_csv(int argc, const char* argv[]) {
-
-//     const args_shortcuts_t shortcuts = {
-//         {'s', "symbol"},
-//         {'f', "year-from"},
-//         {'t', "year-to"},
-//         {'p', "period"},
-//         {'o', "overwrite"},
-//     };
-//     const args_t args = args_parse(argc, argv, &shortcuts);
-
-//     const string symbol = args_get(args, "symbol");
-//     const string nowstr = ms_to_datetime(now(), "%Y", false);
-//     const int yearFrom = parse<int>(args_get(args, "year-from", &nowstr));
-//     const int yearTo = parse<int>(args_get(args, "year-to", &nowstr));
-//     const string period = args_get(args, "period", "minute");
-//     const bool overwrite = args_has(args, "overwrite") 
-//         ? args_has(args, "year-to") 
-//         : !(args_has(args, "year-from") || args_has(args, "year-to"));
-//     // const bool overwrite = vector_has(args, 5) ? parse_bool(args.at(3)) : !(vector_has(args, 2) || vector_has(args, 3));
-//     bitstamp_download_candle_history_csv_all(symbol, yearFrom, yearTo, period, overwrite);
-//     bitstamp_parse_candle_history_csv_all(symbol, yearFrom, yearTo, period);
-//     return 0;
-// }
 
 int backtest(int, const char* []) {
     // TODO: pass arguments
@@ -367,16 +378,8 @@ int help(int, const char* argv[]) {
     cout <<
         "Usages: $ " << argv[0] << " [COMMAND] [OPTIONS...]\n"
         "Commands:\n\n"
-
-        "   test-command\n\n"
-
-        "   download-bitstamp-csv\n\n"
-
-        "       Download Bitstamp candle history csv\n"
-        "       Parameters:\n"
-        "           download-bitstamp-csv {symbol} {from-year(optional, default=[actual year])} {to-year(optional, default=[actual year])} {period(optional, default=minute)} {override(optional, default=false or true if no year given so override the actual year data)}\n"
-        "       see more at https://www.cryptodatadownload.com/data/bitstamp/\n\n"
-
+        // "   test-command\n\n"
+        "   help\n\n"
         "   backtest\n\n" // TODO...
         << endl;
     return 0;
@@ -387,11 +390,9 @@ int main(int argc, const char* argv[])
     LOG("Main thread started.");
     try { 
         // if (argv[1] && !strcmp(argv[1], "test-command")) return test(argc, argv);
-        // if (argv[1] && !strcmp(argv[1], "download-bitstamp-csv")) return download_bitstamp_csv(argc, argv);
         if (argv[1] && !strcmp(argv[1], "backtest")) return backtest(argc, argv);
     } catch (exception &e) {
         const string errmsg = "Exception in main thread: " + string(e.what());
-        LOG(errmsg);
         cout << errmsg << endl;
         cout << "Use '$ " << argv[0] << " help' for more info..." << endl;
         return 1;
