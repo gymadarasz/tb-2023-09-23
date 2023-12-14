@@ -24,90 +24,120 @@ using namespace std;
 
 class Tester {
 public:
+
+    typedef int (*TestCommandFunction)();
     typedef void (*TestFunction)();
 
-    static void run(TestFunction test) {
+    static void run(ManualTestApplication* test, const string& logmsg) {
         cout << ".";
+        LOG("Manual testing...: " + logmsg);
+        test->run();
+        delete test;
+    }
+
+    static void run(TestCommandFunction test, const string& logmsg) {
+        cout << ".";
+        LOG("Testing command...: " + logmsg);
+        int result = test();
+        if (result) LOG(COLOR_ERROR "Command failed: " COLOR_DEFAULT + result);
+        assert(0 == result);
+    }
+
+    static void run(TestFunction test, const string& logmsg) {
+        cout << ".";
+        LOG("Testing...: " + logmsg);
         test();
     }
 };
+
+#define TEST(test) Tester::run(test, QUOTEME(test));
 
 int main() {
 
     cout << "Testing in progress: ";
 
-    Tester::run(MadlibTest::test_shared_lib);
-    Tester::run(MadlibTest::test_str_start_with_positive);
-    Tester::run(MadlibTest::test_str_start_with_negative);
-    Tester::run(MadlibTest::test_args_parse_without_shortcuts);
-    Tester::run(MadlibTest::test_args_parse_with_shortcuts);
-    Tester::run(MadlibTest::test_args_parse_empty_key);
-    Tester::run(MadlibTest::test_args_parse_duplicate_arguments);
-    Tester::run(MadlibTest::test_args_parse_missing_values);
-    Tester::run(MadlibTest::test_args_parse_unrecognized_arguments);
-    Tester::run(MadlibTest::test_args_parse_mix_short_and_long);
-    Tester::run(MadlibTest::test_args_parse_no_arguments);
-    Tester::run(MadlibTest::test_args_parse_complex_values);
-    Tester::run(MadlibTest::test_args_parse_no_value_for_last_argument);
-    Tester::run(MadlibTest::test_args_parse_long_arguments_with_shortcuts);
-    Tester::run(MadlibTest::test_args_parse_short_arguments_without_values);
-    Tester::run(MadlibTest::test_args_parse_short_arguments_with_values_starting_with_dash);
-    Tester::run(MadlibTest::test_lib_reg_match);
-    Tester::run(MadlibTest::test_lib_reg_match_alphabets);
-    Tester::run(MadlibTest::test_str_to_lower);
-    Tester::run(MadlibTest::test_parse_bool);
-    Tester::run(MadlibTest::test_FactoryWithParams_Int);
-    Tester::run(MadlibTest::test_FactoryWithParams_CustomClass);
-    Tester::run(MadlibTest::test_FactoryWithoutParams);
-    Tester::run(ToolsTest::test_trim);
-    Tester::run(ToolsTest::test_normalize_datetime);
-    Tester::run(ToolsTest::test_datetime_conversion);
-    Tester::run(ToolsTest::testSystem_exec);
-    Tester::run(ToolsTest::test_split);
-    Tester::run(ToolsTest::test_is_numeric);
-    Tester::run(ToolsTest::test_parse);
-    Tester::run(ToolsTest::test_str_replace);
-    Tester::run(ToolsTest::test_str_replace_map);
-    Tester::run(ToolsTest::test_map_has);
-    Tester::run(ToolsTest::test_map_keys);
-    Tester::run(ToolsTest::test_map_key_exists);
-    Tester::run(VectorTest::test_vector_create_destroy);
-    Tester::run(VectorTest::testVector_concat);
-    Tester::run(VectorTest::testVector_save_and_load);
-    Tester::run(VectorTest::testVector_load_and_load_with_reference);
-    Tester::run(FilesTest::testFiles_findByExtension);
-    Tester::run(FilesTest::testFiles_findByExtensions);
-    Tester::run(FilesTest::testFiles_replaceExtension);
-    Tester::run(FilesTest::testFiles_normalizePath);
-    Tester::run(FilesTest::testFiles_extractPath);
-    Tester::run(FilesTest::testFiles_extractFilename);
-    Tester::run(FilesTest::testFiles_exists);
-    Tester::run(FilesTest::testFiles_createPath);
-    Tester::run(FilesTest::testFiles_getLastModificationTime);
-    Tester::run(FilesTest::testFiles_file_get_contents);
-    Tester::run(FilesTest::testFiles_file_put_contents);
-    Tester::run(LogTest::testLog_writeln);
+    cout << "Unit tests: ";
+
+    TEST(MadlibTest::test_shared_lib);
+    TEST(MadlibTest::test_str_start_with_positive);
+    TEST(MadlibTest::test_str_start_with_negative);
+    TEST(MadlibTest::test_args_parse_without_shortcuts);
+    TEST(MadlibTest::test_args_parse_with_shortcuts);
+    TEST(MadlibTest::test_args_parse_empty_key);
+    TEST(MadlibTest::test_args_parse_duplicate_arguments);
+    TEST(MadlibTest::test_args_parse_missing_values);
+    TEST(MadlibTest::test_args_parse_unrecognized_arguments);
+    TEST(MadlibTest::test_args_parse_mix_short_and_long);
+    TEST(MadlibTest::test_args_parse_no_arguments);
+    TEST(MadlibTest::test_args_parse_complex_values);
+    TEST(MadlibTest::test_args_parse_no_value_for_last_argument);
+    TEST(MadlibTest::test_args_parse_long_arguments_with_shortcuts);
+    TEST(MadlibTest::test_args_parse_short_arguments_without_values);
+    TEST(MadlibTest::test_args_parse_short_arguments_with_values_starting_with_dash);
+    TEST(MadlibTest::test_lib_reg_match);
+    TEST(MadlibTest::test_lib_reg_match_alphabets);
+    TEST(MadlibTest::test_str_to_lower);
+    TEST(MadlibTest::test_parse_bool);
+    TEST(MadlibTest::test_FactoryWithParams_Int);
+    TEST(MadlibTest::test_FactoryWithParams_CustomClass);
+    TEST(MadlibTest::test_FactoryWithoutParams);
+    TEST(ToolsTest::test_trim);
+    TEST(ToolsTest::test_normalize_datetime);
+    TEST(ToolsTest::test_datetime_conversion);
+    TEST(ToolsTest::testSystem_exec);
+    TEST(ToolsTest::test_split);
+    TEST(ToolsTest::test_is_numeric);
+    TEST(ToolsTest::test_parse);
+    TEST(ToolsTest::test_str_replace);
+    TEST(ToolsTest::test_str_replace_map);
+    TEST(ToolsTest::test_map_has);
+    TEST(ToolsTest::test_map_keys);
+    TEST(ToolsTest::test_map_key_exists);
+    TEST(VectorTest::test_vector_create_destroy);
+    TEST(VectorTest::testVector_concat);
+    TEST(VectorTest::testVector_save_and_load);
+    TEST(VectorTest::testVector_load_and_load_with_reference);
+    TEST(FilesTest::testFiles_findByExtension);
+    TEST(FilesTest::testFiles_findByExtensions);
+    TEST(FilesTest::testFiles_replaceExtension);
+    TEST(FilesTest::testFiles_normalizePath);
+    TEST(FilesTest::testFiles_extractPath);
+    TEST(FilesTest::testFiles_extractFilename);
+    TEST(FilesTest::testFiles_exists);
+    TEST(FilesTest::testFiles_createPath);
+    TEST(FilesTest::testFiles_getLastModificationTime);
+    TEST(FilesTest::testFiles_file_get_contents);
+    TEST(FilesTest::testFiles_file_put_contents);
+    TEST(LogTest::testLog_writeln);
 
     cout << " [OK]" << endl;
 
     cout << "Manual tests: ";
     
-    delete (new ChartLabelManualTest1)->run();
-    delete (new ChartManualTest7Zoom)->run();
-    delete (new MonteCarloChartsTest1)->run(); // TODO: chart scroll and zoom bad
-    delete (new MultiChartAccordionManualTest1)->run();
-    delete (new AccordionManualTest1)->run();
-    delete (new ChartManualTest6)->run();
+    TEST(new ChartLabelManualTest1);
+    TEST(new ChartLabelManualTest1);
+    TEST(new ChartManualTest7Zoom);
+    TEST(new MonteCarloChartsTest1); // TODO: chart scroll and zoom bad
+    TEST(new MultiChartAccordionManualTest1);
+    TEST(new AccordionManualTest1);
+    TEST(new ChartManualTest6);
 
-    chart_manual_test5_zoom();
-    chart_manual_test4_history();
-    chart_manual_test3_candles();
-    chart_manual_test2();
-    chart_manual_test1();
-    graph_manual_test1(); // TODO: BUG: drag-scroll doesnt work if I click below the big willi button somewhere
+    cout << " [OK]" << endl;
 
-    cout << " [OK]" << endl 
-        << "\033[92mAll tests are passed\033[39m" << endl;
+    cout << "Tests commands: ";
+
+    TEST(chart_manual_test5_zoom);
+    TEST(chart_manual_test4_history);
+    TEST(chart_manual_test3_candles);
+    TEST(chart_manual_test2);
+    TEST(chart_manual_test1);
+    TEST(graph_manual_test1); // TODO: BUG: drag-scroll doesnt work if I click below the big willi button somewhere
+
+    cout << " [OK]" << endl;
+
+    string msg = "\033[92mAll tests are passed\033[39m";
+    cout << msg << endl;
+    LOG(msg);
 
 
     return 0;

@@ -5,7 +5,7 @@ namespace madlib::trading::exchange::test {
     class DefaultTestExchange: public TestExchange {
     public:
         using TestExchange::TestExchange;
-        virtual ~DefaultTestExchange() final {};
+        virtual ~DefaultTestExchange() {};
     };
 
     EXPORT_CLASS(DefaultTestExchange)

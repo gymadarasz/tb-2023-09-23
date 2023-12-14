@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <poll.h>
+#include <signal.h>
 
 using namespace std;
 using namespace chrono;
@@ -409,6 +410,7 @@ namespace madlib {
             print(output + "\n");
         }
         virtual ~Printer() {}
+        virtual void init(void* = nullptr) override {}
     };
 
     class Log: public Printer {
@@ -474,8 +476,17 @@ namespace madlib {
         // Check if the command exited normally
         if (WIFEXITED(exec_last_exit_status)) 
             exec_last_exit_code = WEXITSTATUS(exec_last_exit_status);
+        else if (
+            WIFSIGNALED(exec_last_exit_status) && 
+            WTERMSIG(exec_last_exit_status) == SIGPIPE
+        )
+            // Handle the case where the process was terminated by a broken pipe
+            LOG("Warning: The process was terminated by a broken pipe.");
         else
-            throw ERROR("Error occurred while closing the pipe.");
+            throw ERROR(
+                "Error occurred while closing the pipe. Exit signal: " 
+                + to_string(WTERMSIG(exec_last_exit_status))
+            );
         
         return result;
     }
@@ -1134,7 +1145,7 @@ namespace madlib {
             if (!instance) 
                 throw ERROR("Unable to instanciate: " + clazz);
 
-            imports[source] =  {{ { instance, context } }, handle, creator, destroyer };
+            imports[source] = {{ instance }, handle, creator, destroyer };
 
             return instance;
         }

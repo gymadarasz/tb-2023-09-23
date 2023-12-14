@@ -27,7 +27,7 @@ int chart_manual_test5_zoom()
 {
     GFX gfx;
     chart_manual_test5_gfxPtr = &gfx;
-    GUI gui(gfx, 1600, 600);
+    GUI gui(gfx, 1600, 600, "chart_manual_test5_zoom");
     // Chart chart(gfx, zoom, 10, 10, 1580, 580, PUSHED, black);
     // gui.child(chart);
     // chart.setZoom(zoom);
@@ -55,16 +55,18 @@ int chart_manual_test5_zoom()
     const ms_t period = period_to_ms("1h");
     const unsigned int seed = 6;
 
-    // Create a MonteCarloHistory object with the specified parameters
-    MonteCarloHistory history(
+    // Create a MonteCarloTradeCandleHistory object with the specified parameters
+    MonteCarloTradeCandleHistory::Args context({
         symbol, 
         startTime, endTime, period,
         volumeMean, volumeStdDeviation,
         priceMean, priceStdDeviation,
         timeLambda, seed
-    );
+    });
+    MonteCarloTradeCandleHistory history(&context);
+    history.init();
 
-    TradeHistoryChart chart(
+    CandleHistoryChart chart(
         gfx, 10, 10, 1580, 580,
         history
     );

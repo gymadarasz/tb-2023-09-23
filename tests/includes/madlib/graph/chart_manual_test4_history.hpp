@@ -50,17 +50,19 @@ int chart_manual_test4_history()
     const ms_t period = period_to_ms("1h");
     const unsigned int seed = 3;
 
-    // Create a MonteCarloHistory object with the specified parameters
-    MonteCarloHistory history(
+    // Create a MonteCarloTradeCandleHistory object with the specified parameters
+    MonteCarloTradeCandleHistory::Args context({
         symbol, 
         startTime, endTime, period,
         volumeMean, volumeStdDeviation,
         priceMean, priceStdDeviation,
         timeLamda, seed
-    );
+    });
+    MonteCarloTradeCandleHistory history(&context);
+    history.init();
 
     // Zoom zoom;
-    TradeHistoryChart chart(
+    CandleHistoryChart chart(
         gfx, 10, 10, 780, 580,
         history
     );

@@ -24,18 +24,7 @@ protected:
     const ms_t period = period_to_ms("1h");
     const unsigned int seed = 6000;
 
-    // Create a MonteCarloHistory object with the specified parameters
-    MonteCarloHistory history = MonteCarloHistory(
-        symbol, 
-        startTime, endTime, period,
-        volumeMean, volumeStdDeviation,
-        priceMean, priceStdDeviation,
-        timeLambda, seed
-    );
 
-    TradeHistoryChart chart = TradeHistoryChart(
-        gfx, 300, 300, 1000, 300, history
-    );
 
 
     // test sliders...
@@ -48,11 +37,36 @@ protected:
     ScrollBar scrollBarVertical = ScrollBar(gfx, 290, 60, 200, VERTICAL);
     IntervalBar intervalBarVertical = IntervalBar(gfx, 320, 60, 200, VERTICAL);
 
+    MonteCarloTradeCandleHistory* history = NULL;
+    CandleHistoryChart* chart = NULL;
+
 public:
+
+    using ManualTestApplication::ManualTestApplication;
+
+    virtual ~ChartManualTest7Zoom() {
+        delete history;
+        delete chart;
+    }
 
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("ChartManualTest7Zoom");
+
+        // Create a MonteCarloTradeCandleHistory object with the specified parameters
+        MonteCarloTradeCandleHistory::Args context = MonteCarloTradeCandleHistory::Args({
+            symbol, 
+            startTime, endTime, period,
+            volumeMean, volumeStdDeviation,
+            priceMean, priceStdDeviation,
+            timeLambda, seed
+        });
+        history = new MonteCarloTradeCandleHistory(&context);
+        history->init();
+        
+        chart = new CandleHistoryChart(
+            gfx, 300, 300, 1000, 300, *history
+        );
 
         mainFrame.child(slideBarHorizontal);
         mainFrame.child(scrollBarHorizontal);
@@ -61,6 +75,6 @@ public:
         mainFrame.child(scrollBarVertical);
         mainFrame.child(intervalBarVertical);
 
-        mainFrame.child(chart);
+        mainFrame.child(*chart);
     }
 };

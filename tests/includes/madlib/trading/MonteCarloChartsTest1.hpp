@@ -9,17 +9,8 @@ using namespace madlib::trading;
 
 class MonteCarloChartsTest1: public ManualTestApplication {
 protected:
-
-    // const int multiChartAccordionLeft = 10;
-    // const int multiChartAccordionTop = 50;
-    // const int multiChartAccordionWidth = 1000;
-
-    // MultiChartAccordion multiChartAccordion = MultiChartAccordion(
-    //     gfx,
-    //     multiChartAccordionLeft, 
-    //     multiChartAccordionTop, 
-    //     multiChartAccordionWidth
-    // );
+    MonteCarloTradeCandleHistory* history = NULL;
+    CandleStrategyBacktesterMultiChartAccordion* backtester = NULL;
 
     const string symbol = "MONTECARLO";
     const ms_t startTime = datetime_to_ms("2020-01-01 00:00:00.000");
@@ -31,13 +22,6 @@ protected:
     const double priceStdDeviation = 100;
     double timeLambda = (double)period_to_ms("10m");
     const unsigned int seed = 10100;
-    const MonteCarloHistory history = MonteCarloHistory(
-        symbol, 
-        startTime, endTime, period, 
-        volumeMean, volumeStdDeviation, 
-        priceMean, priceStdDeviation, 
-        timeLambda, seed
-    );
 
     const double feeMarketPc = 0.04; //0.4;
     const double feeLimitPc = 0.03;
@@ -54,7 +38,7 @@ protected:
     };
     TestExchange* testExchange = (TestExchange*)sharedFactory.create(
         "build/src/shared/trading/exchange/test", "DefaultTestExchange", 
-        new TestExchange::Args({ symbols, pairs, balances })
+        new TestExchange::Args({ { ms_to_period(period) }, symbols, pairs, balances })
     );
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(symbol)},
@@ -64,34 +48,49 @@ protected:
 
     CandleStrategy* candleStrategy = 
         (CandleStrategy*)sharedFactory.create(
-            "build/src/shared/trading/strategy/candles",
+            "build/src/shared/trading/strategy",
             "ACandleStrategy", 
             new CandleStrategy::Args({ *testExchange, strategyParameters })
         );
-    
-    CandleStrategyBacktesterMultiChartAccordion backtester = CandleStrategyBacktesterMultiChartAccordion(
-        gfx, 10, 50, 1000, 340,
-        startTime, endTime,
-        // multiChartAccordion,
-        history, // tradeHistoryChart,
-        *testExchange, *candleStrategy, symbol, 
-        // multiChartAccordionFramesHeight,
-        showBalanceQuotedScale
-    );
 public:
 
     using ManualTestApplication::ManualTestApplication;
 
-    virtual ~MonteCarloChartsTest1() {}
+    virtual ~MonteCarloChartsTest1() {
+        delete history;
+        delete backtester;
+    }
 
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("MonteCarloChartsTest1");
 
-        backtester.backtest();
+
+        MonteCarloTradeCandleHistory::Args context = MonteCarloTradeCandleHistory::Args({
+            symbol, 
+            startTime, endTime, period,
+            volumeMean, volumeStdDeviation,
+            priceMean, priceStdDeviation,
+            timeLambda, seed
+        });
+        history = new MonteCarloTradeCandleHistory(&context);
+        history->init();
+
+    
+        backtester = new CandleStrategyBacktesterMultiChartAccordion(
+            gfx, 10, 50, 1000, 340,
+            startTime, endTime,
+            // multiChartAccordion,
+            *history, // tradeHistoryChart,
+            *testExchange, *candleStrategy, symbol, 
+            // multiChartAccordionFramesHeight,
+            showBalanceQuotedScale
+        );
+
+        backtester->backtest();
 
         // ----------------
 
-        mainFrame.child(backtester);
+        mainFrame.child(*backtester);
     }
 };

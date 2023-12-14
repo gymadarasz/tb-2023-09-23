@@ -14,25 +14,32 @@ using namespace madlib::graph;
 
 namespace madlib::trading {
 
+    const map<const string, ms_t> periods = {
+        {"1s", MS_PER_SEC},
+        {"1m", MS_PER_MIN},
+        {"5m", 5 * MS_PER_MIN},
+        {"10m", 10 * MS_PER_MIN},
+        {"30m", 30 * MS_PER_MIN},
+        {"1h", MS_PER_HOUR},
+        {"4h", 4 * MS_PER_HOUR},
+        {"6h", 6 * MS_PER_HOUR},
+        {"12h", 12 * MS_PER_HOUR},
+        {"1d", MS_PER_DAY},
+        {"3d", 3 * MS_PER_DAY},
+        {"4d", 4 * MS_PER_DAY},
+        {"1w", MS_PER_WEEK},
+        {"2w", 2 * MS_PER_WEEK},
+        {"4w", 4 * MS_PER_WEEK},
+    };
+
     ms_t period_to_ms(const string &period) {
-        map<const string, ms_t> periods = {
-            {"1s", MS_PER_SEC},
-            {"1m", MS_PER_MIN},
-            {"5m", 5 * MS_PER_MIN},
-            {"10m", 10 * MS_PER_MIN},
-            {"30m", 30 * MS_PER_MIN},
-            {"1h", MS_PER_HOUR},
-            {"4h", 4 * MS_PER_HOUR},
-            {"6h", 6 * MS_PER_HOUR},
-            {"12h", 12 * MS_PER_HOUR},
-            {"1d", MS_PER_DAY},
-            {"3d", 3 * MS_PER_DAY},
-            {"4d", 4 * MS_PER_DAY},
-            {"1w", MS_PER_WEEK},
-            {"2w", 2 * MS_PER_WEEK},
-            {"4w", 4 * MS_PER_WEEK},
-        };
-        return periods[period];
+        return periods.at(period);
+    }
+
+    string ms_to_period(ms_t ms) {
+        for (const auto& period: periods)
+            if (period.second == ms) return period.first;
+        throw ERROR("No period string match to the millisec: " + ms);
     }
 
     class Candle {
@@ -249,7 +256,7 @@ namespace madlib::trading {
     };
 
 
-    class MonteCarloHistory: public TradeCandleHistory {
+    class MonteCarloTradeCandleHistory: public TradeCandleHistory {
     protected:
         double volumeMean;
         double volumeStdDeviation;
@@ -310,7 +317,7 @@ namespace madlib::trading {
             double timeLambda;
             unsigned int seed = random_device()(); // TODO: Add a seed parameter with a default value
         };
-        explicit MonteCarloHistory(void* context): 
+        explicit MonteCarloTradeCandleHistory(void* context): 
             TradeCandleHistory(context),
             volumeMean(((Args*)context)->volumeMean),
             volumeStdDeviation(((Args*)context)->volumeStdDeviation),
@@ -320,7 +327,12 @@ namespace madlib::trading {
             gen(((Args*)context)->seed)
         {}
         
-        virtual ~MonteCarloHistory() {}
+        virtual ~MonteCarloTradeCandleHistory() {}
+
+        virtual void init(void* = nullptr) override {
+            generateTrades();
+            convertToCandles();
+        }
 
         // Function to print the generated events
         void PrintEvents() {
@@ -587,6 +599,8 @@ namespace madlib::trading {
             pairs = ((Args*)context)->pairs;
             balances = ((Args*)context)->balances;
         }
+
+        virtual ~TestExchange() {}
 
         virtual void init(void*) override {
 

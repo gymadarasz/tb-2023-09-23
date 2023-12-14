@@ -24,26 +24,39 @@ protected:
     const ms_t period = period_to_ms("1h");
     const unsigned int seed = 6000;
 
-    // Create a MonteCarloHistory object with the specified parameters
-    MonteCarloHistory history = MonteCarloHistory(
-        symbol, 
-        startTime, endTime, period,
-        volumeMean, volumeStdDeviation,
-        priceMean, priceStdDeviation,
-        timeLambda, seed
-    );
-
-    TradeHistoryChart chart = TradeHistoryChart(
-        gfx, 10, 60, 1580, 780, history
-    );
+    MonteCarloTradeCandleHistory* history = NULL;
+    CandleHistoryChart* chart = NULL;
 public:
+
+    using ManualTestApplication::ManualTestApplication;
+
+    virtual ~ChartManualTest6() {
+        delete history;
+        delete chart;
+    }
 
     void init() override {
         ManualTestApplication::init();
         gui.setTitle("ChartManualTest6");
 
-        mainFrame.child(chart);
 
-        chart.draw();
+        // Create a MonteCarloTradeCandleHistory object with the specified parameters
+        MonteCarloTradeCandleHistory::Args context = MonteCarloTradeCandleHistory::Args({
+            symbol, 
+            startTime, endTime, period,
+            volumeMean, volumeStdDeviation,
+            priceMean, priceStdDeviation,
+            timeLambda, seed
+        });
+        history = new MonteCarloTradeCandleHistory(&context);
+        history->init();
+
+        chart = new CandleHistoryChart(
+            gfx, 10, 60, 1580, 780, *history
+        );
+
+        mainFrame.child(*chart);
+
+        chart->draw();
     }
 };
