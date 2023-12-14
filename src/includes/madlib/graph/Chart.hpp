@@ -295,31 +295,31 @@ namespace madlib::graph {
             return &margin;
         }
 
-        void point(int x, int y) override { 
+        virtual void point(int x, int y) override { 
             Area::point(x + margin.left, y + margin.top);
         }
 
-        void rect(int x1, int y1, int x2, int y2) override final {
+        virtual void rect(int x1, int y1, int x2, int y2) override {
             Area::rect(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
         }
 
-        void fRect(int x1, int y1, int x2, int y2) override final {
+        virtual void fRect(int x1, int y1, int x2, int y2) override {
             Area::fRect(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
         }
 
-        void line(int x1, int y1, int x2, int y2) override final {
+        virtual void line(int x1, int y1, int x2, int y2) override {
             Area::line(x1 + margin.left, y1 + margin.top, x2 + margin.left, y2 + margin.top);
         }
 
-        void hLine(int x1, int y1, int x2) override {
+        virtual void hLine(int x1, int y1, int x2) override {
             Area::hLine(x1 + margin.left, y1 + margin.top, x2 + margin.left);
         }
 
-        void vLine(int x1, int y1, int y2) override final {
+        virtual void vLine(int x1, int y1, int y2) override {
             Area::vLine(x1 + margin.left, y1 + margin.top, y2 + margin.top);
         }
 
-        void write(int x, int y, const string& text) override final {
+        virtual void write(int x, int y, const string& text) override {
             Area::write(x + margin.left, y + margin.top, text);
         }
     };
@@ -475,6 +475,11 @@ namespace madlib::graph {
                 return guessFirstShapeIndex(guessedFirstShapeIndex);
             return guessedFirstShapeIndex;
         }
+
+        virtual void clear() {
+            shapes.clear();
+            prepared = false;
+        }
     };
 
     class PointSeries: public Projector {
@@ -513,9 +518,9 @@ namespace madlib::graph {
             color(color)
         {}
 
-        virtual ~PointSeries() final {}
+        virtual ~PointSeries() {}
 
-        void project() override {
+        virtual void project() override {
             const PointShape* first = (const PointShape*)shapes[shapeIndexFrom];
 
             Pixel prev = translate(
@@ -590,9 +595,9 @@ namespace madlib::graph {
             colorDown(colorDown)
         {}
 
-        virtual ~CandleSeries() final {}
+        virtual ~CandleSeries() {}
 
-        void project() override {
+        virtual void project() override {
             size_t step = (shapeIndexTo - shapeIndexFrom) / (size_t)chartWidth;
             double prevClose = 0;
             if (step < 1) step = 1;
@@ -652,9 +657,9 @@ namespace madlib::graph {
 
         using Projector::Projector;
 
-        virtual ~LabelSeries() final {}
+        virtual ~LabelSeries() {}
 
-        void project() override {
+        virtual void project() override {
             if (shapeIndexTo - shapeIndexFrom > maxLabelsToShow) return;
             for (size_t i = shapeIndexFrom; i < shapeIndexTo; i++) {
                 const LabelShape* label = (const LabelShape*)shapes[i];
@@ -779,7 +784,7 @@ namespace madlib::graph {
             if (zoomAtLeft) chart->timeRange->end += (ms_t)diff;                
             if (zoomAtRight) chart->timeRange->begin -= (ms_t)diff;
 
-            chart->getTimeRange().limit(chart->getTimeRangeFull());
+            chart->timeRange->limit(chart->getTimeRangeFull());
             chart->resetProjectorsPrepared();
             chart->draw();
             if (chart->multiChart) chart->multiChart->follow(*chart);
@@ -884,23 +889,28 @@ namespace madlib::graph {
             alignments.clear();
         }
 
-        void clearProjectorsShapes() {
+        void setTimeRangeFullAndApply(const TimeRange& newTimeRangeFull) {
+            timeRangeFull->apply(newTimeRangeFull);
+            timeRange->apply(*timeRangeFull);
+        }
+
+        virtual void clear() {
             vector_destroy(pointShapes);
             for (PointSeries* pointSeriesProjector: pointSeriesProjectors)
-                pointSeriesProjector->getShapes().clear();
+                pointSeriesProjector->clear();
             vector_destroy(candleShapes);
             for (CandleSeries* candleSeriesProjector: candleSeriesProjectors)
-                candleSeriesProjector->getShapes().clear();
+                candleSeriesProjector->clear();
             vector_destroy(labelShapes);
             for (LabelSeries* labelSeriesProjector: labelSeriesProjectors)
-                labelSeriesProjector->getShapes().clear();
+                labelSeriesProjector->clear();
         };
 
         void join(MultiChart* multiChart) {
             this->multiChart = multiChart;
         }
 
-        void draw() override final {
+        virtual void draw() override {
             TimeRangeArea::draw();
         
             for (const Alignment& alignment: alignments)
@@ -1066,8 +1076,8 @@ namespace madlib::graph {
             return chart;
         }
 
-        void clearCharts() {
-            for (Chart* chart: charts) chart->clearProjectorsShapes();
+        virtual void clear() {
+            for (Chart* chart: charts) chart->clear();
         }
         
     };

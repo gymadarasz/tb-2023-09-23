@@ -13,11 +13,11 @@ namespace madlib::trading::strategy {
 
         using CandleStrategy::CandleStrategy;
 
-        virtual ~ACandleStrategy() final {}
+        virtual ~ACandleStrategy() {}
 
         virtual void init(void*) override {}
 
-        void onCandleClose(const Candle& candle) override {
+        virtual void onCandleClose(const Candle& candle) override {
             const string symbol = parameters.at("symbol").getString();
             // LOG(
             //     ms_to_datetime(candle.getEnd()), 

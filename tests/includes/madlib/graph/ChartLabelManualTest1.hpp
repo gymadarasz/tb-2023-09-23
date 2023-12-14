@@ -4,10 +4,8 @@
 
 #include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
-// #include "../../../../src/includes/madlib/trading/trading.hpp"
 
 using namespace madlib::graph;
-// using namespace madlib::trading;
 
 class ChartLabelManualTest1: public ManualTestApplication {
 protected:
@@ -25,9 +23,13 @@ protected:
 
 public:
 
-    void init() override {
+    using ManualTestApplication::ManualTestApplication;
+
+    virtual ~ChartLabelManualTest1() {}
+
+    virtual void init() override {
         ManualTestApplication::init();
-        gui.setTitle("LabelManualTest1");
+        gui.setTitle("ChartLabelManualTest1");
 
         rand_init_seed(42);
 
@@ -72,6 +74,4 @@ public:
         mainFrame.child(label1);
         mainFrame.child(chart1);
     }
-
-    virtual ~ChartLabelManualTest1() {}
 };

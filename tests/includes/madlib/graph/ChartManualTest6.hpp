@@ -35,7 +35,7 @@ public:
         delete chart;
     }
 
-    void init() override {
+    virtual void init() override {
         ManualTestApplication::init();
         gui.setTitle("ChartManualTest6");
 

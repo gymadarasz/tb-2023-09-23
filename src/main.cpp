@@ -51,8 +51,8 @@ const map<string, Balance> Config::balances = {
     { "BTC", Balance(1) },
     { "USD", Balance(10000) },
 };
-const ms_t Config::startTime = datetime_to_ms("2017-01-01 00:00:00");
-const ms_t Config::endTime = datetime_to_ms("2023-10-25 05:00:00");
+const ms_t Config::startTime = datetime_to_ms("2023-01-01 00:00:00");
+const ms_t Config::endTime = now();
 
 
 class BitstampHistoryApplication: public FrameApplication {
@@ -266,7 +266,7 @@ protected:
         const ms_t endTime = datetime_to_ms(historyDateRange->getToInput()->getText());
         const string symbol = symbolSelect->getInput()->getText();
         const ms_t period = period_to_ms(periodSelect->getInput()->getText());
-        
+                
         candleHistory->setStartTime(startTime);
         candleHistory->setEndTime(endTime);
         candleHistory->setSymbol(symbol);
@@ -274,6 +274,11 @@ protected:
         Progress progress("Loading history...", true);
         candleHistory->load(progress);
         progress.close();
+
+        if (candleStrategyBacktesterMultiChartAccordion) {
+            candleStrategyBacktesterMultiChartAccordion->clear();
+            candleStrategyBacktesterMultiChartAccordion->draw();
+        }
     }
 
     void loadExchangeModule() {
@@ -350,7 +355,7 @@ public:
         delete candleStrategyBacktesterMultiChartAccordion;
     }
 
-    void init() override {
+    virtual void init() override {
         FrameApplication::init();
         gui.setTitle("Bitstamp History Backtest");
         app = this;

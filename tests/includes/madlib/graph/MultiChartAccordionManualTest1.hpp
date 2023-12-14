@@ -39,7 +39,12 @@ protected:
     }
 
 public:
-    void init() override {
+
+    using ManualTestApplication::ManualTestApplication;
+
+    virtual ~MultiChartAccordionManualTest1() {}
+
+    virtual void init() override {
         ManualTestApplication::init();
         gui.setTitle("MultiChartAccordionManualTest1");
 

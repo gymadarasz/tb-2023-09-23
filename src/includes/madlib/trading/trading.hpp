@@ -618,7 +618,7 @@ namespace madlib::trading {
             this->currentTime = currentTime;
         }
 
-        ms_t getCurrentTime() const override {
+        virtual ms_t getCurrentTime() const override {
             return currentTime;
         }
 
@@ -886,7 +886,10 @@ namespace madlib::trading {
             if (showTexts)
                 textSeries = createLabelSeries(mainProjector, true);
             
-            if (generate) this->generate();
+            if (generate) {
+                generateFromHistory();
+                fitTimeRangeToHistory();
+            }
         }
 
         virtual ~CandleHistoryChart() {}
@@ -895,7 +898,7 @@ namespace madlib::trading {
             return textSeries;
         }
 
-        void generate() {
+        void generateFromHistory() {
             
             if (candleSeries) {
                 vector<Candle> candles = candleHistory.getCandles();
@@ -945,6 +948,21 @@ namespace madlib::trading {
                     ));
                 }
             }
+        }
+
+        void fitTimeRangeToHistory() {
+            // apply new full time range aligned to the candle history
+            TimeRange newTimeRangeFull(
+                candleHistory.getStartTime(),
+                candleHistory.getEndTime()
+            );
+            setTimeRangeFullAndApply(newTimeRangeFull);
+        }
+
+        virtual void clear() override {
+            Chart::clear();
+            generateFromHistory();
+            fitTimeRangeToHistory();
         }
     };
 
@@ -1089,7 +1107,7 @@ namespace madlib::trading {
         static bool onProgressStart(CandleStrategyBacktester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
 
-            that->clearCharts();
+            that->clear();
             that->progressState.balanceQuotedAtCloses = &that->balanceQuotedScale->getShapes();
             that->progressState.balanceQuotedFullAtCloses = &that->balanceQuotedFullScale->getShapes();
             that->progressState.balanceBaseAtCloses = &that->balanceBaseScale->getShapes();
@@ -1265,6 +1283,10 @@ namespace madlib::trading {
             delete backtester;
         }
 
+        CandleHistoryChart& getCandleHistoryChart() {
+            return candleHistoryChart;
+        }        
+
         // TODO: separated backtester class that can be reused from command line
         void backtest() {
 
@@ -1272,6 +1294,15 @@ namespace madlib::trading {
                 LOG("Backtest failed"); // TODO
             }
 
+        }
+
+        virtual void clear() override {
+            candleHistoryChart.clear();
+            MultiChartAccordion::clear();
+            for (Chart* chart: charts) 
+                chart->setTimeRangeFullAndApply(
+                    candleHistoryChart.getTimeRangeFull()
+                );
         }
     };
 

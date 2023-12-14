@@ -465,6 +465,7 @@ namespace madlib::graph {
 
     };
 
+#define TEST_GFX_DELAY // {  sleep_ms(2); XFlushGC(display, gc); }
     class GFX: public EventHandler {
     protected:
 
@@ -558,12 +559,12 @@ namespace madlib::graph {
             // XFlush(display);  // Flush the changes to the server
         }
 
-        void drawPoint(int x, int y) const {
+        void drawPoint(int x, int y) const { TEST_GFX_DELAY
             if (viewport.containsCompletely(x, y, x, y))
                 XDrawPoint(display, window, gc, x, y);
         }
 
-        void drawRectangle(int x1, int y1, int x2, int y2) const {
+        void drawRectangle(int x1, int y1, int x2, int y2) const { TEST_GFX_DELAY
             Viewport rect(x1, y1, x2, y2);
             if (rect.insideOf(viewport)) {
                 XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
@@ -575,13 +576,13 @@ namespace madlib::graph {
             if (rect.containsPartially(x1, y1, x1, y2)) drawVerticalLine(x1, y1, y2);
         }
 
-        void fillRectangle(int x1, int y1, int x2, int y2) const {
+        void fillRectangle(int x1, int y1, int x2, int y2) const { TEST_GFX_DELAY
             Viewport rect(x1, y1, x2, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XFillRectangle(display, window, gc, rect.x1, rect.y1, (unsigned)(rect.x2 - rect.x1), (unsigned)(rect.y2 - rect.y1));
         }
 
-        void drawLine(int x1, int y1, int x2, int y2) const {
+        void drawLine(int x1, int y1, int x2, int y2) const { TEST_GFX_DELAY
             Viewport rect(x1, y1, x2, y2);
             
             if (x1 == x2) {
@@ -620,13 +621,13 @@ namespace madlib::graph {
             XDrawLine(display, window, gc, x1, y1, x2, y2);
         }
 
-        void drawVerticalLine(int x1, int y1, int y2) const {
+        void drawVerticalLine(int x1, int y1, int y2) const { TEST_GFX_DELAY
             Viewport rect(x1, y1, x1, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x1, rect.y2);
         }
         
-        void drawHorizontalLine(int x1, int y1, int x2) const {
+        void drawHorizontalLine(int x1, int y1, int x2) const { TEST_GFX_DELAY
             Viewport rect(x1, y1, x2, y1);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x2, rect.y1);
@@ -666,7 +667,7 @@ namespace madlib::graph {
             return fonts;
         }
         
-        void writeText(int x, int y, const string& text) {
+        void writeText(int x, int y, const string& text) { TEST_GFX_DELAY
             // Cut text to fit into the viewport first
             string txt = text;
             if (!fontInfo) setFont(font);
@@ -723,7 +724,7 @@ namespace madlib::graph {
             while (!close) {
 
                 if (!onLoopHandlers.empty() && XPending(display) <= 0) {
-                    sleep(ms);
+                    sleep_ms(ms);
                     for (const onLoopHandler& onLoop: onLoopHandlers) 
                         onLoop(eventContext);
                     continue;
@@ -1102,7 +1103,7 @@ namespace madlib::graph {
             }
             that->setZoomRatio(ratioX, ratioY);
             that->setZoomCenter(x, y);
-            that->draw(); // redraw
+            // that->draw(); // redraw
         }
 
     public:
@@ -1278,11 +1279,11 @@ namespace madlib::graph {
             return viewport;
         }
 
-        void brush(Color color) const override final {
+        virtual void brush(Color color) const override {
             gfx.setColor(color);
         }
 
-        void point(int x, int y) override {
+        virtual void point(int x, int y) override {
             setScrollXYMinMax(x, y);
             prepare(x, y);
             gfx.drawPoint(x, y);
@@ -1320,17 +1321,17 @@ namespace madlib::graph {
             gfx.drawVerticalLine(x1, y1, y2);
         }
 
-        void font(const char* font) const override {
+        virtual void font(const char* font) const override {
             gfx.setFont(font);
         }
 
-        void write(int x, int y, const string &text) override {
+        virtual void write(int x, int y, const string &text) override {
             setScrollXYMinMax(x, y);
             prepare(x, y);
             gfx.writeText(x, y, text);
         }
 
-        TextSize getTextSize(const string& text) const override final {
+        virtual TextSize getTextSize(const string& text) const override {
             TextSize textSize;
             gfx.getTextSize(text, textSize.width, textSize.height);
             return textSize;
@@ -1724,7 +1725,7 @@ namespace madlib::graph {
             addTouchHandler(Painter::zoomHandler);
         }
 
-        virtual ~Frame() final {}
+        virtual ~Frame() {}
     };
 
 
@@ -2293,7 +2294,7 @@ namespace madlib::graph {
 
         class Container;
 
-        class Toggler final: public Button {
+        class Toggler: public Button {
         protected:
             
             static void toggleHandler(void* context, unsigned int, int, int) {
@@ -2390,7 +2391,7 @@ namespace madlib::graph {
                 accordion.height = togglerHeight * ((int)accordionContainerAt + 1);
             }
 
-            virtual ~Container() final {
+            virtual ~Container() {
                 if (toggler) delete toggler;
                 toggler = NULL;
                 if (frame) delete frame;

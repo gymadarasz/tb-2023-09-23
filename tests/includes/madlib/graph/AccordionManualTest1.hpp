@@ -30,7 +30,12 @@ protected:
     // Button oneBtn = Button(gfx, 420, 150, 100, 40, "One");
 
 public:
-    void init() override {
+
+    using ManualTestApplication::ManualTestApplication;
+
+    virtual ~AccordionManualTest1() {}
+
+    virtual void init() override {
         ManualTestApplication::init();
         gui.setTitle("AccordionManualTest1");
         

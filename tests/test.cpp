@@ -19,6 +19,7 @@
 #include "includes/madlib/graph/MultiChartAccordionManualTest1.hpp"
 #include "includes/madlib/trading/MonteCarloChartsTest1.hpp"
 #include "includes/madlib/graph/ChartLabelManualTest1.hpp"
+#include "includes/madlib/graph/CandleHistoryChartReload.hpp"
 
 using namespace std;
 
@@ -114,7 +115,7 @@ int main() {
 
     cout << "Manual tests: ";
     
-    TEST(new ChartLabelManualTest1);
+    TEST(new CandleHistoryChartReload);
     TEST(new ChartLabelManualTest1);
     TEST(new ChartManualTest7Zoom);
     TEST(new MonteCarloChartsTest1); // TODO: chart scroll and zoom bad

@@ -61,7 +61,7 @@ public:
         delete backtester;
     }
 
-    void init() override {
+    virtual void init() override {
         ManualTestApplication::init();
         gui.setTitle("MonteCarloChartsTest1");
 

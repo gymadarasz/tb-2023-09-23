@@ -152,11 +152,11 @@ namespace madlib::trading::history {
 
         using CandleHistory::CandleHistory;
 
-        void init(void*) override {} 
+        virtual void init(void*) override {} 
         
         virtual ~BitstampCandleHistory() {};
 
-        void load(Progress& progress) override {
+        virtual void load(Progress& progress) override {
             if (period != MS_PER_MIN) throw ERROR("Period works only on minutes charts"); // TODO: aggregate to other periods
             int fromYear = parse<int>(ms_to_datetime(startTime).substr(0, 4));
             int toYear = parse<int>(ms_to_datetime(endTime).substr(0, 4));
@@ -187,7 +187,7 @@ namespace madlib::trading::history {
         }
 
         // Note: see more at https://www.cryptodatadownload.com/data/bitstamp/
-        void download(Progress& progress, bool override) override {
+        virtual void download(Progress& progress, bool override) override {
             if (period != MS_PER_MIN) throw ERROR("Period works only on minutes charts"); // TODO: aggregate to other periods
             int fromYear = parse<int>(ms_to_date(startTime).substr(0, 4));
             int toYear = parse<int>(ms_to_date(endTime).substr(0, 4));

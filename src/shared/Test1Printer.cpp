@@ -5,10 +5,10 @@ using namespace std;
 
 namespace madlib::printer {
 
-    class Test1Printer final: public Printer {
+    class Test1Printer: public Printer {
     public:
         using Printer::Printer;
-        void print(const string& output) override final {
+        virtual void print(const string& output) override {
             cout << "Test1Printer prints: " << output;
         }
     };

@@ -289,7 +289,7 @@ namespace madlib {
         return "";  // Alternatively, you can return filepath;
     }
 
-    inline void sleep(unsigned long ms) {
+    inline void sleep_ms(unsigned long ms) {
         this_thread::sleep_for(chrono::milliseconds(ms));
     }
 
@@ -444,7 +444,7 @@ namespace madlib {
             return *this;
         }
 
-        void print(const string& message) override final {
+        virtual void print(const string& message) override {
             file_put_contents(filename, message, true);
         }
 
