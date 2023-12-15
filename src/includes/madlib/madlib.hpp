@@ -557,7 +557,7 @@ namespace madlib {
         for (const auto& entry : filesystem::directory_iterator(folder)) {
             // cout << "ENTRY:" << entry.path() << endl;
             if (
-                entry.is_regular_file() && 
+                (entry.is_directory() || entry.is_regular_file()) && 
                 (
                     pattern.empty() || 
                     entry.path().filename().string().find(pattern) != string::npos
@@ -842,7 +842,15 @@ namespace madlib {
         string ret = inp;
         ret = str_sanitize(ret, sanitize, replacement);
         ret = str_esc(ret);
-        return "'" + ret + "'";
+        return ret;
+    }
+
+    string zenity_quote(const string& inp, const char quote = '\'') {
+        return quote + inp + quote;
+    }
+
+    string zenity_quote_esc(const string& inp, const string& sanitize = str_sanitizer_default_allowed_chars + ".'\",;:=?/()[]", const char replacement = '_', const char quote = '\'') {
+        return zenity_quote(zenity_esc(inp, sanitize, replacement), quote);
     }
 
     string zenity_combo(
@@ -860,10 +868,10 @@ namespace madlib {
                 "  --add-combo={label}"
                 "  --combo-values={items}",
                 {
-                    { "{title}", zenity_esc(title) },
-                    { "{text}", zenity_esc(text) },
-                    { "{label}", zenity_esc(label) },
-                    { "{items}", vector_concat(items, "|", zenity_esc) },
+                    { "{title}", zenity_quote_esc(title) },
+                    { "{text}", zenity_quote_esc(text) },
+                    { "{label}", zenity_quote_esc(label) },
+                    { "{items}", zenity_quote(vector_concat(items, "|", zenity_esc)) },
                 }
             );
 
@@ -882,8 +890,8 @@ namespace madlib {
                 "  --text={text}"
                 "  --date-format='%Y-%m-%d'",
                 {
-                    { "{title}", zenity_esc(title) },
-                    { "{text}", zenity_esc(text) },
+                    { "{title}", zenity_quote_esc(title) },
+                    { "{text}", zenity_quote_esc(text) },
                 }
             );
 
@@ -904,10 +912,10 @@ namespace madlib {
                 "  --cancel-label={cancel}"
                 "  --ok-label={ok}",
                 {
-                    { "{title}", zenity_esc(title) },
-                    { "{text}", zenity_esc(text) },
-                    { "{cancel}", zenity_esc(cancel) },
-                    { "{ok}", zenity_esc(ok) },
+                    { "{title}", zenity_quote_esc(title) },
+                    { "{text}", zenity_quote_esc(text) },
+                    { "{cancel}", zenity_quote_esc(cancel) },
+                    { "{ok}", zenity_quote_esc(ok) },
                 }
             );
 
@@ -923,7 +931,7 @@ namespace madlib {
                 "--file-selection"
                 "  --title={title}",
                 {
-                    { "{title}", zenity_esc(title) },
+                    { "{title}", zenity_quote_esc(title) },
                 }
             );
 
@@ -944,7 +952,7 @@ namespace madlib {
                 "{autoClose}"
                 "{timeRemaining}",
                 {
-                    { "{title}", zenity_esc(title) },
+                    { "{title}", zenity_quote_esc(title) },
                     { "{noCancel}", noCancel ? "  --no-cancel" : "" },
                     { "{autoClose}", autoClose ? "  --auto-close" : "" },
                     { "{timeRemaining}", timeRemaining ? "  --time-remaining" : "" },
@@ -1066,8 +1074,8 @@ namespace madlib {
             if (context) delete (clazz::Args*)context; \
             return obj; \
         } \
-        extern "C" void destroy##clazz(void* instance) { \
-            delete (clazz*)instance; \
+        extern "C" void destroy##clazz(clazz* instance) { \
+            delete instance; \
         }
 
         
@@ -1078,7 +1086,7 @@ namespace madlib {
         typedef void (*SharedDestroyer)(void*);
 
         typedef struct {
-            vector<void*> instances;
+            vector<Shared*> instances;
             void* handle = NULL;
             SharedCreator creator;
             SharedDestroyer destroyer;
@@ -1100,21 +1108,30 @@ namespace madlib {
         }
 
         void* create(void* instance, const string& path, const string& clazz, void* context = NULL) {
-            if (instance) {
-                bool found = false;
+            if (instance) {                
+                string found = "";
+                int at = 0;
                 for (const auto& import: imports) {
+                    at = 0;
                     for (const void* iinstance: import.second.instances) {
                         if (iinstance == instance) {
                             import.second.destroyer(instance);
                             instance = NULL;
-                            found = true;
+                            found = import.first;
                             break;
                         }
+                        at++;
                     }
-                    if (found) break;
+                    if (!found.empty()) break;
                 }
-                if (!found)
+                if (found.empty())
                     throw ERROR("Requested instance is not created before.");
+                
+                imports[found].instances.erase(imports[found].instances.begin() + at);
+                if (imports[found].instances.empty()) {
+                    if (imports[found].handle) dlclose(imports[found].handle);
+                    imports.erase(found);
+                }
             }
             return create(path, clazz, context);
         }

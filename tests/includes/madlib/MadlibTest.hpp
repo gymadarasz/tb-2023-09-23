@@ -21,7 +21,7 @@ public:
         assert(str_to_lower("HeLLo WoRLd") == "hello world");
 
         // Test case 5: String with non-alphabetic characters
-        assert(str_to_lower("123!@#") == "123!@#");
+        assert(str_to_lower("123!#@") == "123!#@");
     }
 
     static void test_parse_bool() {
@@ -113,7 +113,7 @@ public:
     }
 
     static void test_lib_reg_match() {
-        string str = "This is a test string with some numbers 123 and some special characters !@#$%^&*";
+        string str = "This is a test string with some numbers 123 and some special characters !#@$%^&*";
         vector<string> matches;
         
         // Test for matching pattern that exists in the string
@@ -134,7 +134,7 @@ public:
     }
 
     static void test_lib_reg_match_alphabets() {
-        string str = "Thisisateststringwithsomenumbersandallsorts of special characters!@#$%^&*()_+";
+        string str = "Thisisateststringwithsomenumbersandallsorts of special characters!#@$%^&*()_+";
         vector<string> matches;
 
         // Test for matching pattern that does not exist in the string

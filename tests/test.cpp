@@ -53,12 +53,7 @@ public:
 
 #define TEST(test) Tester::run(test, QUOTEME(test));
 
-int main() {
-
-    cout << "Testing in progress: ";
-
-    cout << "Unit tests: ";
-
+void unit_tests() {
     TEST(MadlibTest::test_shared_lib);
     TEST(MadlibTest::test_str_start_with_positive);
     TEST(MadlibTest::test_str_start_with_negative);
@@ -110,11 +105,9 @@ int main() {
     TEST(FilesTest::testFiles_file_get_contents);
     TEST(FilesTest::testFiles_file_put_contents);
     TEST(LogTest::testLog_writeln);
+}
 
-    cout << " [OK]" << endl;
-
-    cout << "Manual tests: ";
-    
+void manual_tests() {
     TEST(new CandleHistoryChartReload);
     TEST(new ChartLabelManualTest1);
     TEST(new ChartManualTest7Zoom);
@@ -122,18 +115,31 @@ int main() {
     TEST(new MultiChartAccordionManualTest1);
     TEST(new AccordionManualTest1);
     TEST(new ChartManualTest6);
+}
 
-    cout << " [OK]" << endl;
-
-    cout << "Tests commands: ";
-
+void cmd_tests() {
     TEST(chart_manual_test5_zoom);
     TEST(chart_manual_test4_history);
     TEST(chart_manual_test3_candles);
     TEST(chart_manual_test2);
     TEST(chart_manual_test1);
     TEST(graph_manual_test1); // TODO: BUG: drag-scroll doesnt work if I click below the big willi button somewhere
+}
 
+int main() {
+
+    cout << "Testing in progress: ";
+
+    cout << "Unit tests: ";
+    unit_tests();
+    cout << " [OK]" << endl;
+
+    cout << "Manual tests: ";
+    manual_tests();
+    cout << " [OK]" << endl;
+
+    cout << "Tests commands: ";
+    cmd_tests();
     cout << " [OK]" << endl;
 
     string msg = "\033[92mAll tests are passed\033[39m";

@@ -87,12 +87,22 @@ public:
     }
 };
 
-void exec(string cmd) {
+bool exec_cmd(string cmd) {
     cout << COLOR_INFO "Execute command:" COLOR_DEFAULT " $ " << cmd << endl;
-    string output = madlib::exec(cmd);
+    string output = madlib::exec(cmd);    
     if (!output.empty()) {
-        cout << str_replace(output, "error:", COLOR_ERROR "error:" COLOR_DEFAULT) << endl;
+        string replaced = str_replace(output, "error:", COLOR_ERROR "error:" COLOR_DEFAULT);
+        cout << replaced << endl;
+        if (replaced != output) {
+            LOG("Command output contains error(s).");
+            return false;
+        }
     }
+    if (exec_last_exit_code != 0) {
+        LOG("Command exit code is non-zero: " + exec_last_exit_code);
+        return false;
+    }
+    return true;
 }
 
 class Builder {
@@ -129,6 +139,7 @@ protected:
         const string& main,
         const string& flagsLibs
     ) {
+        int errors = 0;
         vector<string> oFiles;
         for (const string& file : files) {
             string path = path_normalize(buildPath + path_extract(file));
@@ -139,11 +150,13 @@ protected:
                 !file_exists(oFile) ||
                 file_get_mtime(oFile) < file_get_mtime(file)
             ) {
-                ::exec("g++ " + flags + " -c " + file + " -o " + oFile);
+                errors += !exec_cmd("g++ " + flags + " -c " + file + " -o " + oFile);
             }
             oFiles.push_back(oFile);
         }
-        ::exec("g++ " + flags + " -o " + buildPath + main + " " + vector_concat(oFiles) + " " + flagsLibs);
+        errors += !exec_cmd("g++ " + flags + " -o " + buildPath + main + " " + vector_concat(oFiles) + " " + flagsLibs);
+        if (errors)
+            throw ERROR("Compilation error(s): " + to_string(errors));
         return oFiles;
     }
 
@@ -161,6 +174,7 @@ public:
         executeMain(args.executeMain),
         mainArgs(mainArgs)
     {
+        int errors = 0;
         ms_t startAt = now();
         cout << "Build start at: " << ms_to_datetime(startAt) << endl;
         // build source files
@@ -182,16 +196,18 @@ public:
                 !file_exists(osFile) ||
                 file_get_mtime(osFile) < file_get_mtime(file)
             ) {
-                ::exec("g++ " + flags + " -shared -fPIC " + file + " -o " + osFile);
+                errors += !exec_cmd("g++ " + flags + " -shared -fPIC " + file + " -o " + osFile);
             }
             osFiles.push_back(osFile);
         }
+        if (errors) 
+            throw ERROR("Build error(s): " + to_string(errors));
 
         ms_t finishAt = now();
         cout << "Build finish at: " << ms_to_datetime(finishAt) << endl;
         cout << "Build in " << finishAt - startAt << " ms" << endl;
 
-        if (executeMain) ::exec("./" + buildPath + main + " " + mainArgs);
+        if (executeMain) exec_cmd("./" + buildPath + main + " " + mainArgs);
     }
 };
 

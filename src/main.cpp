@@ -92,36 +92,40 @@ protected:
     Button* startButton = NULL;
     CandleStrategyBacktesterMultiChartAccordion* candleStrategyBacktesterMultiChartAccordion = NULL;
 
-    vector<string> getClasses(const string& path) {
-        vector<string> files = file_find_by_extension(path, ".so");
+    vector<string> getClassFolders(const string& path) {
+        vector<string> files = file_find_by_extension(path); // , ".so");
         for (string& file: files) file = filename_extract(file, true);
         return files;
     }
 
     vector<string> getHistoryClasses() {
-        return getClasses(Config::candleHistoryPath);
+        return getClassFolders(Config::candleHistoryPath);
     }
 
     vector<string> getExchangeClasses() {
-        return getClasses(Config::testExchangePath);
+        return getClassFolders(Config::testExchangePath);
     }
 
     vector<string> getStrategyClasses() {
-        return getClasses(Config::candleStrategyPath);
+        return getClassFolders(Config::candleStrategyPath);
     }
 
     static void onHistorySelected(void*, unsigned int, int, int) {
         app->historySelect->setValue(app->historySelect->getInput()->getText());
-        app->loadHistoryModule();
         app->historySelect->getInput()->draw();
+        app->loadHistoryModule();
+        app->loadHistoryData();
+        app->updateCandleStrategyBacktesterMultiChartAccordion();
     }
 
     static void onHistoryDateRangeFromTouch(void*, unsigned int, int, int) {
-        app->loadHistoryData(); // TODO: !@# reset the multicharts date range too
+        app->loadHistoryData();
+        app->updateCandleStrategyBacktesterMultiChartAccordion();
     }
 
     static void onHistoryDateRangeToTouch(void*, unsigned int, int, int) {
-        app->loadHistoryData(); // TODO: !@# reset the multicharts date range too + validate the interval in DateRange handlers (from can not be greater then to!!)
+        app->loadHistoryData(); // TODO: validate the interval in DateRange handlers (from can not be greater then to!!)
+        app->updateCandleStrategyBacktesterMultiChartAccordion();
     }
 
     static void onExchangeSelected(void*, unsigned int, int, int) {
@@ -169,11 +173,14 @@ protected:
 
     void createHistorySelect() {
         vector<string> values = getHistoryClasses();
-        string defval = values.size() == 1 ? values[0] : "";
+        string defval = values.size() >= 1 ? values[0] : "";
         historySelect = new Select(mainFrame, 10, settingsTop, "History", values, defval);
         Input* historyInput = historySelect->getInput();
         historyInput->addTouchHandler(onHistorySelected);
-        if (!defval.empty()) loadHistoryModule();
+        if (!defval.empty()) {
+            loadHistoryModule();
+            loadHistoryData();
+        }
     }
 
     void createHistoryDateRange() {
@@ -184,7 +191,7 @@ protected:
 
     void createExchangeSelect() {
         vector<string> values = getExchangeClasses();
-        string defval = values.size() == 1 ? values[0] : "";
+        string defval = values.size() >= 1 ? values[0] : "";
         exchangeSelect = new Select(mainFrame, 10, settingsTop + settingsRowHeight, "Exchange", values, defval);
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
@@ -207,7 +214,7 @@ protected:
 
     void createStrategySelect() {
         vector<string> values = getStrategyClasses();
-        string defval = values.size() == 1 ? values[0] : "";
+        string defval = values.size() >= 1 ? values[0] : "";
         candleStrategySelect = new Select(mainFrame, 600, settingsTop + settingsRowHeight, "Strategy", values, defval);
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategyInput->addTouchHandler(onCandleStrategySelected);
@@ -230,15 +237,23 @@ protected:
         const ms_t startTime = datetime_to_ms(historyDateRange->getFromInput()->getText());
         const ms_t endTime = datetime_to_ms(historyDateRange->getToInput()->getText());
 
-        candleStrategyBacktesterMultiChartAccordion = new CandleStrategyBacktesterMultiChartAccordion(
-            gfx, 
-            multiChartAccordionLeft, 
-            multiChartAccordionTop, 
-            multiChartAccordionWidth, 
-            multiChartAccordionFramesHeight,
-            startTime, endTime,
-            *candleHistory, *testExchange, *candleStrategy, Config::symbol
-        );
+        // if (candleStrategyBacktesterMultiChartAccordion) {
+        //     candleStrategyBacktesterMultiChartAccordion->clear();
+        //     return;
+        //     // delete candleStrategyBacktesterMultiChartAccordion;
+        //     // candleStrategyBacktesterMultiChartAccordion = NULL;
+        // }
+        
+        candleStrategyBacktesterMultiChartAccordion = 
+            new CandleStrategyBacktesterMultiChartAccordion(
+                gfx, 
+                multiChartAccordionLeft, 
+                multiChartAccordionTop, 
+                multiChartAccordionWidth, 
+                multiChartAccordionFramesHeight,
+                startTime, endTime,
+                candleHistory, *testExchange, *candleStrategy, Config::symbol
+            );
         mainFrame.child(*candleStrategyBacktesterMultiChartAccordion);
     }
 
@@ -248,20 +263,28 @@ protected:
         const ms_t start = datetime_to_ms(historyDateRange->getFromInput()->getText());
         const ms_t end = datetime_to_ms(historyDateRange->getToInput()->getText());
 
-        Input* historyInput = historySelect->getInput();
+        string moduleName = historySelect->getInput()->getText();
 
+        // if (!candleHistory)
         candleHistory = (CandleHistory*)sharedFactory.create(
             candleHistory,
-            Config::candleHistoryPath, historyInput->getText(),
+            Config::candleHistoryPath + "/" + moduleName, moduleName,
             new CandleHistory::Args(
                 { symbol, start, end, period_to_ms(period) }
             )
         );
 
-        loadHistoryData();
+        // if (candleStrategyBacktesterMultiChartAccordion)
+        //     candleStrategyBacktesterMultiChartAccordion->setCandleHistory(*candleHistory);
+
+        // createCandleStrategyBacktesterMultiChartAccordion();
+        // else candleHistory->clear();
+
+        // loadHistoryData();
     }
 
     void loadHistoryData() {
+
         const ms_t startTime = datetime_to_ms(historyDateRange->getFromInput()->getText());
         const ms_t endTime = datetime_to_ms(historyDateRange->getToInput()->getText());
         const string symbol = symbolSelect->getInput()->getText();
@@ -271,22 +294,23 @@ protected:
         candleHistory->setEndTime(endTime);
         candleHistory->setSymbol(symbol);
         candleHistory->setPeriod(period);
-        Progress progress("Loading history...", true);
+        Progress progress("Loading history...");
         candleHistory->load(progress);
         progress.close();
 
-        if (candleStrategyBacktesterMultiChartAccordion) {
-            candleStrategyBacktesterMultiChartAccordion->clear();
-            candleStrategyBacktesterMultiChartAccordion->draw();
-        }
+        // if (candleStrategyBacktesterMultiChartAccordion) {
+        //     candleStrategyBacktesterMultiChartAccordion->clear();
+        //     candleStrategyBacktesterMultiChartAccordion->draw();
+        // }
     }
 
     void loadExchangeModule() {
         // load the selected exchange lib
-        Input* exchangeInput = exchangeSelect->getInput();
+        string moduleName = exchangeSelect->getInput()->getText();
+        // if (!testExchange)
         testExchange = (TestExchange*)sharedFactory.create(
             testExchange,
-            Config::testExchangePath, exchangeInput->getText(), 
+            Config::testExchangePath + "/" + moduleName, moduleName, 
             new TestExchange::Args(
                 // TODO: args from user with a settings form...??
                 { Config::periods, Config::symbols, Config::pairs, Config::balances }
@@ -296,10 +320,11 @@ protected:
 
     void loadStrategyModule() {
         // load the selected strategy lib
-        Input* candleStrategyInput = candleStrategySelect->getInput();
+        string moduleName = candleStrategySelect->getInput()->getText();
+        // if (!candleStrategy)
         candleStrategy = (CandleStrategy*)sharedFactory.create(
-            candleStrategy,
-            Config::candleStrategyPath, candleStrategyInput->getText(), 
+            candleStrategy, 
+            Config::candleStrategyPath + "/" + moduleName, moduleName, 
             new CandleStrategy::Args(
                 // TODO: args from user with a settings form...??
                 { *testExchange, strategyParameters }
@@ -339,6 +364,14 @@ protected:
         symbolSelect->getInput()->setText(defaultSymbol);
     }
 
+
+    void updateCandleStrategyBacktesterMultiChartAccordion() {
+        candleStrategyBacktesterMultiChartAccordion->clearCharts();
+        candleStrategyBacktesterMultiChartAccordion->getCandleHistoryChart().generateFromHistory();
+        candleStrategyBacktesterMultiChartAccordion->getCandleHistoryChart().fitTimeRangeToHistory();
+        candleStrategyBacktesterMultiChartAccordion->draw();
+    }
+
 public:
 
     using FrameApplication::FrameApplication;
@@ -360,7 +393,7 @@ public:
         gui.setTitle("Bitstamp History Backtest");
         app = this;
 
-        createExchangeSelect();
+        createExchangeSelect(); // TODO: !@# test each form element and fix them
         createStrategySelect();
         createPeriodSelect();
         createSymbolSelect();

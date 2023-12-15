@@ -476,7 +476,7 @@ namespace madlib::graph {
             return guessedFirstShapeIndex;
         }
 
-        virtual void clear() {
+        virtual void clearShapes() {
             shapes.clear();
             prepared = false;
         }
@@ -894,16 +894,16 @@ namespace madlib::graph {
             timeRange->apply(*timeRangeFull);
         }
 
-        virtual void clear() {
+        virtual void clearProjectors() {
             vector_destroy(pointShapes);
             for (PointSeries* pointSeriesProjector: pointSeriesProjectors)
-                pointSeriesProjector->clear();
+                pointSeriesProjector->clearShapes();
             vector_destroy(candleShapes);
             for (CandleSeries* candleSeriesProjector: candleSeriesProjectors)
-                candleSeriesProjector->clear();
+                candleSeriesProjector->clearShapes();
             vector_destroy(labelShapes);
             for (LabelSeries* labelSeriesProjector: labelSeriesProjectors)
-                labelSeriesProjector->clear();
+                labelSeriesProjector->clearShapes();
         };
 
         void join(MultiChart* multiChart) {
@@ -1076,8 +1076,9 @@ namespace madlib::graph {
             return chart;
         }
 
-        virtual void clear() {
-            for (Chart* chart: charts) chart->clear();
+        virtual void clearCharts() {
+            for (Chart* chart: charts) 
+                chart->clearProjectors();
         }
         
     };

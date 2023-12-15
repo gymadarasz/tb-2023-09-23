@@ -45,35 +45,40 @@ int chart_manual_test5_zoom()
 
     // Define parameters and desired time range
     const string symbol = "MONTECARLO";
-    const double volumeMean = 100;  // Initial volume
-    const double volumeStdDeviation = 10;
-    const double priceMean = 100;  // Initial price
-    const double priceStdDeviation = 10;
-    const double timeLambda = MS_PER_MIN;
+    // const double volumeMean = 100;  // Initial volume
+    // const double volumeStdDeviation = 10;
+    // const double priceMean = 100;  // Initial price
+    // const double priceStdDeviation = 10;
+    // const double timeLambda = MS_PER_MIN;
     const ms_t startTime = datetime_to_ms("2021-01-01"); // Current time as the start time
     const ms_t endTime = datetime_to_ms("2021-01-07"); // 300 seconds in the future
     const ms_t period = period_to_ms("1h");
-    const unsigned int seed = 6;
+    // const unsigned int seed = 6;
+
+    SharedFactory sharedFactory = SharedFactory();
 
     // Create a MonteCarloTradeCandleHistory object with the specified parameters
-    MonteCarloTradeCandleHistory::Args context({
-        symbol, 
-        startTime, endTime, period,
-        volumeMean, volumeStdDeviation,
-        priceMean, priceStdDeviation,
-        timeLambda, seed
-    });
-    MonteCarloTradeCandleHistory history(&context);
-    history.init();
+    TradeCandleHistory* history = (TradeCandleHistory*)sharedFactory.create(
+        "build/src/shared/trading/history/MonteCarloTradeCandleHistory", 
+        "MonteCarloTradeCandleHistory",
+        new TradeCandleHistory::Args({
+            symbol, 
+            startTime, endTime, period,
+            // volumeMean, volumeStdDeviation,
+            // priceMean, priceStdDeviation,
+            // timeLamda, seed
+        })
+    );
 
     CandleHistoryChart chart(
         gfx, 10, 10, 1580, 580,
-        history
+        *history
     );
     chart.setZoomRatio(1.5, 1.5);
     gui.child(chart);
     chart_manual_test5_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test5_draw);
+    chart.draw();
 
     gui.loop();
     

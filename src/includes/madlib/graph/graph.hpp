@@ -465,7 +465,6 @@ namespace madlib::graph {
 
     };
 
-#define TEST_GFX_DELAY // {  sleep_ms(2); XFlushGC(display, gc); }
     class GFX: public EventHandler {
     protected:
 
@@ -559,12 +558,12 @@ namespace madlib::graph {
             // XFlush(display);  // Flush the changes to the server
         }
 
-        void drawPoint(int x, int y) const { TEST_GFX_DELAY
+        void drawPoint(int x, int y) const {
             if (viewport.containsCompletely(x, y, x, y))
                 XDrawPoint(display, window, gc, x, y);
         }
 
-        void drawRectangle(int x1, int y1, int x2, int y2) const { TEST_GFX_DELAY
+        void drawRectangle(int x1, int y1, int x2, int y2) const {
             Viewport rect(x1, y1, x2, y2);
             if (rect.insideOf(viewport)) {
                 XDrawRectangle(display, window, gc, x1, y1, (unsigned)(x2 - x1), (unsigned)(y2 - y1));
@@ -576,13 +575,13 @@ namespace madlib::graph {
             if (rect.containsPartially(x1, y1, x1, y2)) drawVerticalLine(x1, y1, y2);
         }
 
-        void fillRectangle(int x1, int y1, int x2, int y2) const { TEST_GFX_DELAY
+        void fillRectangle(int x1, int y1, int x2, int y2) const {
             Viewport rect(x1, y1, x2, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XFillRectangle(display, window, gc, rect.x1, rect.y1, (unsigned)(rect.x2 - rect.x1), (unsigned)(rect.y2 - rect.y1));
         }
 
-        void drawLine(int x1, int y1, int x2, int y2) const { TEST_GFX_DELAY
+        void drawLine(int x1, int y1, int x2, int y2) const {
             Viewport rect(x1, y1, x2, y2);
             
             if (x1 == x2) {
@@ -621,13 +620,13 @@ namespace madlib::graph {
             XDrawLine(display, window, gc, x1, y1, x2, y2);
         }
 
-        void drawVerticalLine(int x1, int y1, int y2) const { TEST_GFX_DELAY
+        void drawVerticalLine(int x1, int y1, int y2) const {
             Viewport rect(x1, y1, x1, y2);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x1, rect.y2);
         }
         
-        void drawHorizontalLine(int x1, int y1, int x2) const { TEST_GFX_DELAY
+        void drawHorizontalLine(int x1, int y1, int x2) const {
             Viewport rect(x1, y1, x2, y1);
             rect.intersect(viewport.x1, viewport.y1, viewport.x2, viewport.y2);
             XDrawLine(display, window, gc, rect.x1, rect.y1, rect.x2, rect.y1);
@@ -667,7 +666,7 @@ namespace madlib::graph {
             return fonts;
         }
         
-        void writeText(int x, int y, const string& text) { TEST_GFX_DELAY
+        void writeText(int x, int y, const string& text) {
             // Cut text to fit into the viewport first
             string txt = text;
             if (!fontInfo) setFont(font);

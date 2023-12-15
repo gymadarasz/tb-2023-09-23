@@ -14,11 +14,11 @@ protected:
 
     // Define parameters and desired time range
     const string symbol = "MONTECARLO";
-    const double volumeMean = 100;  // Initial volume
-    const double volumeStdDeviation = 10;
-    const double priceMean = 100;  // Initial price
-    const double priceStdDeviation = 10;
-    const double timeLambda = MS_PER_MIN;
+    // const double volumeMean = 100;  // Initial volume
+    // const double volumeStdDeviation = 10;
+    // const double priceMean = 100;  // Initial price
+    // const double priceStdDeviation = 10;
+    // const double timeLambda = MS_PER_MIN;
     const ms_t startTime = datetime_to_ms("2021-01-01");
     const ms_t endTime = datetime_to_ms("2021-01-07");
     const ms_t period = period_to_ms("1h");
@@ -37,7 +37,7 @@ protected:
     ScrollBar scrollBarVertical = ScrollBar(gfx, 290, 60, 200, VERTICAL);
     IntervalBar intervalBarVertical = IntervalBar(gfx, 320, 60, 200, VERTICAL);
 
-    MonteCarloTradeCandleHistory* history = NULL;
+    TradeCandleHistory* history = NULL;
     CandleHistoryChart* chart = NULL;
 
 public:
@@ -45,7 +45,6 @@ public:
     using ManualTestApplication::ManualTestApplication;
 
     virtual ~ChartManualTest7Zoom() {
-        delete history;
         delete chart;
     }
 
@@ -54,15 +53,17 @@ public:
         gui.setTitle("ChartManualTest7Zoom");
 
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
-        MonteCarloTradeCandleHistory::Args context = MonteCarloTradeCandleHistory::Args({
-            symbol, 
-            startTime, endTime, period,
-            volumeMean, volumeStdDeviation,
-            priceMean, priceStdDeviation,
-            timeLambda, seed
-        });
-        history = new MonteCarloTradeCandleHistory(&context);
-        history->init();
+        history = (TradeCandleHistory*)sharedFactory.create(
+            "build/src/shared/trading/history/MonteCarloTradeCandleHistory", 
+            "MonteCarloTradeCandleHistory",
+            new TradeCandleHistory::Args({
+                symbol, 
+                startTime, endTime, period,
+                // volumeMean, volumeStdDeviation,
+                // priceMean, priceStdDeviation,
+                // timeLamda, seed
+            })
+        );
         
         chart = new CandleHistoryChart(
             gfx, 300, 300, 1000, 300, *history
