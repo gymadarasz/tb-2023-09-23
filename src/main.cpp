@@ -236,13 +236,6 @@ protected:
     void createCandleStrategyBacktesterMultiChartAccordion() {
         const ms_t startTime = datetime_to_ms(historyDateRange->getFromInput()->getText());
         const ms_t endTime = datetime_to_ms(historyDateRange->getToInput()->getText());
-
-        // if (candleStrategyBacktesterMultiChartAccordion) {
-        //     candleStrategyBacktesterMultiChartAccordion->clear();
-        //     return;
-        //     // delete candleStrategyBacktesterMultiChartAccordion;
-        //     // candleStrategyBacktesterMultiChartAccordion = NULL;
-        // }
         
         candleStrategyBacktesterMultiChartAccordion = 
             new CandleStrategyBacktesterMultiChartAccordion(
@@ -265,7 +258,6 @@ protected:
 
         string moduleName = historySelect->getInput()->getText();
 
-        // if (!candleHistory)
         candleHistory = (CandleHistory*)sharedFactory.create(
             candleHistory,
             Config::candleHistoryPath + "/" + moduleName, moduleName,
@@ -273,14 +265,6 @@ protected:
                 { symbol, start, end, period_to_ms(period) }
             )
         );
-
-        // if (candleStrategyBacktesterMultiChartAccordion)
-        //     candleStrategyBacktesterMultiChartAccordion->setCandleHistory(*candleHistory);
-
-        // createCandleStrategyBacktesterMultiChartAccordion();
-        // else candleHistory->clear();
-
-        // loadHistoryData();
     }
 
     void loadHistoryData() {
@@ -297,17 +281,12 @@ protected:
         Progress progress("Loading history...");
         candleHistory->load(progress);
         progress.close();
-
-        // if (candleStrategyBacktesterMultiChartAccordion) {
-        //     candleStrategyBacktesterMultiChartAccordion->clear();
-        //     candleStrategyBacktesterMultiChartAccordion->draw();
-        // }
     }
 
     void loadExchangeModule() {
         // load the selected exchange lib
         string moduleName = exchangeSelect->getInput()->getText();
-        // if (!testExchange)
+        
         testExchange = (TestExchange*)sharedFactory.create(
             testExchange,
             Config::testExchangePath + "/" + moduleName, moduleName, 
@@ -321,7 +300,7 @@ protected:
     void loadStrategyModule() {
         // load the selected strategy lib
         string moduleName = candleStrategySelect->getInput()->getText();
-        // if (!candleStrategy)
+        
         candleStrategy = (CandleStrategy*)sharedFactory.create(
             candleStrategy, 
             Config::candleStrategyPath + "/" + moduleName, moduleName, 
