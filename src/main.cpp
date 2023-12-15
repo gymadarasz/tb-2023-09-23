@@ -78,19 +78,19 @@ protected:
     const bool showBalanceQuotedScale = true;
 
     
-    CandleHistory* candleHistory = NULL;
-    TestExchange* testExchange = NULL;
-    CandleStrategy* candleStrategy = NULL;
+    CandleHistory* candleHistory = nullptr;
+    TestExchange* testExchange = nullptr;
+    CandleStrategy* candleStrategy = nullptr;
 
-    Select* historySelect = NULL;
-    DateRange* historyDateRange = NULL;
-    Select* exchangeSelect = NULL;
-    Select* periodSelect = NULL;
-    Select* symbolSelect = NULL;
-    Select* candleStrategySelect = NULL;
-    Button* downloadButton = NULL;
-    Button* startButton = NULL;
-    CandleStrategyBacktesterMultiChartAccordion* candleStrategyBacktesterMultiChartAccordion = NULL;
+    Select* historySelect = nullptr;
+    DateRange* historyDateRange = nullptr;
+    Select* exchangeSelect = nullptr;
+    Select* periodSelect = nullptr;
+    Select* symbolSelect = nullptr;
+    Select* candleStrategySelect = nullptr;
+    Button* downloadButton = nullptr;
+    Button* startButton = nullptr;
+    CandleStrategyBacktesterMultiChartAccordion* candleStrategyBacktesterMultiChartAccordion = nullptr;
 
     vector<string> getClassFolders(const string& path) {
         vector<string> files = file_find_by_extension(path); // , ".so");
@@ -251,20 +251,20 @@ protected:
     }
 
     void loadHistoryModule() {
-        const string period = periodSelect->getInput()->getText();
-        const string symbol = symbolSelect->getInput()->getText();
-        const ms_t start = datetime_to_ms(historyDateRange->getFromInput()->getText());
-        const ms_t end = datetime_to_ms(historyDateRange->getToInput()->getText());
+        // const string period = periodSelect->getInput()->getText();
+        // const string symbol = symbolSelect->getInput()->getText();
+        // const ms_t start = datetime_to_ms(historyDateRange->getFromInput()->getText());
+        // const ms_t end = datetime_to_ms(historyDateRange->getToInput()->getText());
 
-        string moduleName = historySelect->getInput()->getText();
+        // string moduleName = historySelect->getInput()->getText();
 
-        candleHistory = (CandleHistory*)sharedFactory.create(
-            candleHistory,
-            Config::candleHistoryPath + "/" + moduleName, moduleName,
-            new CandleHistory::Args(
-                { symbol, start, end, period_to_ms(period) }
-            )
-        );
+        // candleHistory = (CandleHistory*)factory.create(
+        //     candleHistory,
+        //     Config::candleHistoryPath + "/" + moduleName, moduleName,
+        //     // new CandleHistory::Args({ 
+        //             symbol, start, end, period_to_ms(period) 
+        //     // })
+        // );
     }
 
     void loadHistoryData() {
@@ -285,30 +285,30 @@ protected:
 
     void loadExchangeModule() {
         // load the selected exchange lib
-        string moduleName = exchangeSelect->getInput()->getText();
+        // string moduleName = exchangeSelect->getInput()->getText();
         
-        testExchange = (TestExchange*)sharedFactory.create(
-            testExchange,
-            Config::testExchangePath + "/" + moduleName, moduleName, 
-            new TestExchange::Args(
-                // TODO: args from user with a settings form...??
-                { Config::periods, Config::symbols, Config::pairs, Config::balances }
-            )
-        );
+        // testExchange = (TestExchange*)sharedFactory.create(
+        //     testExchange,
+        //     Config::testExchangePath + "/" + moduleName, moduleName, 
+        //     // TODO: args from user with a settings form...??
+        //     // new TestExchange::Args({
+        //     Config::periods, Config::symbols, Config::pairs, Config::balances
+        //     // })
+        // );
     }
 
     void loadStrategyModule() {
         // load the selected strategy lib
-        string moduleName = candleStrategySelect->getInput()->getText();
+        // string moduleName = candleStrategySelect->getInput()->getText();
         
-        candleStrategy = (CandleStrategy*)sharedFactory.create(
-            candleStrategy, 
-            Config::candleStrategyPath + "/" + moduleName, moduleName, 
-            new CandleStrategy::Args(
-                // TODO: args from user with a settings form...??
-                { *testExchange, strategyParameters }
-            )
-        );
+        // candleStrategy = (CandleStrategy*)sharedFactory.create(
+        //     candleStrategy, 
+        //     Config::candleStrategyPath + "/" + moduleName, moduleName, 
+        //     // TODO: args from user with a settings form...??
+        //     // new CandleStrategy::Args({ 
+        //     *testExchange, strategyParameters 
+        //     // })
+        // );
     }
 
     void loadPeriods() {  
@@ -383,7 +383,7 @@ public:
         createCandleStrategyBacktesterMultiChartAccordion();
     }
 };
-BitstampHistoryApplication* BitstampHistoryApplication::app = NULL;
+BitstampHistoryApplication* BitstampHistoryApplication::app = nullptr;
 
 int backtest(int, const char* []) {
     // TODO: pass arguments

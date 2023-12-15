@@ -13,6 +13,7 @@ namespace madlib::printer {
         }
     };
 
-    EXPORT_CLASS(Test2Printer)
-
+    extern "C" Test2Printer* createTest2Printer(const string& prefix = nullptr) {
+        return new Test2Printer(prefix);
+    }
 }

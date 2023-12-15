@@ -293,11 +293,11 @@ namespace madlib {
         this_thread::sleep_for(chrono::milliseconds(ms));
     }
 
-    mt19937* rand_gen = NULL;
+    mt19937* rand_gen = nullptr;
 
     inline void rand_close() {
         delete rand_gen;
-        rand_gen = NULL;
+        rand_gen = nullptr;
     }
 
     inline void rand_init() {
@@ -392,25 +392,33 @@ namespace madlib {
         file.close();
     }
 
-    class Shared {
-    public:
-        struct Args {};
-        explicit Shared(void* = nullptr) {}
-        virtual void init(void* = nullptr) {
-            throw ERR_UNIMP;
-        }
-        virtual ~Shared() {}
-    };
+    // class Shared {
+    // public:
+    //     Shared() {}
+    //     // virtual void init(void* = nullptr) {
+    //     //     throw ERR_UNIMP;
+    //     // }
+    //     // virtual void deinit(void* = nullptr) {
+    //     //     throw ERR_UNIMP;
+    //     // }
+    //     virtual ~Shared() {}
+    // };
 
-    class Printer: public Shared {
+    class Printer {
+    protected:
+        string prefix;
+        
     public:
-        using Shared::Shared;
+        Printer(const string& prefix = ""): prefix(prefix) {}
+        
         virtual void print(const string& output) = 0;
+        
         void println(const string& output) {
-            print(output + "\n");
+            print(output + "\n" + prefix);
         }
+
         virtual ~Printer() {}
-        virtual void init(void* = nullptr) override {}
+        // virtual void init(void* = nullptr) override {}
     };
 
     class Log: public Printer {
@@ -636,7 +644,7 @@ namespace madlib {
     string vector_concat(
         const vector<string>& strings, 
         const string& separator = " ", 
-        str_sanitizer_func_t sanitizer = NULL, 
+        str_sanitizer_func_t sanitizer = nullptr, 
         const string& allowed_chars = str_sanitizer_default_allowed_chars,
         const char replacement = '_'
     ) {
@@ -727,7 +735,7 @@ namespace madlib {
         for (T* elem: v) 
             if (elem) {
                 delete elem;
-                elem = NULL;
+                elem = nullptr;
             }
         v.clear();
     }
@@ -789,7 +797,7 @@ namespace madlib {
     typedef map<const string, string> args_t;
     typedef map<const char, string> args_shortcuts_t;
 
-    args_t args_parse(int argc, const char* argv[], const args_shortcuts_t* shorts = NULL) {
+    args_t args_parse(int argc, const char* argv[], const args_shortcuts_t* shorts = nullptr) {
         args_t args;
         for (int i = 1; i < argc; i++) {
             if (argv[i][0] != '-') continue;
@@ -810,7 +818,7 @@ namespace madlib {
         return args.count(key);
     }
 
-    const string args_get(const args_t& args, const string& key, const string* defval = NULL) {
+    const string args_get(const args_t& args, const string& key, const string* defval = nullptr) {
         if (args.count(key)) return args.at(key);
         if (defval) return *defval;
         throw ERROR("Missing argument: " + key);
@@ -939,7 +947,7 @@ namespace madlib {
     }
 
     FILE* zenity_progress(
-        const string& title,
+        const string& title = "Loading...",
         bool noCancel = false,
         bool autoClose = true,
         bool timeRemaining = true
@@ -980,12 +988,12 @@ namespace madlib {
 
         bool closed = false;
 
-        FILE* pipe = NULL;
+        FILE* pipe = nullptr;
 
     public:
         
         explicit Progress(
-            const string& title,
+            const string& title = "Loading...",
             bool noCancel = false,
             bool autoClose = true,
             bool timeRemaining = true
@@ -1024,7 +1032,7 @@ namespace madlib {
     };
 
     template <typename T>
-    class Factory {
+    class VectorFactory {
     protected:
         vector<T*> instances;
     public:
@@ -1052,7 +1060,7 @@ namespace madlib {
             vector_destroy<T>(instances);
         }
 
-        virtual ~Factory() {
+        virtual ~VectorFactory() {
             // for (T* instance : instances) {
             //     delete instance;
             // }
@@ -1066,106 +1074,216 @@ namespace madlib {
 
     };
 
+/*
+    // #define EXPORT_CLASS(clazz, ...) \
+    //     extern "C" clazz* create##clazz(__VA_ARGS__) { \
+    //         return new clazz(__VA_ARGS__); \
+    //     } \
+    //     extern "C" void destroy##clazz (clazz* instance) { \
+    //         delete instance; \
+    //     }
+*/
+        
+    // class SharedFactory {
+    // protected:
 
-    #define EXPORT_CLASS(clazz) \
-        extern "C" clazz* create##clazz(clazz::Args* context = nullptr) { \
-            clazz* obj = new clazz(context); \
-            obj->init(context); \
-            if (context) delete (clazz::Args*)context; \
-            return obj; \
-        } \
-        extern "C" void destroy##clazz(clazz* instance) { \
-            delete instance; \
+    //     template<typename... Args>
+    //     using SharedCreator = Shared* (*)(Args...);
+
+    //     typedef void (*SharedDestroyer)(Shared*);
+
+    //     using SharedCreatorT = T* (*)(Args...);
+    //     typedef struct {
+    //         vector<Shared*> instances;
+    //         void* handle = nullptr;
+    //         SharedCreator<> creator;
+    //         SharedDestroyer destroyer;
+    //     } SharedInstance;
+
+    //     map<const string, SharedInstance> imports;
+
+    // public:
+
+    //     SharedFactory() {} 
+
+    //     virtual ~SharedFactory() {
+    //         for (const auto& pair: imports) {
+    //             const SharedInstance& import = pair.second;
+    //             for (Shared* instance: import.instances)
+    //                 if (import.destroyer) import.destroyer(instance);
+    //             if (import.handle) dlclose(import.handle);
+    //         }
+    //     }
+
+    //     template<typename T, typename... Args>
+    //     T* create(T* instance, const string& path, const string& clazz, Args... args) {
+
+    //         if (instance) {                
+    //             string found = "";
+    //             int at = 0;
+    //             for (const auto& import: imports) {
+    //                 at = 0;
+    //                 for (const void* iinstance: import.second.instances) {
+    //                     if (iinstance == instance) {
+    //                         import.second.destroyer(instance);
+    //                         instance = nullptr;
+    //                         found = import.first;
+    //                         break;
+    //                     }
+    //                     at++;
+    //                 }
+    //                 if (!found.empty()) break;
+    //             }
+    //             if (found.empty())
+    //                 throw ERROR("Requested instance is not created before.");
+                
+    //             imports[found].instances.erase(imports[found].instances.begin() + at);
+    //             if (imports[found].instances.empty()) {
+    //                 if (imports[found].handle) dlclose(imports[found].handle);
+    //                 imports.erase(found);
+    //             }
+    //         }
+            
+    //         const string source = path_normalize(path + "/" + clazz + ".so");
+
+    //         if (map_has(imports, source)) {
+    //             instance = ((SharedCreatorT)imports[source].creator)(args...);
+    //             imports[source].instances.push_back(instance);
+    //             return instance;
+    //         }
+
+    //         const string create = "create" + clazz;
+    //         const string destroy = "destroy" + clazz;
+
+    //         void* handle = dlopen((source).c_str(), RTLD_LAZY);
+    //         if (!handle) 
+    //             throw ERROR("Unable to open: " + source + " - " + dlerror());
+
+    //         SharedCreatorT creator = (SharedCreatorT)(dlsym(handle, string(create).c_str()));
+    //         if (!creator) 
+    //             throw ERROR("Unable to create: " + clazz + " - " + dlerror());
+
+    //         SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
+            
+    //         instance = creator(args...);
+    //         if (!instance) 
+    //             throw ERROR("Unable to instanciate: " + clazz);
+
+    //         imports[source] = {{ instance }, handle, creator, destroyer };
+
+    //         return instance;
+    //     }
+
+    // };
+
+    
+    template <typename InstanceT>
+    class Factory {
+    protected:
+        struct LibraryInfo {
+            void* handle;
+            vector<InstanceT*> instances;
+        };
+
+        map<string, LibraryInfo> libraryHandles;
+
+        // Helper function to check if an instance is in the map
+        bool isInstanceInMap(InstanceT* instance) {
+            for (const auto& entry : libraryHandles) {
+                const auto& instances = entry.second.instances;
+                if (find(instances.begin(), instances.end(), instance) != instances.end()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        
-    class SharedFactory {
-    protected:
+        template <typename U>
+        bool deleteInstanceSafely(U* instance) {
+            // TODO: Perform any necessary cleanup and delete the instance
+            delete instance;
 
-        typedef Shared* (*SharedCreator)(void*);
-        typedef void (*SharedDestroyer)(void*);
-
-        typedef struct {
-            vector<Shared*> instances;
-            void* handle = NULL;
-            SharedCreator creator;
-            SharedDestroyer destroyer;
-        } SharedInstance;
-
-        map<const string, SharedInstance> imports;
+            // Return true if deletion was successful
+            return true; // Change this logic based on your actual deletion requirements
+        }
 
     public:
 
-        SharedFactory() {} 
-
-        virtual ~SharedFactory() {
-            for (const auto& pair: imports) {
-                const SharedInstance& import = pair.second;
-                for (void* instance: import.instances)
-                    if (import.destroyer) import.destroyer(instance);
-                if (import.handle) dlclose(import.handle);
+        virtual ~Factory() {
+            // Close all loaded libraries and delete instances
+            for (const auto& entry : libraryHandles) {
+                for (InstanceT* instance : entry.second.instances) {
+                    deleteInstanceSafely(instance);
+                }
+                dlclose(entry.second.handle);
             }
         }
 
-        void* create(void* instance, const string& path, const string& clazz, void* context = NULL) {
-            if (instance) {                
-                string found = "";
-                int at = 0;
-                for (const auto& import: imports) {
-                    at = 0;
-                    for (const void* iinstance: import.second.instances) {
-                        if (iinstance == instance) {
-                            import.second.destroyer(instance);
-                            instance = NULL;
-                            found = import.first;
-                            break;
-                        }
-                        at++;
-                    }
-                    if (!found.empty()) break;
+        template <typename... Args>
+        InstanceT* createInstance(const string& libraryName, Args... args) {
+            // Check if the library is already loaded
+            if (libraryHandles.find(libraryName) == libraryHandles.end()) {
+                void* handle = dlopen(libraryName.c_str(), RTLD_LAZY);
+                if (!handle) {
+                    throw ERROR("Error opening library '" + libraryName + "': " + dlerror());
                 }
-                if (found.empty())
-                    throw ERROR("Requested instance is not created before.");
-                
-                imports[found].instances.erase(imports[found].instances.begin() + at);
-                if (imports[found].instances.empty()) {
-                    if (imports[found].handle) dlclose(imports[found].handle);
-                    imports.erase(found);
-                }
-            }
-            return create(path, clazz, context);
-        }
-
-        void* create(const string& path, const string& clazz, void* context = NULL) {
-            const string source = path_normalize(path + "/" + clazz + ".so");
-
-            if (map_has(imports, source)) {
-                Shared* instance = imports[source].creator(context);
-                imports[source].instances.push_back(instance);
-                return instance;
+                libraryHandles[libraryName] = {handle, {}};
             }
 
-            const string create = "create" + clazz;
-            const string destroy = "destroy" + clazz;
+            using CreateFunction = InstanceT* (*)(Args...);
+            // Use the constructor name as the symbol to load
+            string constructorSymbol = "create" + filename_extract(libraryName, true);
+            CreateFunction createFunc = (CreateFunction)dlsym(libraryHandles[libraryName].handle, constructorSymbol.c_str());
 
-            void* handle = dlopen((source).c_str(), RTLD_LAZY);
-            if (!handle) 
-                throw ERROR("Unable to open: " + source + " - " + dlerror());
+            const char* dlsym_error = dlerror();
+            if (dlsym_error) {
+                throw ERROR("Error loading symbol: " + string(dlsym_error));
+            }
 
-            SharedCreator creator = (SharedCreator)(dlsym(handle, string(create).c_str()));
-            if (!creator) 
-                throw ERROR("Unable to create: " + clazz + " - " + dlerror());
-
-            SharedDestroyer destroyer = (SharedDestroyer)(dlsym(handle, string(destroy).c_str()));
-            
-            Shared* instance = creator(context);
-            if (!instance) 
-                throw ERROR("Unable to instanciate: " + clazz);
-
-            imports[source] = {{ instance }, handle, creator, destroyer };
-
+            InstanceT* instance = createFunc(args...);
+            libraryHandles[libraryName].instances.push_back(instance);
             return instance;
+        }
+        
+        template <typename... Args>
+        InstanceT* updateInstance(InstanceT* existingInstance, const string& libraryName, Args... args) {
+            if (existingInstance) {
+                // Check if the existing instance is in the map
+                if (!isInstanceInMap(existingInstance)) {
+                    throw ERROR("Existing instance not found in the factory map.");
+                }
+
+                // Delete the existing instance
+                deleteInstance(existingInstance);
+            }
+
+            // Call createInstance to create a new instance
+            return createInstance<InstanceT>(libraryName, args...);
+        }
+
+        void deleteInstance(InstanceT* instance) {
+            // Find the library info containing the instance
+            for (auto& entry : libraryHandles) {
+                auto& instances = entry.second.instances;
+                auto it = find(instances.begin(), instances.end(), instance);
+                if (it != instances.end()) {
+                    instances.erase(it);
+
+                    // Delete instance and check for success
+                    if (deleteInstanceSafely(instance)) {
+                        // Remove entry from map if instances vector becomes empty
+                        if (instances.empty()) {
+                            dlclose(entry.second.handle);
+                            libraryHandles.erase(entry.first);
+                        }
+                    }
+                    return;
+                }
+            }
+
+            throw ERROR("Instance not found for deletion.");
         }
 
     };
+
 }

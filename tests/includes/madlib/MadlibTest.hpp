@@ -47,8 +47,8 @@ public:
         assert(parse_bool("1") == true);
     }
 
-    static void test_FactoryWithParams_Int() {
-        Factory<int> intFactory;
+    static void test_VectorFactoryWithParams_Int() {
+        VectorFactory<int> intFactory;
         int* intInstance = intFactory.create(42);
 
         assert(*intInstance == 42);
@@ -59,7 +59,7 @@ public:
         assert(*intInstance != 42);
     }
 
-    static void test_FactoryWithParams_CustomClass() {
+    static void test_VectorFactoryWithParams_CustomClass() {
         // Additional test for objects of a custom class
         class MyObject {
         public:
@@ -67,7 +67,7 @@ public:
             explicit MyObject(int val) : value(val) {}
         };
 
-        Factory<MyObject> objFactory;
+        VectorFactory<MyObject> objFactory;
         MyObject* objInstance = objFactory.create(100);
 
         assert(objInstance->value == 100);
@@ -78,7 +78,7 @@ public:
         assert(objInstance->value != 100);
     }
 
-    static void test_FactoryWithoutParams() {
+    static void test_VectorFactoryWithoutParams() {
         // Test for classes without constructor parameters
         class NoParamClass {
         public:
@@ -86,7 +86,7 @@ public:
             NoParamClass() : value(999) {}  // Default value for testing
         };
 
-        Factory<NoParamClass> noParamFactory;
+        VectorFactory<NoParamClass> noParamFactory;
         NoParamClass* noParamInstance = noParamFactory.create();
 
         assert(noParamInstance->value == 999);
@@ -289,20 +289,20 @@ public:
         }
     }
 
-    static void test_shared_lib() {
+    static void test_shared_lib_Factory() {
         // Redirect standard output to a stringstream
         stringstream buffer;
         streambuf* original_cout = cout.rdbuf(buffer.rdbuf());
 
-        SharedFactory sharedFactory = SharedFactory();
+        Factory factory = Factory<Printer>();
 
-        Printer* printer1 = (Printer*)sharedFactory.create("build/src/shared", "Test1Printer");
+        Printer* printer1 = factory.createInstance("build/src/shared/Test1Printer.so");
         printer1->println("Printer1 is printing");
         assert(buffer.str() == "Test1Printer prints: Printer1 is printing\n");
 
         buffer.str("");  // Clear the buffer for reuse
         
-        Printer* printer2 = (Printer*)sharedFactory.create("build/src/shared", "Test2Printer");
+        Printer* printer2 = factory.createInstance("build/src/shared/Test2Printer.so");
         printer2->println("Printer2 is printing");
         assert(buffer.str() == "Test2Printer prints: Printer2 is printing\n");
 

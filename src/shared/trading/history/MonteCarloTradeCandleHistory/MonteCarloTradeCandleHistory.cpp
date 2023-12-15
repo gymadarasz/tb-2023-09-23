@@ -82,7 +82,7 @@ namespace madlib::trading::history {
         
         virtual ~MonteCarloTradeCandleHistory() {}
 
-        virtual void init(void* = nullptr) override {}
+        // virtual void init(void* = nullptr) override {}
 
         virtual void load(Progress&) override {
             generateTrades();
@@ -104,5 +104,13 @@ namespace madlib::trading::history {
         }
     };
 
-    EXPORT_CLASS(MonteCarloTradeCandleHistory)
+    extern "C" MonteCarloTradeCandleHistory* createMonteCarloTradeCandleHistory(
+            const string& symbol,
+            const ms_t startTime,
+            const ms_t endTime,
+            const ms_t period
+    ) {
+        return new MonteCarloTradeCandleHistory(symbol, startTime, endTime, period);
+    }
+
 }

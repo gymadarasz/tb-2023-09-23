@@ -49,7 +49,7 @@ int chart_manual_test1()
     gui.child(chart);
     
     // generate data and show on scales
-    PointSeries* mainProjector = chart.createPointSeries(NULL, true, lightGreen);
+    PointSeries* mainProjector = chart.createPointSeries(nullptr, true, lightGreen);
     chart_manual_test1_generateRealPoints(
         chart, mainProjector->getShapes(), 1
     );

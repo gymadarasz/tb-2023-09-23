@@ -200,48 +200,56 @@ public:
             }
             osFiles.push_back(osFile);
         }
-        if (errors) 
-            throw ERROR("Build error(s): " + to_string(errors));
-
         ms_t finishAt = now();
         cout << "Build finish at: " << ms_to_datetime(finishAt) << endl;
-        cout << "Build in " << finishAt - startAt << " ms" << endl;
+        cout << "Build in " COLOR_INFO << finishAt - startAt << " ms" COLOR_DEFAULT << endl;
+
+        if (errors) 
+            throw ERROR("Build error(s): " + to_string(errors));
 
         if (executeMain) exec_cmd("./" + buildPath + main + " " + mainArgs);
     }
 };
 
 int main(int argc, const char *argv[]) {
+    try {
 
-    cout << "Build in progress.." << endl;
+        cout << "Build in progress.." << endl;
 
-    BuildArguments::Mode mode = BuildArguments::Mode::RELEASE;  // Default mode
+        BuildArguments::Mode mode = BuildArguments::Mode::RELEASE;  // Default mode
 
-    if (argc > 1) {
-        string modeArg = argv[1];
+        if (argc > 1) {
+            string modeArg = argv[1];
 
-        if (modeArg == "RELEASE") {
-            mode = BuildArguments::Mode::RELEASE;
-        } else if (modeArg == "DEBUG") {
-            mode = BuildArguments::Mode::DEBUG;
-        } else if (modeArg == "DEBUG_TESTS") {
-            mode = BuildArguments::Mode::DEBUG_TESTS;
-        } else if (modeArg == "TESTS") {
-            mode = BuildArguments::Mode::TESTS;
-        } else if (modeArg == "TESTS_COVERAGE") {
-            mode = BuildArguments::Mode::TESTS_COVERAGE;
-        } else {
-            cerr << "Invalid mode argument. Usage: " << argv[0] << " [RELEASE|DEBUG|DEBUG_TESTS|TESTS|TESTS_COVERAGE]" << endl;
-            return 1;  // Exit with an error code
+            if (modeArg == "RELEASE") {
+                mode = BuildArguments::Mode::RELEASE;
+            } else if (modeArg == "DEBUG") {
+                mode = BuildArguments::Mode::DEBUG;
+            } else if (modeArg == "DEBUG_TESTS") {
+                mode = BuildArguments::Mode::DEBUG_TESTS;
+            } else if (modeArg == "TESTS") {
+                mode = BuildArguments::Mode::TESTS;
+            } else if (modeArg == "TESTS_COVERAGE") {
+                mode = BuildArguments::Mode::TESTS_COVERAGE;
+            } else {
+                cerr << "Invalid mode argument. Usage: " << argv[0] << " [RELEASE|DEBUG|DEBUG_TESTS|TESTS|TESTS_COVERAGE]" << endl;
+                return 1;  // Exit with an error code
+            }
         }
+
+        vector<string> mainArgsVector;
+        for (int i = 2; i < argc; i++) mainArgsVector.push_back(argv[i]);
+        const string mainArgs = vector_concat(mainArgsVector, " ");
+
+        BuildArguments args(mode);
+        Builder builder(args, mainArgs);
+        static_cast<void>(builder); // hax to fix a cppcheck style warning
+    } catch (exception &e) {
+        const string errmsg = "Exception in build process: " + string(e.what());
+        cerr << errmsg << endl;
+        LOG(errmsg);
+        return -1;
     }
-
-    vector<string> mainArgsVector;
-    for (int i = 2; i < argc; i++) mainArgsVector.push_back(argv[i]);
-    const string mainArgs = vector_concat(mainArgsVector, " ");
-
-    BuildArguments args(mode);
-    Builder builder(args, mainArgs);
-    static_cast<void>(builder); // hax to fix a cppcheck style warning
+    
     return 0;
 }

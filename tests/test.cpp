@@ -54,7 +54,7 @@ public:
 #define TEST(test) Tester::run(test, QUOTEME(test));
 
 void unit_tests() {
-    TEST(MadlibTest::test_shared_lib);
+    TEST(MadlibTest::test_shared_lib_Factory);
     TEST(MadlibTest::test_str_start_with_positive);
     TEST(MadlibTest::test_str_start_with_negative);
     TEST(MadlibTest::test_args_parse_without_shortcuts);
@@ -74,9 +74,9 @@ void unit_tests() {
     TEST(MadlibTest::test_lib_reg_match_alphabets);
     TEST(MadlibTest::test_str_to_lower);
     TEST(MadlibTest::test_parse_bool);
-    TEST(MadlibTest::test_FactoryWithParams_Int);
-    TEST(MadlibTest::test_FactoryWithParams_CustomClass);
-    TEST(MadlibTest::test_FactoryWithoutParams);
+    TEST(MadlibTest::test_VectorFactoryWithParams_Int);
+    TEST(MadlibTest::test_VectorFactoryWithParams_CustomClass);
+    TEST(MadlibTest::test_VectorFactoryWithoutParams);
     TEST(ToolsTest::test_trim);
     TEST(ToolsTest::test_normalize_datetime);
     TEST(ToolsTest::test_datetime_conversion);
@@ -111,7 +111,7 @@ void manual_tests() {
     TEST(new CandleHistoryChartReload);
     TEST(new ChartLabelManualTest1);
     TEST(new ChartManualTest7Zoom);
-    TEST(new MonteCarloChartsTest1); // TODO: chart scroll and zoom bad
+    TEST(new MonteCarloChartsTest1);
     TEST(new MultiChartAccordionManualTest1);
     TEST(new AccordionManualTest1);
     TEST(new ChartManualTest6);

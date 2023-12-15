@@ -374,7 +374,7 @@ namespace madlib::graph {
 
     protected:
 
-        void* eventContext = NULL;
+        void* eventContext = nullptr;
         
         vector<onResizeHandler> onResizeHandlers;
         vector<onKeyPressHandler> onKeyPressHandlers;
@@ -387,7 +387,7 @@ namespace madlib::graph {
 
     public:
 
-        EventHandler(void* eventContext = NULL): eventContext(eventContext) {}
+        EventHandler(void* eventContext = nullptr): eventContext(eventContext) {}
 
         virtual ~EventHandler() {}
 
@@ -471,18 +471,18 @@ namespace madlib::graph {
         static Display *display;
         Window window;
         GC gc;
-        const char* font = NULL;
-        XFontStruct *fontInfo = NULL;
+        const char* font = nullptr;
+        XFontStruct *fontInfo = nullptr;
 
         Viewport viewport;
 
-        void* context = NULL;
+        void* context = nullptr;
 
     public:
 
         bool close = false;
 
-        GFX(void* context = NULL): context(context) {}
+        GFX(void* context = nullptr): context(context) {}
 
         void* getContext() const {
             return context;
@@ -503,7 +503,7 @@ namespace madlib::graph {
             const char* font = Theme::defaultWindowFont
         ) {
             // Initialize the X display
-            if (!display) display = XOpenDisplay(NULL);
+            if (!display) display = XOpenDisplay(nullptr);
             if (!display) throw ERROR("Unable to open display.");
 
             // int screen = DefaultScreen(display);
@@ -516,7 +516,7 @@ namespace madlib::graph {
             XStoreName(display, window, title);
 
             // Create a graphics context
-            gc = XCreateGC(display, window, 0, NULL);
+            gc = XCreateGC(display, window, 0, nullptr);
 
             // Select inputs
             XSelectInput(display, window, 
@@ -651,7 +651,7 @@ namespace madlib::graph {
             int nFonts;
             char** fontNames = XListFonts(display, "*", 1000, &nFonts);
 
-            if (fontNames == NULL) {
+            if (fontNames == nullptr) {
                 fprintf(stderr, "Unable to list fonts.\n");
                 return fonts;
             }
@@ -751,14 +751,14 @@ namespace madlib::graph {
 
                     case KeyPress:
                         // Handle key press event
-                        XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
+                        XLookupString(&event.xkey, text, sizeof(text), &key, nullptr);
                         for (const onKeyPressHandler& onKeyPress: onKeyPressHandlers)
                             onKeyPress(eventContext, key);
                         break;
 
                     case KeyRelease:
                         // Handle key release event
-                        XLookupString(&event.xkey, text, sizeof(text), &key, NULL);
+                        XLookupString(&event.xkey, text, sizeof(text), &key, nullptr);
                         for (const onKeyReleaseHandler& onKeyRelease: onKeyReleaseHandlers)
                             onKeyRelease(eventContext, key);
                         break;
@@ -790,7 +790,7 @@ namespace madlib::graph {
         }
     };
 
-    Display* GFX::display = NULL;
+    Display* GFX::display = nullptr;
 
 
     class Zoomable { // TODO: remove Zoomable, it's now YAGNI
@@ -1111,7 +1111,7 @@ namespace madlib::graph {
             int width, int height, 
             bool scrollFixed = true,
             bool zoomFixed = true,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): 
             Scrollable(width, height, scrollFixed),
             Zoomable(zoomFixed),
@@ -1190,7 +1190,7 @@ namespace madlib::graph {
         Color textColor;
 
         vector<Area*> areas;
-        Area* parent = NULL;
+        Area* parent = nullptr;
 
         void reduceViewport(Viewport& viewport) const {
             if (!parent) return;
@@ -1243,7 +1243,7 @@ namespace madlib::graph {
             const int textMargin = Theme::defaultAreaTextMargin,
             const Color borderColor = Theme::defaultAreaBorderColor,
             const Color textColor = Theme::defaultAreaTextColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): 
             Painter(
                 width, height, 
@@ -1659,7 +1659,7 @@ namespace madlib::graph {
             int width, int height,
             const char* title = Theme::defaultWindowTitle, 
             Color color = Theme::defaultWindowColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ):
             Area(
                 gfx, 0, 0, width, height, false, false, "",
@@ -1702,7 +1702,7 @@ namespace madlib::graph {
             bool zoomFixed = false,
             Border border = Theme::defaultFrameBorder,
             Color backgroundColor = Theme::defaultFrameBackgroundColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ):
             Area(
                 gfx, 
@@ -1762,7 +1762,7 @@ namespace madlib::graph {
             const string &text = "", 
             const Align textAlign = Theme::defaultButtonTextAlign,
             const Border buttonBorder = Theme::defaultButtonBorder,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): Area(
             gfx, left, top, width, height, false, false,
             text, textAlign, buttonBorder,
@@ -1814,7 +1814,7 @@ namespace madlib::graph {
             const string &text, 
             const Align textAlign = Theme::defaultLabelTextAlign,
             const Border border = Theme::defaultLabelBorder,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): Area(
             gfx, left, top, width, height, false, false, text, textAlign, border, 
             Theme::defaultAreaBackgroundColor,
@@ -1835,7 +1835,7 @@ namespace madlib::graph {
             int width, int height,
             const string& text = "",
             // TODO: add style (can we use style structure for each element so pass only one argument per element?)
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): 
             Area(
                 gfx, left, top, width, height, 
@@ -1858,8 +1858,8 @@ namespace madlib::graph {
         // const string title = "Select";
         const string prompt = "Select"; // TODO
         
-        Label* label = NULL;
-        Input* input = NULL;
+        Label* label = nullptr;
+        Input* input = nullptr;
 
         vector<string> values;
         string value;
@@ -1923,10 +1923,10 @@ namespace madlib::graph {
     protected:
         const string prompt = "Select a date"; // TODO
 
-        Label* fromLabel = NULL;
-        Input* fromInput = NULL;
-        Label* toLabel = NULL;
-        Input* toInput = NULL;
+        Label* fromLabel = nullptr;
+        Input* fromInput = nullptr;
+        Label* toLabel = nullptr;
+        Input* toInput = nullptr;
 
         ms_t fromValue;
         ms_t toValue;
@@ -2044,7 +2044,7 @@ namespace madlib::graph {
         // Point<int> dragStartAt = Point<int>(-1, -1);
         int dragStartAt = -1;
 
-        Button* handler = NULL;
+        Button* handler = nullptr;
 
         bool direction;
         int thickness;
@@ -2080,7 +2080,7 @@ namespace madlib::graph {
             GFX& gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, double value = 0,
             int thickness = Theme::defaultBarThickness,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): Area(
             gfx, left, top, 
             direction == HORIZONTAL ? length : thickness,
@@ -2141,7 +2141,7 @@ namespace madlib::graph {
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::defaultBarThickness,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): SlideBar(
             gfx, left, top, length, direction, 
             minValue, maxValue, value, thickness, 
@@ -2254,8 +2254,8 @@ namespace madlib::graph {
         bool dragMinStarted = false;
         bool dragMaxStarted = false;
 
-        Button* handlerMin = NULL;
-        Button* handlerMax = NULL;
+        Button* handlerMin = nullptr;
+        Button* handlerMax = nullptr;
     public:
         IntervalBar(
             GFX& gfx, int left, int top, int length, bool direction,
@@ -2352,8 +2352,8 @@ namespace madlib::graph {
         protected:
             const int innerBorderSize = 1;
 
-            Toggler* toggler = NULL;
-            Frame* frame = NULL;
+            Toggler* toggler = nullptr;
+            Frame* frame = nullptr;
 
             Accordion& accordion;
             int frameHeight;
@@ -2392,9 +2392,9 @@ namespace madlib::graph {
 
             virtual ~Container() {
                 if (toggler) delete toggler;
-                toggler = NULL;
+                toggler = nullptr;
                 if (frame) delete frame;
-                frame = NULL;
+                frame = nullptr;
             }
 
             bool isOpened() const {
@@ -2446,7 +2446,7 @@ namespace madlib::graph {
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ): 
             Area(
                 gfx, left, top, width, 
@@ -2597,7 +2597,6 @@ namespace madlib::graph {
 
         GFX gfx = GFX(this);
         GUI gui = GUI(gfx, 1600, 900, "Application");
-        SharedFactory sharedFactory;
 
     public:
     

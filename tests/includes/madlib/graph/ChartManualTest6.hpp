@@ -24,8 +24,10 @@ protected:
     const ms_t period = period_to_ms("1h");
     const unsigned int seed = 6000;
 
-    TradeCandleHistory* history = NULL;
-    CandleHistoryChart* chart = NULL;
+    Factory<CandleHistory> candleHistoryFactory = Factory<CandleHistory>(); 
+
+    CandleHistory* history = nullptr;
+    CandleHistoryChart* chart = nullptr;
 public:
 
     using ManualTestApplication::ManualTestApplication;
@@ -39,20 +41,23 @@ public:
         gui.setTitle("ChartManualTest6");
 
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
-        history = (TradeCandleHistory*)sharedFactory.create(
-            "build/src/shared/trading/history/MonteCarloTradeCandleHistory", 
-            "MonteCarloTradeCandleHistory",
-            new TradeCandleHistory::Args({
-                symbol, 
-                startTime, endTime, period,
+        history = candleHistoryFactory.createInstance(
+            "build/src/shared/trading/history/MonteCarloTradeCandleHistory/"
+            "MonteCarloTradeCandleHistory.so",
+            // new TradeCandleHistory::Args({
+            symbol, 
+            startTime, endTime, period
                 // volumeMean, volumeStdDeviation,
                 // priceMean, priceStdDeviation,
                 // timeLamda, seed
-            })
+            // })
         );
+        Progress progress;
+        history->load(progress);
+        progress.close();
 
         chart = new CandleHistoryChart(
-            gfx, 10, 60, 1580, 780, *history
+            gfx, 10, 60, 1580, 780, history
         );
 
         mainFrame.child(*chart);

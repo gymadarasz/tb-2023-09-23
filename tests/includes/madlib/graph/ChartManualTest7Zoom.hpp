@@ -37,8 +37,9 @@ protected:
     ScrollBar scrollBarVertical = ScrollBar(gfx, 290, 60, 200, VERTICAL);
     IntervalBar intervalBarVertical = IntervalBar(gfx, 320, 60, 200, VERTICAL);
 
-    TradeCandleHistory* history = NULL;
-    CandleHistoryChart* chart = NULL;
+    Factory<CandleHistory> candleHistoryFactory = Factory<CandleHistory>();
+    CandleHistory* history = nullptr;
+    CandleHistoryChart* chart = nullptr;
 
 public:
 
@@ -53,20 +54,23 @@ public:
         gui.setTitle("ChartManualTest7Zoom");
 
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
-        history = (TradeCandleHistory*)sharedFactory.create(
-            "build/src/shared/trading/history/MonteCarloTradeCandleHistory", 
-            "MonteCarloTradeCandleHistory",
-            new TradeCandleHistory::Args({
-                symbol, 
-                startTime, endTime, period,
+        history = candleHistoryFactory.createInstance(
+            "build/src/shared/trading/history/MonteCarloTradeCandleHistory/"
+            "MonteCarloTradeCandleHistory.so",
+            // new TradeCandleHistory::Args({
+            symbol, 
+            startTime, endTime, period
                 // volumeMean, volumeStdDeviation,
                 // priceMean, priceStdDeviation,
                 // timeLamda, seed
-            })
+            // })
         );
+        Progress progress;
+        history->load(progress);
+        progress.close();
         
         chart = new CandleHistoryChart(
-            gfx, 300, 300, 1000, 300, *history
+            gfx, 300, 300, 1000, 300, history
         );
 
         mainFrame.child(slideBarHorizontal);

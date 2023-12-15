@@ -15,10 +15,10 @@ namespace madlib::trading::strategy {
 
         virtual ~ACandleStrategy() {}
 
-        virtual void init(void*) override {}
+        // virtual void init(void*) override {}
 
-        virtual void onCandleClose(const Candle& candle) override {
-            const string symbol = parameters.at("symbol").getString();
+        virtual void onCandleClose(Exchange& exchange, const string& symbol, const Candle& candle) override {
+            //const string symbol = parameters.at("symbol").getString();
             // LOG(
             //     ms_to_datetime(candle.getEnd()), 
             //     " ", candle.getClose(), 
@@ -39,7 +39,7 @@ namespace madlib::trading::strategy {
                     balanceQuoted09 = exchange.getBalanceQuoted(symbol) * 0.9;
                     orderAmountPrice = orderAmount * exchange.getPairAt(symbol).getPrice();
                     if (orderAmountPrice < balanceQuoted09) {
-                        marketBuy(symbol, orderAmount);
+                        marketBuy(exchange, symbol, orderAmount);
                     }
                     exitAt = exchange.getBalanceQuotedFull(symbol) * 1.25;
                     stage = 1;
@@ -49,7 +49,7 @@ namespace madlib::trading::strategy {
                     
                     if (tick > 50 /*|| exitAt > exchange.getBalanceQuotedFull(symbol)*/) {
                         balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
-                        marketSell(symbol, buyAmount > balanceBase09 ? balanceBase09 : buyAmount);
+                        marketSell(exchange, symbol, buyAmount > balanceBase09 ? balanceBase09 : buyAmount);
                         stage = 2;
                     }
                     break;
@@ -72,5 +72,13 @@ namespace madlib::trading::strategy {
         }
     };
 
-    EXPORT_CLASS(ACandleStrategy)
+    extern "C" ACandleStrategy* createACandleStrategy(
+        // map<string, Strategy::Parameter>& parameters,
+        // LabelSeries* labelSeries = nullptr
+    ) {
+        return new ACandleStrategy(
+            // parameters, 
+            // labelSeries
+        );
+    }
 }

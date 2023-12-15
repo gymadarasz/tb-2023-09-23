@@ -243,8 +243,8 @@ namespace madlib::graph {
     protected:
         Margin margin;
 
-        TimeRange* timeRangeFull = NULL;
-        TimeRange* timeRange = NULL;
+        TimeRange* timeRangeFull = nullptr;
+        TimeRange* timeRange = nullptr;
 
         // convert x to ms_t
         ms_t retractX(int x) const {
@@ -262,7 +262,7 @@ namespace madlib::graph {
             const Border border = Theme::defaultChartBorder,
             const Color backgroundColor = Theme::defaultChartBackgroundColor,
             const Color borderColor = Theme::defaultChartBorderColor,
-            void *eventContext = NULL
+            void *eventContext = nullptr
         ): 
             Area(
                 gfx, left, top, width, height, 
@@ -391,10 +391,10 @@ namespace madlib::graph {
             return Pixel(translateX(ms), translateY(value));
         }
 
-        bool align(Projector* other = NULL, bool extends = true) {
+        bool align(Projector* other = nullptr, bool extends = true) {
             if (prepared) return true;
             if (shapes.size() == 0) return false;
-            if (other && !other->prepared && !other->align(NULL, extends)) other = NULL;
+            if (other && !other->prepared && !other->align(nullptr, extends)) other = nullptr;
 
             chartHeight = timeRangeArea.getHeight() - 
                 (timeRangeArea.getMargin()->top + timeRangeArea.getMargin()->bottom);
@@ -691,7 +691,7 @@ namespace madlib::graph {
     public:
         explicit Alignment(
             Projector* projector,
-            Projector* alignToProjector = NULL,
+            Projector* alignToProjector = nullptr,
             bool extends = true
         ):
             projector(projector),
@@ -752,7 +752,7 @@ namespace madlib::graph {
 
     protected:
 
-        MultiChart* multiChart = NULL;
+        MultiChart* multiChart = nullptr;
 
         bool dragTimeRange = false;
         int dragTimeRangeStartedX = 0;
@@ -862,7 +862,7 @@ namespace madlib::graph {
             const Border border = Theme::defaultChartBorder,
             const Color backgroundColor = Theme::defaultChartBackgroundColor,
             const Color borderColor = Theme::defaultChartBorderColor,
-            void *eventContext = NULL
+            void *eventContext = nullptr
         ):
             TimeRangeArea(
                 gfx, left, top, width, height,
@@ -928,7 +928,7 @@ namespace madlib::graph {
         }
 
         PointSeries* createPointSeries(
-            Projector* alignToProjector = NULL,
+            Projector* alignToProjector = nullptr,
             bool alignExtends = true,
             Color color = Theme::defaultChartSeriesColor
         ) {
@@ -938,7 +938,7 @@ namespace madlib::graph {
             pointSeriesProjectors.push_back(pointSeries);
             // alignToProjector = alignToProjector
             //     ? alignToProjector
-            //     : projectors.size() > 0 ? projectors[0] : NULL;
+            //     : projectors.size() > 0 ? projectors[0] : nullptr;
             projectors.push_back(pointSeries);
             alignments.push_back(Alignment(
                 pointSeries, 
@@ -949,7 +949,7 @@ namespace madlib::graph {
         }
 
         CandleSeries* createCandleSeries(
-            Projector* alignToProjector = NULL,
+            Projector* alignToProjector = nullptr,
             bool alignExtends = true,
             Color colorUp = Theme::defaultChartCandleColorUp, 
             Color colorDown = Theme::defaultChartCandleColorDown
@@ -964,7 +964,7 @@ namespace madlib::graph {
         }
 
         LabelSeries* createLabelSeries(
-            Projector* alignToProjector = NULL,
+            Projector* alignToProjector = nullptr,
             bool alignExtends = true
         ) {
             LabelSeries* labelSeries = new LabelSeries(*this);
@@ -1049,7 +1049,7 @@ namespace madlib::graph {
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ):
             Accordion(
                 gfx, left, top, width, 

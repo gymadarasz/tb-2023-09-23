@@ -61,29 +61,32 @@ int chart_manual_test4_history()
     // MonteCarloTradeCandleHistory history(&context);
     // history.init();
 
-    SharedFactory sharedFactory = SharedFactory();
+    Factory factory = Factory<CandleHistory>();
 
-    TradeCandleHistory* history = (TradeCandleHistory*)sharedFactory.create(
-        "build/src/shared/trading/history/MonteCarloTradeCandleHistory", 
-        "MonteCarloTradeCandleHistory",
-        new TradeCandleHistory::Args({
-            symbol, 
-            startTime, endTime, period,
+    CandleHistory* history = factory.createInstance(
+        "build/src/shared/trading/history/MonteCarloTradeCandleHistory/" 
+        "MonteCarloTradeCandleHistory.so",
+        // new TradeCandleHistory::Args({
+        symbol, startTime, endTime, period
             // volumeMean, volumeStdDeviation,
             // priceMean, priceStdDeviation,
             // timeLamda, seed
-        })
+        // })
     );
+    Progress progress;
+    history->load(progress);
+    progress.close();
 
     // Zoom zoom;
     CandleHistoryChart chart(
         gfx, 10, 10, 780, 580,
-        *history
+        history
     );
     gui.child(chart);
     chart_manual_test4_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test4_draw);
 
+    chart.draw();
     gui.loop();
     
     return 0;

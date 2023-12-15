@@ -12,7 +12,9 @@ namespace madlib::printer {
             cout << "Test1Printer prints: " << output;
         }
     };
-
-    EXPORT_CLASS(Test1Printer)
+    
+    extern "C" Test1Printer* createTest1Printer(const string& prefix = nullptr) {
+        return new Test1Printer(prefix);
+    }
 
 }

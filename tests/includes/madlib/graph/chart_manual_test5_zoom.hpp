@@ -55,24 +55,27 @@ int chart_manual_test5_zoom()
     const ms_t period = period_to_ms("1h");
     // const unsigned int seed = 6;
 
-    SharedFactory sharedFactory = SharedFactory();
+    Factory factory = Factory<CandleHistory>();
 
     // Create a MonteCarloTradeCandleHistory object with the specified parameters
-    TradeCandleHistory* history = (TradeCandleHistory*)sharedFactory.create(
-        "build/src/shared/trading/history/MonteCarloTradeCandleHistory", 
-        "MonteCarloTradeCandleHistory",
-        new TradeCandleHistory::Args({
-            symbol, 
-            startTime, endTime, period,
+    CandleHistory* history = factory.createInstance(
+        "build/src/shared/trading/history/MonteCarloTradeCandleHistory/"
+        "MonteCarloTradeCandleHistory.so",
+        // new TradeCandleHistory::Args({
+        symbol, 
+        startTime, endTime, period
             // volumeMean, volumeStdDeviation,
             // priceMean, priceStdDeviation,
             // timeLamda, seed
-        })
+        // })
     );
+    Progress progress;
+    history->load(progress);
+    progress.close();
 
     CandleHistoryChart chart(
         gfx, 10, 10, 1580, 580,
-        *history
+        history
     );
     chart.setZoomRatio(1.5, 1.5);
     gui.child(chart);

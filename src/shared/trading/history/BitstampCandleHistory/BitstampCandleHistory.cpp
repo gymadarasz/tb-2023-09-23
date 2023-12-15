@@ -152,7 +152,7 @@ namespace madlib::trading::history {
 
         using CandleHistory::CandleHistory;
 
-        virtual void init(void*) override {} 
+        // virtual void init(void*) override {} 
         
         virtual ~BitstampCandleHistory() {};
 
@@ -201,5 +201,5 @@ namespace madlib::trading::history {
     const string BitstampCandleHistory::csvPath = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
     const string BitstampCandleHistory::csvFileTpl = csvPath + "/Bitstamp_{symbol}_{year}_{period}.csv";
             
-    EXPORT_CLASS(BitstampCandleHistory);
+    // EXPORT_CLASS(BitstampCandleHistory);
 }

@@ -118,7 +118,7 @@ namespace madlib::trading {
         ms_t timestamp;
     };
 
-    class History: public Shared {
+    class History {
     protected:
 
         string symbol;
@@ -127,17 +127,17 @@ namespace madlib::trading {
         ms_t period;
 
     public:
-        struct Args {
-            const string symbol;
-            const ms_t startTime;
-            const ms_t endTime;
-            const ms_t period;
-        };
-        explicit History(void* context): 
-            symbol(((Args*)context)->symbol),
-            startTime(((Args*)context)->startTime),
-            endTime(((Args*)context)->endTime),
-            period(((Args*)context)->period)
+    
+        History(
+            const string& symbol,
+            const ms_t startTime,
+            const ms_t endTime,
+            const ms_t period
+        ): 
+            symbol(symbol),
+            startTime(startTime),
+            endTime(endTime),
+            period(period)
         {}
 
         virtual ~History() {}
@@ -388,7 +388,7 @@ namespace madlib::trading {
         }
     };
 
-    class Exchange: public Shared {
+    class Exchange {
     protected:
         
         map<string, Pair> pairs;
@@ -501,27 +501,32 @@ namespace madlib::trading {
         }
 
     public:
-        struct Args {
-            const vector<string>& periods;
-            const vector<string>& symbols;
-            const map<string, Pair>& pairs;
-            const map<string, Balance>& balances;
-        };
+        // struct Args {
+        //     const vector<string>& periods;
+        //     const vector<string>& symbols;
+        //     const map<string, Pair>& pairs;
+        //     const map<string, Balance>& balances;
+        // };
         
-        explicit TestExchange(void* context): 
+        TestExchange(
+            const vector<string>& periods,
+            const vector<string>& symbols,
+            const map<string, Pair>& pairs,
+            const map<string, Balance>& balances
+        ): 
             Exchange(), 
-            periods(((Args*)context)->periods),
-            symbols(((Args*)context)->symbols)
+            periods(periods),
+            symbols(symbols)
         {
-            pairs = ((Args*)context)->pairs;
-            balances = ((Args*)context)->balances;
+            this->pairs = pairs;
+            this->balances = balances;
         }
 
         virtual ~TestExchange() {}
 
-        virtual void init(void*) override {
+        // virtual void init(void* = nullptr) override {
 
-        }
+        // }
 
         virtual vector<string> getPeriods() const override {
             return periods;
@@ -566,7 +571,7 @@ namespace madlib::trading {
         // }
     };
 
-    class Strategy: public Shared {
+    class Strategy {
     public:
 
         template<typename T>
@@ -649,34 +654,29 @@ namespace madlib::trading {
 
     protected:
 
-        Exchange& exchange;
-        map<string, Parameter> parameters;
-        LabelSeries* labelSeries;
+        // map<string, Parameter>& parameters;
+        LabelSeries* labelSeries = nullptr;
 
     public:
-        struct Args {
-            Exchange& exchange;
-            const map<string, Parameter>& parameters;
-            LabelSeries* labelSeries = NULL;
-        };
-
-        explicit Strategy(void* context):
-            exchange(((Args*)context)->exchange),
-            parameters(((Args*)context)->parameters),
-            labelSeries(((Args*)context)->labelSeries)
+        Strategy(
+            // map<string, Parameter>& parameters,
+            // LabelSeries* labelSeries = nullptr
+        )//:
+            // parameters(parameters),
+            // labelSeries(labelSeries)
         {}
         
         virtual ~Strategy() {}
 
-        LabelSeries* getLabelSeries() const {
-            return labelSeries;
-        }
+        // LabelSeries* getLabelSeries() const {
+        //     return labelSeries;
+        // }
 
         void setLabelSeries(LabelSeries* labelSeries) {
             this->labelSeries = labelSeries;
         }
 
-        void addBuyText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
+        void addBuyText(Exchange& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
@@ -685,7 +685,7 @@ namespace madlib::trading {
             // addText(labelSeries.getBuyTextRealChoords(), labelSeries.getBuyTexts(), currentTime, currentPrice, text);
         }
 
-        void addSellText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
+        void addSellText(Exchange& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
@@ -694,7 +694,7 @@ namespace madlib::trading {
             // addText(labelSeries.getSellTextRealChoords(), labelSeries.getSellTexts(), currentTime, currentPrice, text);
         }
 
-        void addErrorText(const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
+        void addErrorText(Exchange& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange.getCurrentTime();
             if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
@@ -703,33 +703,33 @@ namespace madlib::trading {
             // addText(labelSeries.getErrorTextRealChoords(), labelSeries.getErrorTexts(), currentTime, currentPrice, text);
         }
 
-        bool marketBuy(const string& symbol, double amount) {
+        bool marketBuy(Exchange& exchange, const string& symbol, double amount) {
             ms_t currentTime = exchange.getCurrentTime();
             double currentPrice = exchange.getPairAt(symbol).getPrice();
             if (exchange.marketBuy(symbol, amount, false)) {
-                addBuyText(symbol, currentTime, currentPrice);
+                addBuyText(exchange, symbol, currentTime, currentPrice);
                 return true;
             }
             LOG(
                 " Exchange time: " + ms_to_datetime(currentTime) 
                 + ", Strategy BUY Error, [" + symbol + "] " + to_string(amount)
             );
-            addErrorText(symbol, currentTime, currentPrice);
+            addErrorText(exchange, symbol, currentTime, currentPrice);
             return false;
         }
 
-        bool marketSell(const string& symbol, double amount) {
+        bool marketSell(Exchange& exchange, const string& symbol, double amount) {
             ms_t currentTime = exchange.getCurrentTime();
             double currentPrice = exchange.getPairAt(symbol).getPrice();
             if (exchange.marketSell(symbol, amount, false)) {
-                addSellText(symbol, currentTime, currentPrice);
+                addSellText(exchange, symbol, currentTime, currentPrice);
                 return true;
             }
             LOG(
                 " Exchange time: " + ms_to_datetime(currentTime) 
                 + ", Strategy SELL Error, [" + symbol + "] " + to_string(amount)
             );
-            addErrorText(symbol, currentTime, currentPrice);
+            addErrorText(exchange, symbol, currentTime, currentPrice);
             return false;
         }
     };
@@ -742,7 +742,7 @@ namespace madlib::trading {
 
         virtual ~CandleStrategy() {}
 
-        virtual void onCandleClose(const Candle&) {
+        virtual void onCandleClose(Exchange&, const string&, const Candle&) {
             throw ERR_UNIMP;
         }
     };
@@ -751,15 +751,15 @@ namespace madlib::trading {
     class CandleHistoryChart: public Chart {
     protected:
         CandleHistory*& candleHistory;
-        LabelSeries* labelSeries = NULL;
+        // LabelSeries* labelSeries = nullptr;
         const Color& priceColor;
         const Color& volumeColor;
 
-        Projector* mainProjector = NULL;
-        CandleSeries* candleSeries = NULL;
-        PointSeries* priceSeries = NULL;
-        PointSeries* volumeSeries = NULL;
-        LabelSeries* textSeries = NULL;
+        Projector* mainProjector = nullptr;
+        CandleSeries* candleSeries = nullptr;
+        PointSeries* priceSeries = nullptr;
+        PointSeries* volumeSeries = nullptr;
+        LabelSeries* labelSeries = nullptr;
 
     public:
 
@@ -767,7 +767,7 @@ namespace madlib::trading {
             GFX& gfx, int left, int top, int width, int height,
             // ms_t timeRangeBegin, ms_t timeRangeEnd,
             CandleHistory*& candleHistory,
-            LabelSeries* labelSeries = NULL,
+            // LabelSeries* labelSeries = nullptr, // TODO: add labelTexts
             const bool showCandles = true, // TODO
             const bool showPrices = true, // TODO
             const bool showVolumes = true, // TODO
@@ -775,7 +775,7 @@ namespace madlib::trading {
             const bool generate = true,
             const Color& priceColor = Theme::defaultTradeHistoryChartPriceColor,
             const Color& volumeColor = Theme::defaultTradeHistoryChartVolumeColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ):  
             Chart(
                 gfx, left, top, width, height,
@@ -787,9 +787,9 @@ namespace madlib::trading {
                 eventContext
             ),
             candleHistory(candleHistory),
-            labelSeries(labelSeries),
             priceColor(priceColor),
-            volumeColor(volumeColor)
+            volumeColor(volumeColor) //,
+            // labelSeries(labelSeries)
         {
             if (showCandles)
                 mainProjector = candleSeries = createCandleSeries();
@@ -799,9 +799,9 @@ namespace madlib::trading {
                 );
             }
             if (showVolumes)
-                volumeSeries = createPointSeries(NULL, true, volumeColor);
+                volumeSeries = createPointSeries(nullptr, true, volumeColor);
             if (showTexts)
-                textSeries = createLabelSeries(mainProjector, true);
+                labelSeries = createLabelSeries(mainProjector, true);
             
             if (generate) {
                 generateFromHistory();
@@ -811,8 +811,8 @@ namespace madlib::trading {
 
         virtual ~CandleHistoryChart() {}
 
-        LabelSeries* getTextSeries() const {
-            return textSeries;
+        LabelSeries* getLabelSeries() const {
+            return labelSeries;
         }
 
         void generateFromHistory() {
@@ -847,24 +847,24 @@ namespace madlib::trading {
                 }
             }
 
-            if (
-                mainProjector && textSeries && labelSeries &&
-                textSeries != labelSeries
-            ) {
-                vector<Shape*>& textShapes = textSeries->getShapes();
-                for (Shape* shape: labelSeries->getShapes()) {
-                    LabelShape* tradeText = (LabelShape*)shape;
-                    textShapes.push_back(createLabelShape(
-                        tradeText->time(), 
-                        tradeText->value(),
-                        tradeText->text(),
-                        tradeText->color(),
-                        tradeText->backgroundColor(),
-                        tradeText->padding(),
-                        tradeText->hasBackground()
-                    ));
-                }
-            }
+            // if (
+            //     mainProjector && labelSeries && labelSeries &&
+            //     labelSeries != labelSeries
+            // ) {
+            //     vector<Shape*>& textShapes = labelSeries->getShapes();
+            //     for (Shape* shape: labelSeries->getShapes()) {
+            //         LabelShape* tradeText = (LabelShape*)shape;
+            //         textShapes.push_back(createLabelShape(
+            //             tradeText->time(), 
+            //             tradeText->value(),
+            //             tradeText->text(),
+            //             tradeText->color(),
+            //             tradeText->backgroundColor(),
+            //             tradeText->padding(),
+            //             tradeText->hasBackground()
+            //         ));
+            //     }
+            // }
         }
 
         void fitTimeRangeToHistory() {
@@ -889,8 +889,8 @@ namespace madlib::trading {
         class ProgressContext {
         public:
             
-            void* context = NULL;
-            const Candle* candle = NULL;
+            void* context = nullptr;
+            const Candle* candle = nullptr;
 
             ProgressContext() {}
 
@@ -906,9 +906,9 @@ namespace madlib::trading {
         TestExchange& testExchange;
         CandleStrategy& candleStrategy;
         const string& symbol;
-        ProgressCallback onProgressStart = NULL;
-        ProgressCallback onProgressStep = NULL;
-        ProgressCallback onProgressFinish = NULL;
+        ProgressCallback onProgressStart = nullptr;
+        ProgressCallback onProgressStep = nullptr;
+        ProgressCallback onProgressFinish = nullptr;
         
     public:
 
@@ -918,9 +918,9 @@ namespace madlib::trading {
             TestExchange& testExchange,
             CandleStrategy& candleStrategy,
             const string& symbol,
-            const ProgressCallback onProgressStart = NULL,
-            const ProgressCallback onProgressStep = NULL,
-            const ProgressCallback onProgressFinish = NULL
+            const ProgressCallback onProgressStart = nullptr,
+            const ProgressCallback onProgressStep = nullptr,
+            const ProgressCallback onProgressFinish = nullptr
         ):
             context(context),
             candleHistory(candleHistory),
@@ -958,7 +958,7 @@ namespace madlib::trading {
                 if (onProgressStep && !onProgressStep(progressContext)) 
                     return false;
                 
-                candleStrategy.onCandleClose(candle);
+                candleStrategy.onCandleClose(testExchange, symbol, candle);
             }
 
             if (onProgressFinish) return onProgressFinish(progressContext);
@@ -970,7 +970,7 @@ namespace madlib::trading {
     class CandleStrategyBacktesterMultiChartAccordion: public MultiChartAccordion {
     protected:
 
-        CandleStrategyBacktester* backtester;
+        CandleStrategyBacktester* backtester = nullptr;
 
         CandleHistory*& candleHistory;
         TestExchange& testExchange;
@@ -985,34 +985,34 @@ namespace madlib::trading {
         // **** tradeHistoryChart ****
         
         CandleHistoryChart candleHistoryChart = CandleHistoryChart(
-            gfx, 0, 0, 0, 0, candleHistory, candleStrategy.getLabelSeries(),
+            gfx, 0, 0, 0, 0, candleHistory, //candleStrategy.getLabelSeries(),
             true, false, false
         );
 
         // **** balanceQuotedChart ****
 
-        Chart* balanceQuotedChart = NULL;
-        PointSeries* balanceQuotedFullScale = NULL;
-        PointSeries* balanceQuotedScale = NULL;
+        Chart* balanceQuotedChart = nullptr;
+        PointSeries* balanceQuotedFullScale = nullptr;
+        PointSeries* balanceQuotedScale = nullptr;
 
         // **** balanceBaseChart ****
 
-        Chart* balanceBaseChart = NULL;
-        PointSeries* balanceBaseFullScale = NULL;
-        PointSeries* balanceBaseScale = NULL;
+        Chart* balanceBaseChart = nullptr;
+        PointSeries* balanceBaseFullScale = nullptr;
+        PointSeries* balanceBaseScale = nullptr;
 
         struct ProgressState {
             // show log and progress
             size_t candlesRemaining = 0, candlesSize = 0;
             ms_t progressUpdatedAt = 0;
-            Progress* progress = NULL;
+            Progress* progress = nullptr;
 
             // show results on charts:
-            vector<Shape*>* balanceQuotedAtCloses = NULL;
-            vector<Shape*>* balanceQuotedFullAtCloses = NULL;
-            vector<Shape*>* balanceBaseAtCloses = NULL;
-            vector<Shape*>* balanceBaseFullAtCloses = NULL;
-            Pair* pair = NULL;
+            vector<Shape*>* balanceQuotedAtCloses = nullptr;
+            vector<Shape*>* balanceQuotedFullAtCloses = nullptr;
+            vector<Shape*>* balanceBaseAtCloses = nullptr;
+            vector<Shape*>* balanceBaseFullAtCloses = nullptr;
+            Pair* pair = nullptr;
 
             bool showProgressStarted = false;
 
@@ -1151,7 +1151,7 @@ namespace madlib::trading {
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
-            void* eventContext = NULL
+            void* eventContext = nullptr
         ):
             MultiChartAccordion(
                 gfx, left, top, width,
@@ -1181,10 +1181,10 @@ namespace madlib::trading {
                 "History", candleHistoryChart, multiChartAccordionFramesHeight
             );
 
-            if (!candleStrategy.getLabelSeries())
-                candleStrategy.setLabelSeries(
-                    candleHistoryChart.getTextSeries()
-                );
+            // if (!candleStrategy.getLabelSeries())
+            candleStrategy.setLabelSeries(
+                candleHistoryChart.getLabelSeries()
+            );
 
             multiChart.attach(candleHistoryChart);
 
@@ -1193,7 +1193,7 @@ namespace madlib::trading {
             balanceQuotedChart = createChart(
                 "Balance (quoted)", multiChartAccordionFramesHeight
             );
-            balanceQuotedFullScale = balanceQuotedChart->createPointSeries(NULL, true, lightGreen);
+            balanceQuotedFullScale = balanceQuotedChart->createPointSeries(nullptr, true, lightGreen);
             balanceQuotedScale = balanceQuotedChart->createPointSeries(balanceQuotedFullScale, true, green);
 
             // **** balanceBaseChart ****
@@ -1201,7 +1201,7 @@ namespace madlib::trading {
             balanceBaseChart = createChart(
                 "Balance (base)", multiChartAccordionFramesHeight
             );
-            balanceBaseFullScale = balanceBaseChart->createPointSeries(NULL, true, yellow);
+            balanceBaseFullScale = balanceBaseChart->createPointSeries(nullptr, true, yellow);
             balanceBaseScale = balanceBaseChart->createPointSeries(balanceBaseFullScale, true, orange);
 
             openAll(false);
