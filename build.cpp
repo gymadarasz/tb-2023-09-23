@@ -1,7 +1,12 @@
-#include <iostream>
+#include <vector>
 #include <string>
+#include <iostream>
 
-#include "src/includes/madlib/madlib.hpp"
+#include "src/includes/madlib/macros.hpp"
+#include "src/includes/madlib/sys.hpp"
+#include "src/includes/madlib/str.hpp"
+#include "src/includes/madlib/files.hpp"
+#include "src/includes/madlib/vectors.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -136,7 +141,7 @@ protected:
     static void collectDependencies(const string& filename, vector<string>& deps) {
         vector<string> matches;
         string contents = file_get_contents(filename);
-        if (!regx_match_all("\\#include\\s*\"(.*)\"", contents, &matches)) return;
+        if (!regx_match_all("\\n\\s*\\#include\\s*\"(.*)\"", contents, &matches)) return;
         for (size_t i = 1; i < matches.size(); i += 2) {
             string filepath = path_normalize(__DIR__ + "/" + path_extract(filename) + "/" + matches[i]);
             if (vector_contains(deps, filepath)) break;

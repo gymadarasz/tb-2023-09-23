@@ -2,7 +2,10 @@
 
 #include <cassert>
 
-#include "../../../src/includes/madlib/madlib.hpp"
+#include "../../../src/includes/madlib/str.hpp"
+#include "../../../src/includes/madlib/time.hpp"
+#include "../../../src/includes/madlib/sys.hpp"
+#include "../../../src/includes/madlib/maps.hpp"
 
 using namespace std;
 using namespace madlib;
@@ -15,9 +18,9 @@ public:
         const string testStr2 = "  \t  \t Trim this string \t  \t  ";
         const string testStr3 = "No spaces to trim";
 
-        string result1 = trim(testStr1);
-        string result2 = trim(testStr2);
-        string result3 = trim(testStr3);
+        string result1 = str_trim(testStr1);
+        string result2 = str_trim(testStr2);
+        string result3 = str_trim(testStr3);
 
         // Check if the results match the expected trimmed strings
         assert(result1 == "Hello, World!");
@@ -96,7 +99,7 @@ public:
         // Test case 1: Split by a comma
         string data1 = "apple,banana,cherry";
         string separator1 = ",";
-        vector<string> result1 = split(separator1, data1);
+        vector<string> result1 = str_split(separator1, data1);
         assert(result1.size() == 3);
         assert(result1[0] == "apple");
         assert(result1[1] == "banana");
@@ -105,7 +108,7 @@ public:
         // Test case 2: Split by a space
         string data2 = "one two three";
         string separator2 = " ";
-        vector<string> result2 = split(separator2, data2);
+        vector<string> result2 = str_split(separator2, data2);
         assert(result2.size() == 3);
         assert(result2[0] == "one");
         assert(result2[1] == "two");
@@ -114,7 +117,7 @@ public:
         // Test case 3: Split by a semicolon
         string data3 = "Alice;Bob;Charlie";
         string separator3 = ";";
-        vector<string> result3 = split(separator3, data3);
+        vector<string> result3 = str_split(separator3, data3);
         assert(result3.size() == 3);
         assert(result3[0] == "Alice");
         assert(result3[1] == "Bob");
@@ -123,7 +126,7 @@ public:
         // Test case 4: Split by multiple characters
         string data4 = "apple...banana...cherry";
         string separator4 = "...";
-        vector<string> result4 = split(separator4, data4);
+        vector<string> result4 = str_split(separator4, data4);
         assert(result4.size() == 3);
         assert(result4[0] == "apple");
         assert(result4[1] == "banana");
@@ -132,13 +135,13 @@ public:
         // Negative case 1: Empty data
         string data5 = "";
         string separator5 = ",";
-        vector<string> result5 = split(separator5, data5);
+        vector<string> result5 = str_split(separator5, data5);
         assert(result5.empty()); // Should result in an empty vector
 
         // Negative case 2: Separator not found
         string data6 = "abcdefg";
         string separator6 = ",";
-        vector<string> result6 = split(separator6, data6);
+        vector<string> result6 = str_split(separator6, data6);
         assert(result6.size() == 1); // Should result in a single element vector with the entire string
     }
 

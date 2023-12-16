@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-#include "../../../src/includes/madlib/madlib.hpp"
+#include "../../../src/includes/madlib/files.hpp"
 
 using namespace std;
 using namespace madlib;

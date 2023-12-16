@@ -1,7 +1,11 @@
 #pragma once
 
+#include <cmath>
+
+#include "../time.hpp"
+#include "../ERROR.hpp"
+#include "../vectors.hpp"
 #include "graph.hpp"
-#include "../madlib.hpp"
 
 using namespace std;
 using namespace madlib;

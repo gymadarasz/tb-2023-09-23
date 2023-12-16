@@ -4,7 +4,8 @@
 #include <string>
 #include <climits>
 
-#include "../madlib.hpp"
+#include "../maps.hpp"
+#include "../Progress.hpp"
 #include "../graph/Chart.hpp"
 
 using namespace std;

@@ -1,5 +1,6 @@
 #include <iostream>
-#include "../includes/madlib/madlib.hpp"
+
+#include "../includes/madlib/Printer.hpp"
 
 using namespace std;
 

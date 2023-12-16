@@ -1,14 +1,14 @@
 #pragma once
 
+#include <stdexcept>
+#include <vector>
+#include <cmath>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <X11/keysym.h>
-#include <stdexcept>
-#include <vector>
 
-#include "../madlib.hpp"
-
+#include "../zenity.hpp"
 
 using namespace std;
 using namespace madlib;

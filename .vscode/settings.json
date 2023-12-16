@@ -66,7 +66,12 @@
         "set": "cpp",
         "unordered_set": "cpp",
         "optional": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "complex": "cpp",
+        "list": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp",
+        "filesystem": "cpp"
     },
     "cmake.configureOnOpen": false,
 }

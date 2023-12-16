@@ -38,23 +38,23 @@ namespace madlib::trading::history {
                     + "csv input file   : " + csvFile + "\n"
                     + "output data file : " + datFile
             );
-            vector<string> csvData = split("\n", file_get_contents(csvFile));
+            vector<string> csvData = str_split("\n", file_get_contents(csvFile));
 
             vector<Candle> candles;
             const size_t csvDataSize = csvData.size();
             const size_t headerLines = 2;
             
-            string firstLine = trim(csvData.at(headerLines));
-            vector<string> firstSplits = split(",", firstLine);
-            string firstDate = trim(firstSplits.at(BitstampCandlesCsvField::DATE));
-            string secondLine = trim(csvData.at(headerLines + 1));
-            vector<string> secondSplits = split(",", secondLine);
-            string secondDate = trim(secondSplits.at(BitstampCandlesCsvField::DATE));        
+            string firstLine = str_trim(csvData.at(headerLines));
+            vector<string> firstSplits = str_split(",", firstLine);
+            string firstDate = str_trim(firstSplits.at(BitstampCandlesCsvField::DATE));
+            string secondLine = str_trim(csvData.at(headerLines + 1));
+            vector<string> secondSplits = str_split(",", secondLine);
+            string secondDate = str_trim(secondSplits.at(BitstampCandlesCsvField::DATE));        
             ms_t period = datetime_to_ms(firstDate) - datetime_to_ms(secondDate);
 
             ms_t t = now();
             for (size_t i = csvDataSize - 1; i >= headerLines; i--) {
-                string line = trim(csvData.at(i));
+                string line = str_trim(csvData.at(i));
                 if (line.empty()) continue;
                 if (t < now() - 5 * second) {
                     t = now();
@@ -62,14 +62,14 @@ namespace madlib::trading::history {
                     progress.update(msg);
                     LOG(msg);
                 }
-                vector<string> fields = split(",", line);
-                if (!is_numeric(trim(fields.at(BitstampCandlesCsvField::UNIX)))) break;            
-                double open = parse<double>(trim(fields.at(BitstampCandlesCsvField::OPEN)));
-                double close = parse<double>(trim(fields.at(BitstampCandlesCsvField::CLOSE)));
-                double low = parse<double>(trim(fields.at(BitstampCandlesCsvField::LOW)));
-                double high = parse<double>(trim(fields.at(BitstampCandlesCsvField::HIGH)));
-                double volume = parse<double>(trim(fields.at(BitstampCandlesCsvField::VOLUME_BASE)));
-                ms_t start = datetime_to_ms(trim(fields.at(BitstampCandlesCsvField::DATE)));
+                vector<string> fields = str_split(",", line);
+                if (!is_numeric(str_trim(fields.at(BitstampCandlesCsvField::UNIX)))) break;            
+                double open = parse<double>(str_trim(fields.at(BitstampCandlesCsvField::OPEN)));
+                double close = parse<double>(str_trim(fields.at(BitstampCandlesCsvField::CLOSE)));
+                double low = parse<double>(str_trim(fields.at(BitstampCandlesCsvField::LOW)));
+                double high = parse<double>(str_trim(fields.at(BitstampCandlesCsvField::HIGH)));
+                double volume = parse<double>(str_trim(fields.at(BitstampCandlesCsvField::VOLUME_BASE)));
+                ms_t start = datetime_to_ms(str_trim(fields.at(BitstampCandlesCsvField::DATE)));
                 ms_t end = start + period - 1;
                 Candle candle(open, close, low, high, volume, start, end);
                 candles.push_back(candle);

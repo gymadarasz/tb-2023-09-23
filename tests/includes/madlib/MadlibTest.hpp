@@ -1,7 +1,11 @@
 #pragma once
 
 #include <cassert>
-#include "../../../src/includes/madlib/madlib.hpp"
+
+#include "../../../src/includes/madlib/VectorFactory.hpp"
+#include "../../../src/includes/madlib/args.hpp"
+#include "../../../src/includes/madlib/Factory.hpp"
+#include "../../../src/includes/madlib/Printer.hpp"
 
 using namespace madlib;
 

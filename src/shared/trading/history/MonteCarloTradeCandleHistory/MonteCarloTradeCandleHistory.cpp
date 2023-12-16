@@ -1,3 +1,4 @@
+#include "../../../../includes/madlib/rand.hpp"
 #include "../../../../includes/madlib/trading/trading.hpp"
 
 namespace madlib::trading::history {
