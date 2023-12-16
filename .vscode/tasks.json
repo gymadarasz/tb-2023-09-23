@@ -5,7 +5,6 @@
             "label": "build-dbg",
             "type": "shell",
             "command": "./build-dbg.sh",
-            // "command": "./cleanup.sh | ./build-dbg.sh",  // Command to run your build script
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -14,7 +13,7 @@
         {
             "label": "build-main-dbg",
             "type": "shell",
-            "command": "./cleanup.sh | ./build-run.sh DEBUG && ./build/build DEBUG",  // Command to run your build script
+            "command": "./build-run.sh DEBUG && ./build/build DEBUG",  // Command to run your build script
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -23,7 +22,7 @@
         {
             "label": "build-test-dbg",
             "type": "shell",
-            "command": "./cleanup.sh | ./build-run.sh DEBUG_TESTS && ./build/build DEBUG_TESTS",  // Command to run your build script
+            "command": "./build-run.sh DEBUG_TESTS && ./build/build DEBUG_TESTS",  // Command to run your build script
             "group": {
                 "kind": "build",
                 "isDefault": true
