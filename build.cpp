@@ -91,7 +91,8 @@ bool exec_cmd(string cmd) {
     cout << COLOR_INFO "Execute command:" COLOR_DEFAULT " $ " << cmd << endl;
     string output = madlib::exec(cmd);    
     if (!output.empty()) {
-        string replaced = str_replace(output, "error:", COLOR_ERROR "error:" COLOR_DEFAULT);
+        string replaced = output; // TODO: regx_replace(output, "<regular-expression-finds-filenames>", COLOR_FILENAME + "<match>" + COLOR_DEFAULT);
+        replaced = str_replace(replaced, "error:", COLOR_ERROR "error:" COLOR_DEFAULT);
         cout << replaced << endl;
         if (replaced != output) {
             LOG("Command output contains error(s).");
@@ -156,7 +157,7 @@ protected:
         }
         errors += !exec_cmd("g++ " + flags + " -o " + buildPath + main + " " + vector_concat(oFiles) + " " + flagsLibs);
         if (errors)
-            throw ERROR("Compilation error(s): " + to_string(errors));
+            throw ERROR("Compilation fails in " + to_string(errors) + " file(s).");
         return oFiles;
     }
 
@@ -176,7 +177,7 @@ public:
     {
         int errors = 0;
         ms_t startAt = now();
-        cout << "Build start at: " << ms_to_datetime(startAt) << endl;
+        cout << "Build start at: " COLOR_DATETIME << ms_to_datetime(startAt) << COLOR_DEFAULT << endl;
         // build source files
         vector<string> files = collectFiles(sourcePaths, { cppExtension });
         files.push_back(mainPath + "/" + main + cppExtension);
@@ -201,11 +202,11 @@ public:
             osFiles.push_back(osFile);
         }
         ms_t finishAt = now();
-        cout << "Build finish at: " << ms_to_datetime(finishAt) << endl;
-        cout << "Build in " COLOR_INFO << finishAt - startAt << " ms" COLOR_DEFAULT << endl;
+        cout << "Build finish at: " COLOR_DATETIME << ms_to_datetime(finishAt) << COLOR_DEFAULT << endl;
+        cout << "Build in " COLOR_HIGHLIGHT << finishAt - startAt << " ms" COLOR_DEFAULT << endl;
 
         if (errors) 
-            throw ERROR("Build error(s): " + to_string(errors));
+            throw ERROR("Build failed in " + to_string(errors) + " file(s).");
 
         if (executeMain) exec_cmd("./" + buildPath + main + " " + mainArgs);
     }

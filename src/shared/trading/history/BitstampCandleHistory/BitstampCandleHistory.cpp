@@ -201,5 +201,12 @@ namespace madlib::trading::history {
     const string BitstampCandleHistory::csvPath = __DIR__ + "/download/cryptodatadownload.com/bitstamp/";
     const string BitstampCandleHistory::csvFileTpl = csvPath + "/Bitstamp_{symbol}_{year}_{period}.csv";
             
-    // EXPORT_CLASS(BitstampCandleHistory);
+    extern "C" BitstampCandleHistory* createBitstampCandleHistory(
+        const string& symbol,
+        const ms_t startTime,
+        const ms_t endTime,
+        const ms_t period
+    ) {
+        return new BitstampCandleHistory(symbol, startTime, endTime, period);
+    }
 }

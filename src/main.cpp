@@ -60,6 +60,10 @@ protected:
 
     static BitstampHistoryApplication* app;
 
+    Factory<TestExchange> testExchangeFactory = Factory<TestExchange>();
+    Factory<CandleStrategy> candleStrategyFactory = Factory<CandleStrategy>();
+    Factory<CandleHistory> candleHistoryFactory = Factory<CandleHistory>();
+
 
     map<string, Strategy::Parameter> strategyParameters = {
         {"symbol", Strategy::Parameter(Config::symbol)},
@@ -251,20 +255,20 @@ protected:
     }
 
     void loadHistoryModule() {
-        // const string period = periodSelect->getInput()->getText();
-        // const string symbol = symbolSelect->getInput()->getText();
-        // const ms_t start = datetime_to_ms(historyDateRange->getFromInput()->getText());
-        // const ms_t end = datetime_to_ms(historyDateRange->getToInput()->getText());
+        const string period = periodSelect->getInput()->getText();
+        const string symbol = symbolSelect->getInput()->getText();
+        const ms_t start = datetime_to_ms(historyDateRange->getFromInput()->getText());
+        const ms_t end = datetime_to_ms(historyDateRange->getToInput()->getText());
 
-        // string moduleName = historySelect->getInput()->getText();
+        string moduleName = historySelect->getInput()->getText();
 
-        // candleHistory = (CandleHistory*)factory.create(
-        //     candleHistory,
-        //     Config::candleHistoryPath + "/" + moduleName, moduleName,
-        //     // new CandleHistory::Args({ 
-        //             symbol, start, end, period_to_ms(period) 
-        //     // })
-        // );
+        candleHistory = candleHistoryFactory.updateInstance(
+            candleHistory,
+            Config::candleHistoryPath + "/" + moduleName + "/" + moduleName + ".so",
+            // new CandleHistory::Args({
+            symbol, start, end, period_to_ms(period) 
+            // })
+        );
     }
 
     void loadHistoryData() {
@@ -284,31 +288,31 @@ protected:
     }
 
     void loadExchangeModule() {
-        // load the selected exchange lib
-        // string moduleName = exchangeSelect->getInput()->getText();
+        // Load the selected exchange lib
+        string moduleName = exchangeSelect->getInput()->getText();
         
-        // testExchange = (TestExchange*)sharedFactory.create(
-        //     testExchange,
-        //     Config::testExchangePath + "/" + moduleName, moduleName, 
-        //     // TODO: args from user with a settings form...??
-        //     // new TestExchange::Args({
-        //     Config::periods, Config::symbols, Config::pairs, Config::balances
-        //     // })
-        // );
+        testExchange = testExchangeFactory.updateInstance(
+            testExchange,
+            Config::testExchangePath + "/" + moduleName + "/" + moduleName + ".so", 
+            // TODO: args from user with a settings form...??
+            // new TestExchange::Args({
+            Config::periods, Config::symbols, Config::pairs, Config::balances
+            // })
+        );
     }
 
     void loadStrategyModule() {
         // load the selected strategy lib
-        // string moduleName = candleStrategySelect->getInput()->getText();
+        string moduleName = candleStrategySelect->getInput()->getText();
         
-        // candleStrategy = (CandleStrategy*)sharedFactory.create(
-        //     candleStrategy, 
-        //     Config::candleStrategyPath + "/" + moduleName, moduleName, 
-        //     // TODO: args from user with a settings form...??
-        //     // new CandleStrategy::Args({ 
-        //     *testExchange, strategyParameters 
-        //     // })
-        // );
+        candleStrategy = candleStrategyFactory.updateInstance(
+            candleStrategy, 
+            Config::candleStrategyPath + "/" + moduleName + "/" + moduleName + ".so", 
+            // TODO: args from user with a settings form...??
+            // new CandleStrategy::Args({ 
+            *testExchange, strategyParameters 
+            // })
+        );
     }
 
     void loadPeriods() {  

@@ -117,16 +117,16 @@ public:
         vector<string> matches;
         
         // Test for matching pattern that exists in the string
-        assert(reg_match("[0-9]+", str, &matches) == 1);
+        assert(regx_match("[0-9]+", str, &matches) == 1);
         assert(matches.size() == 1);
         assert(matches[0] == string("123"));
         
         // Test for matching pattern that does not exist in the string
-        assert(reg_match("[a-z]+", str, &matches) == 1);
+        assert(regx_match("[a-z]+", str, &matches) == 1);
         assert(matches.size() == 1);
         
         // Test for matching pattern that captures multiple groups
-        assert(reg_match("([a-zA-Z]+)\\s([a-z]+)", str, &matches) == 1);
+        assert(regx_match("([a-zA-Z]+)\\s([a-z]+)", str, &matches) == 1);
         assert(matches.size() == 3);
         assert(matches[0] == string("This is"));
         assert(matches[1] == string("This"));
@@ -138,16 +138,16 @@ public:
         vector<string> matches;
 
         // Test for matching pattern that does not exist in the string
-        assert(reg_match("[0-9]+", str, &matches) == 0);
+        assert(regx_match("[0-9]+", str, &matches) == 0);
         assert(matches.size() == 0);
 
         // Test for matching pattern that exists in the string
-        assert(reg_match("test", str, &matches) == 1);
+        assert(regx_match("test", str, &matches) == 1);
         assert(matches.size() == 1);
         assert(matches[0] == string("test"));
 
         // Test for matching pattern that appears multiple times in the string
-        assert(reg_match("[a-z]+", str, &matches) == 1);
+        assert(regx_match("[a-z]+", str, &matches) == 1);
         assert(matches.size() == 1);
     }
 

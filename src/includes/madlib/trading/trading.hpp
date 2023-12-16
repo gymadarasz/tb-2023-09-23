@@ -33,6 +33,10 @@ namespace madlib::trading {
     };
 
     ms_t period_to_ms(const string &period) {
+        if (period.empty())
+            throw ERROR("Missing period");
+        if (!map_has(periods, period))
+            throw ERROR("Invalid period: " + period);
         return periods.at(period);
     }
 
