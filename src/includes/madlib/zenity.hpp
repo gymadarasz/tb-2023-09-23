@@ -8,7 +8,7 @@ using namespace std;
 
 namespace madlib {
 
-    string zenity(const string& args, const string& err = "/dev/null") {
+    string zenity_exec(const string& args, const string& err = "/dev/null") {
         return str_trim(exec("echo $(zenity " + args + " 2>" + err + ")"));
     }
 
@@ -57,7 +57,7 @@ namespace madlib {
                 }
             );
 
-        return zenity(cmd, err);
+        return zenity_exec(cmd, err);
     }
 
     string zenity_date(
@@ -77,7 +77,7 @@ namespace madlib {
                 }
             );
 
-        return zenity(cmd, err);
+        return zenity_exec(cmd, err);
     }
 
     bool zenity_question(
@@ -117,7 +117,7 @@ namespace madlib {
                 }
             );
 
-        return zenity(cmd, err);
+        return zenity_exec(cmd, err);
     }
 
     FILE* zenity_progress(
@@ -142,6 +142,42 @@ namespace madlib {
             );
 
         return zenity_pipe(cmd);
+    }
+
+    enum zenity_dialogue_type { INFO, WARNING, ERROR};
+    void zenity_dialogue(
+        const string& text, 
+        const string* titleptr = nullptr,
+        const zenity_dialogue_type type = ERROR,
+        const string& err = "/dev/null"
+    ) {
+        string title = titleptr ? *titleptr : "Error";
+        string typestr = "error";
+        switch (type) {
+            case INFO:
+                typestr = "info";
+                break;
+            case WARNING:
+                typestr = "warning";
+                break;
+            case ERROR:
+                typestr = "error";
+                break;
+            default:
+                throw ERROR("Invalid zenity dialogue type");
+        }
+        const string cmd = 
+            str_replace(
+                "--" + typestr +
+                "  --text={title}"
+                "  --text={text}",
+                {
+                    { "{title}", zenity_quote_esc(title) },
+                    { "{text}", zenity_quote_esc(text) },
+                }
+            );
+
+        zenity_exec(cmd, err);
     }
 
     bool zenity_progress_update(FILE* pipe, int percent) {

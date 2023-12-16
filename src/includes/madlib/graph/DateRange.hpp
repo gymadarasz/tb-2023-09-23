@@ -17,26 +17,36 @@ namespace madlib::graph {
         static void onFromDateTouchHandler(void* context, unsigned int, int, int) {
             Area* that = (Area*)context;
             DateRange* dateRange = (DateRange*)that->getEventContext();
-            string selection = zenity_date(
-                dateRange->fromLabel->getText(),
-                dateRange->prompt
-            );
-            that->getGFX().triggerFakeEvent({ GFX::RELEASE });
-            if (selection.empty()) dateRange->fromInput->setText(ms_to_date(dateRange->fromValue));
-            else dateRange->fromInput->setText(selection);
+            ms_t to = datetime_to_ms(dateRange->toInput->getText());
+            string selection = "";
+            while (true) {
+                selection = zenity_date(
+                    dateRange->fromLabel->getText(),
+                    dateRange->prompt
+                );
+                if (selection.empty()) break;
+                if (datetime_to_ms(selection) <= to) break;
+                zenity_dialogue("The selected start date and time cannot be grather than the end date and time for the period.");
+            }
+            if (!selection.empty()) dateRange->fromInput->setText(selection);
             dateRange->fromInput->draw();
         }
 
         static void onToDateTouchHandler(void* context, unsigned int, int, int) {
             Area* that = (Area*)context;
             DateRange* dateRange = (DateRange*)that->getEventContext();
-            string selection = zenity_date(
-                dateRange->toLabel->getText(),
-                dateRange->prompt
-            );
-            that->getGFX().triggerFakeEvent({ GFX::RELEASE });
-            if (selection.empty()) dateRange->toInput->setText(ms_to_date(dateRange->toValue));
-            else dateRange->toInput->setText(selection);
+            ms_t from = datetime_to_ms(dateRange->fromInput->getText());
+            string selection = "";
+            while (true) {
+                selection = zenity_date(
+                    dateRange->toLabel->getText(),
+                    dateRange->prompt
+                );
+                if (selection.empty()) break;
+                if (datetime_to_ms(selection) >= from) break;
+                zenity_dialogue("The selected end date and time cannot be less than the start date and time for the period.");
+            }
+            if (!selection.empty()) dateRange->toInput->setText(selection);
             dateRange->toInput->draw();
         }
 
