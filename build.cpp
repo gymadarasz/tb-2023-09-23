@@ -144,7 +144,7 @@ protected:
         if (!regx_match_all("\\n\\s*\\#include\\s*\"(.*)\"", contents, &matches)) return;
         for (size_t i = 1; i < matches.size(); i += 2) {
             string filepath = path_normalize(__DIR__ + "/" + path_extract(filename) + "/" + matches[i]);
-            if (vector_contains(deps, filepath)) break;
+            if (vector_contains(deps, filepath)) continue;
             deps.push_back(filepath);
             collectDependencies(filepath, deps);
         }
