@@ -1,4 +1,4 @@
-#include "../../../../../includes/madlib/trading/trading.hpp"
+#include "../../../../../includes/madlib/trading/TestExchange.hpp"
 
 namespace madlib::trading::exchange::test {
 

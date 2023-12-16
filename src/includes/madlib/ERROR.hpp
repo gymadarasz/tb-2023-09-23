@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "macros.hpp"
+#include "str.hpp"
 
 using namespace std;
 

@@ -12,6 +12,14 @@ namespace madlib {
 
     #define __DATE_TIME__ COLOR_DATETIME "[" + madlib::ms_to_datetime() + "] " COLOR_DEFAULT
 
+    typedef long ms_t;
+
+    const ms_t second = 1000;
+    const ms_t minute = 60 * second;
+    const ms_t hour = 60 * minute;
+    const ms_t day = 24 * hour;
+    const ms_t week = 7 * day;
+    
     ms_t now() {
         // Get the current time_point
         system_clock::time_point currentTime = system_clock::now();

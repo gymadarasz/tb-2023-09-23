@@ -112,13 +112,6 @@ namespace madlib {
     #define DBG_BREAK cout << "DBG break at " << __FILE__ << ":" << __LINE__ << endl;
 
 
-    typedef long ms_t;
-
-    const ms_t second = 1000;
-    const ms_t minute = 60 * second;
-    const ms_t hour = 60 * minute;
-    const ms_t day = 24 * hour;
-    const ms_t week = 7 * day;
     
 
 }

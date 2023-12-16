@@ -1,5 +1,7 @@
 #include "../../../../includes/madlib/rand.hpp"
-#include "../../../../includes/madlib/trading/trading.hpp"
+#include "../../../../includes/madlib/time.hpp"
+#include "../../../../includes/madlib/Progress.hpp"
+#include "../../../../includes/madlib/trading/TradeCandleHistory.hpp"
 
 namespace madlib::trading::history {
 

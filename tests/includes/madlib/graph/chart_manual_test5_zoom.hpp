@@ -4,7 +4,6 @@
 #include "../../../../src/includes/madlib/graph/GUI.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 #include "../../../../src/includes/madlib/graph/Button.hpp"
-#include "../../../../src/includes/madlib/trading/trading.hpp"
 
 using namespace std;
 using namespace madlib;

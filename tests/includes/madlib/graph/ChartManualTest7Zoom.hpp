@@ -6,7 +6,6 @@
 #include "../../../../src/includes/madlib/graph/SlideBar.hpp"
 #include "../../../../src/includes/madlib/graph/ScrollBar.hpp"
 #include "../../../../src/includes/madlib/graph/IntervalBar.hpp"
-#include "../../../../src/includes/madlib/trading/trading.hpp"
 
 using namespace madlib::graph;
 using namespace madlib::trading;

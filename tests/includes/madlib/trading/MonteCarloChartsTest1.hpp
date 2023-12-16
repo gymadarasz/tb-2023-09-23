@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../../src/includes/madlib/trading/trading.hpp"
 #include "../../ManualTestApplication.hpp"
+#include "../../../../src/includes/madlib/trading/CandleStrategyBacktesterMultiChartAccordion.hpp"
 
 using namespace madlib::graph;
 using namespace madlib::trading;

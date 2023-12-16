@@ -1,4 +1,6 @@
-#include "../../../../includes/madlib/trading/trading.hpp"
+#include "../../../../includes/madlib/trading/Candle.hpp"
+#include "../../../../includes/madlib/trading/CandleStrategy.hpp"
+#include "../../../../includes/madlib/trading/Exchange.hpp"
 
 namespace madlib::trading::strategy {
 

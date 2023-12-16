@@ -1,16 +1,25 @@
 #include <iostream>
 #include <cstdio>
 
+#include "includes/madlib/time.hpp"
 #include "includes/madlib/Factory.hpp"
 // #include "includes/madlib/graph/graph.hpp"
 #include "includes/madlib/graph/FrameApplication.hpp"
 #include "includes/madlib/graph/Select.hpp"
 #include "includes/madlib/graph/DateRange.hpp"
 #include "includes/madlib/graph/Input.hpp"
-#include "includes/madlib/trading/trading.hpp"
+#include "includes/madlib/trading/periods.hpp"
+#include "includes/madlib/trading/Fees.hpp"
+#include "includes/madlib/trading/Pair.hpp"
+#include "includes/madlib/trading/Balance.hpp"
+#include "includes/madlib/trading/TestExchange.hpp"
+#include "includes/madlib/trading/CandleStrategy.hpp"
+#include "includes/madlib/trading/CandleHistory.hpp"
+#include "includes/madlib/trading/CandleStrategyBacktesterMultiChartAccordion.hpp"
 
 using namespace std;
-// using namespace madlib::graph;
+using namespace madlib;
+using namespace madlib::graph;
 using namespace madlib::trading;
 
 

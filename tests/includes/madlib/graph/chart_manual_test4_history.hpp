@@ -1,10 +1,13 @@
 #pragma once
 
 #include "../../../../src/includes/madlib/Factory.hpp"
+#include "../../../../src/includes/madlib/Progress.hpp"
 #include "../../../../src/includes/madlib/graph/GUI.hpp"
 #include "../../../../src/includes/madlib/graph/Button.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
-#include "../../../../src/includes/madlib/trading/trading.hpp"
+#include "../../../../src/includes/madlib/trading/periods.hpp"
+#include "../../../../src/includes/madlib/trading/CandleHistory.hpp"
+#include "../../../../src/includes/madlib/trading/CandleHistoryChart.hpp"
 
 using namespace std;
 using namespace madlib;
