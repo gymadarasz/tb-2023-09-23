@@ -1211,6 +1211,7 @@ namespace madlib::trading {
             openAll(false);
         }
 
+
         virtual ~CandleStrategyBacktesterMultiChartAccordion() {
             delete backtester;
         }

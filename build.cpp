@@ -133,6 +133,30 @@ protected:
         return files;
     }
 
+    static void collectDependencies(const string& filename, vector<string>& deps) {
+        vector<string> matches;
+        string contents = file_get_contents(filename);
+        if (!regx_match_all("\\#include\\s*\"(.*)\"", contents, &matches)) return;
+        for (size_t i = 1; i < matches.size(); i += 2) {
+            string filepath = path_normalize(__DIR__ + "/" + path_extract(filename) + "/" + matches[i]);
+            if (vector_contains(deps, filepath)) break;
+            deps.push_back(filepath);
+            collectDependencies(filepath, deps);
+        }
+        vector_unique(deps);
+    }
+
+    static ms_t getLatestModification(const string& filename) {
+        ms_t lastModAt = file_get_mtime(filename);
+        vector<string> dependencies;
+        collectDependencies(filename, dependencies);
+        for (const string& dependency: dependencies) {
+            ms_t depLastModAt = file_get_mtime(dependency);
+            if (depLastModAt > lastModAt) lastModAt = depLastModAt;
+        }
+        return lastModAt;
+    }
+
     static vector<string> buildFiles(
         const vector<string>& files,
         const string& buildPath,
@@ -149,7 +173,7 @@ protected:
             string oFile = buildPath + path_normalize(file_replace_extension(file, "o"));
             if (
                 !file_exists(oFile) ||
-                file_get_mtime(oFile) < file_get_mtime(file)
+                file_get_mtime(oFile) < getLatestModification(file)  // file_get_mtime(file)
             ) {
                 errors += !exec_cmd("g++ " + flags + " -c " + file + " -o " + oFile);
             }
@@ -195,7 +219,7 @@ public:
             string osFile = buildPath + path_normalize(file_replace_extension(file, "so"));
             if (
                 !file_exists(osFile) ||
-                file_get_mtime(osFile) < file_get_mtime(file)
+                file_get_mtime(osFile) < getLatestModification(file) // file_get_mtime(file)
             ) {
                 errors += !exec_cmd("g++ " + flags + " -shared -fPIC " + file + " -o " + osFile);
             }

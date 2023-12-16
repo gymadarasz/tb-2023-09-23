@@ -51,15 +51,16 @@ namespace madlib {
     #define COLOR_RED "\033[31m"
     #define COLOR_MAGENTA "\033[35m"
     #define COLOR_YELLOW "\033[33m"
-    #define COLOR_WHITE "\033[37m"
-    #define COLOR_BRIGHT_BLACK "\033[90m"
+    #define COLOR_DARK_GRAY "\033[37m"
+    
+    #define COLOR_GRAY "\033[90m"
     #define COLOR_BRIGHT_BLUE "\033[94m"
     #define COLOR_BRIGHT_GREEN "\033[92m"
     #define COLOR_BRIGHT_CYAN "\033[96m"
     #define COLOR_BRIGHT_RED "\033[91m"
     #define COLOR_BRIGHT_MAGENTA "\033[95m"
     #define COLOR_BRIGHT_YELLOW "\033[93m"
-    #define COLOR_BRIGHT_WHITE "\033[97m"
+    #define COLOR_WHITE "\033[97m"
 
     #define BACKGROUND_BLACK "\033[40m"
     #define BACKGROUND_RED "\033[41m"
@@ -68,28 +69,28 @@ namespace madlib {
     #define BACKGROUND_BLUE "\033[44m"
     #define BACKGROUND_MAGENTA "\033[45m"
     #define BACKGROUND_CYAN "\033[46m"
-    #define BACKGROUND_WHITE "\033[47m"
+    #define BACKGROUND_DARK_GRAY "\033[47m"
 
-    #define BACKGROUND_BRIGHT_BLACK "\033[100m"
+    #define BACKGROUND_GRAY "\033[100m"
     #define BACKGROUND_BRIGHT_RED "\033[101m"
     #define BACKGROUND_BRIGHT_GREEN "\033[102m"
     #define BACKGROUND_BRIGHT_YELLOW "\033[103m"
     #define BACKGROUND_BRIGHT_BLUE "\033[104m"
     #define BACKGROUND_BRIGHT_MAGENTA "\033[105m"
     #define BACKGROUND_BRIGHT_CYAN "\033[106m"
-    #define BACKGROUND_BRIGHT_WHITE "\033[107m"
+    #define BACKGROUND_WHITE "\033[107m"
 
     #define COLOR_DEFAULT "\033[0;0;0m"
     
-    #define COLOR_ERROR     TEXT_BOLD COLOR_RED
-    #define COLOR_ALERT     TEXT_BOLD COLOR_YELLOW
-    #define COLOR_WARNING   TEXT_BOLD COLOR_BRIGHT_YELLOW
-    #define COLOR_INFO      TEXT_BOLD COLOR_BRIGHT_CYAN
+    #define COLOR_ERROR     TEXT_BOLD BACKGROUND_RED COLOR_WHITE
+    #define COLOR_ALERT     TEXT_BOLD COLOR_BRIGHT_RED
+    #define COLOR_WARNING   COLOR_BRIGHT_YELLOW
+    #define COLOR_INFO      COLOR_BRIGHT_CYAN
     #define COLOR_SUCCESS   TEXT_BOLD COLOR_GREEN
-    #define COLOR_DEBUG     TEXT_BOLD COLOR_MAGENTA
-    #define COLOR_FILENAME  COLOR_BRIGHT_BLACK
-    #define COLOR_DATETIME  COLOR_CYAN
-    #define COLOR_HIGHLIGHT TEXT_BOLD COLOR_BRIGHT_WHITE
+    #define COLOR_DEBUG     COLOR_GREEN
+    #define COLOR_FILENAME  COLOR_GRAY
+    #define COLOR_DATETIME  COLOR_YELLOW
+    #define COLOR_HIGHLIGHT TEXT_BOLD COLOR_WHITE
 
     #define QUOTEME_1(x) #x
     #define QUOTEME(x) QUOTEME_1(x)
@@ -211,6 +212,31 @@ namespace madlib {
             return 1;
         }
         return 0;
+    }
+
+    inline int regx_match_all(
+        const string& pattern,
+        const string& str,
+        vector<string>* matches = nullptr
+    ) {
+        regex r(pattern);
+        smatch m;
+
+        if (matches != nullptr) {
+            // Clear the vector before adding more matches
+            matches->clear();
+        }
+
+        // Use regex_iterator to find all matches
+        for (sregex_iterator it(str.begin(), str.end(), r), end; it != end; ++it) {
+            if (matches != nullptr) {
+                for (const auto& match : *it) {
+                    matches->push_back(match.str());
+                }
+            }
+        }
+
+        return static_cast<int>(matches != nullptr && !matches->empty());
     }
         
     string normalize_datetime(const string& datetime) {
@@ -809,7 +835,24 @@ namespace madlib {
         T maxVal = values[0];
         for (size_t i = 1; i < values.size(); ++i) if (values[i] > maxVal) maxVal = values[i];
         return maxVal;
-    }  
+    }
+
+    template<typename T>
+    void vector_sort(vector<T>& values) {
+        sort(values.begin(), values.end());
+    }
+
+    template<typename T>
+    void vector_unique(vector<T>& values) {
+        sort(values.begin(), values.end());
+        auto last = unique(values.begin(), values.end());
+        values.erase(last, values.end());
+    }
+
+    template<typename T>
+    bool vector_contains(const vector<T>& values, T value) {
+        return std::find(values.begin(), values.end(), value) != values.end();
+    }
 
     template<typename KeyT, typename T>
     bool map_has(const map<KeyT, T>& m, KeyT key) {

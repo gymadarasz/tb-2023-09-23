@@ -4,7 +4,8 @@
         {
             "label": "build-dbg",
             "type": "shell",
-            "command": "./cleanup.sh | ./build-dbg.sh",  // Command to run your build script
+            "command": "./build-dbg.sh",
+            // "command": "./cleanup.sh | ./build-dbg.sh",  // Command to run your build script
             "group": {
                 "kind": "build",
                 "isDefault": true
