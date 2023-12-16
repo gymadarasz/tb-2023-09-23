@@ -180,6 +180,7 @@ protected:
         Progress progress("Reload history...", true);
         app->candleHistory->reload(progress);
         progress.close();
+        app->gfx.triggerFakeEvent({ GFX::RELEASE });
     }
 
     static void onStartTouch(void*, unsigned int, int, int) {

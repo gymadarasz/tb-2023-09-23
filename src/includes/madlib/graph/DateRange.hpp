@@ -21,6 +21,7 @@ namespace madlib::graph {
                 dateRange->fromLabel->getText(),
                 dateRange->prompt
             );
+            that->getGFX().triggerFakeEvent({ GFX::RELEASE });
             if (selection.empty()) dateRange->fromInput->setText(ms_to_date(dateRange->fromValue));
             else dateRange->fromInput->setText(selection);
             dateRange->fromInput->draw();
@@ -33,6 +34,7 @@ namespace madlib::graph {
                 dateRange->toLabel->getText(),
                 dateRange->prompt
             );
+            that->getGFX().triggerFakeEvent({ GFX::RELEASE });
             if (selection.empty()) dateRange->toInput->setText(ms_to_date(dateRange->toValue));
             else dateRange->toInput->setText(selection);
             dateRange->toInput->draw();

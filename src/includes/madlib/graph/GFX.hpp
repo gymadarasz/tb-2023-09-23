@@ -2,6 +2,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 
 #include "../ERROR.hpp"
 #include "../time.hpp"
@@ -269,7 +270,39 @@ namespace madlib::graph {
             height = 0;
         }
 
-        void eventLoop(unsigned long ms = Theme::defaultGFXEventLoopMs) const {
+        enum FakeEventType { RELEASE }; // TODO: add more event types...
+
+        typedef struct {
+	        unsigned int button = AnyButton;
+	        int x = 0, y = 0;
+        } FakeEventData;
+
+        typedef struct {
+            FakeEventType type = RELEASE;
+            FakeEventData data = {};
+            XEvent toXEvent() {
+                XEvent event;
+                switch (type){
+                    case RELEASE:
+                        event.type = ButtonRelease;
+                        event.xbutton.button = data.button;
+                        event.xbutton.x = data.x;
+                        event.xbutton.y = data.y;
+                        break;                    
+                    default:
+                        throw ERROR("Invalid fake event");
+                }
+                return event;
+            }
+        } FakeEvent;
+
+        vector<FakeEvent> fakeEvents;
+
+        void triggerFakeEvent(FakeEvent fakeEvent) {
+            this->fakeEvents.push_back(fakeEvent);
+        }
+
+        void eventLoop(unsigned long ms = Theme::defaultGFXEventLoopMs) {
 
             while (!close) {
 
@@ -280,7 +313,16 @@ namespace madlib::graph {
                     continue;
                 }
 
-                XEvent event;                
+                XEvent event;               
+
+                if (!fakeEvents.empty()) {
+                    FakeEvent fakeEvent = fakeEvents.front();
+                    fakeEvents.erase(fakeEvents.begin());
+                    event  = fakeEvent.toXEvent();
+                    handleEvent(event);
+                    continue;
+                }
+
                 XNextEvent(display, &event);
 
                 // Flush the event queue to discard any pending events
@@ -289,55 +331,67 @@ namespace madlib::graph {
                     if (event.type == MotionNotify) break;
                 }
 
-                int width, height;
-                KeySym key;
-                char text[32]; // FlawFinder: ignore
-                switch (event.type) {
-                    case Expose:
-                        // Handle expose event (e.g., redraw)
-                        getWindowSize(width, height);
-                        for (const onResizeHandler& onResize: onResizeHandlers)
-                            onResize(eventContext, width, height);
-                        break;
-
-                    case KeyPress:
-                        // Handle key press event
-                        XLookupString(&event.xkey, text, sizeof(text), &key, nullptr);
-                        for (const onKeyPressHandler& onKeyPress: onKeyPressHandlers)
-                            onKeyPress(eventContext, key);
-                        break;
-
-                    case KeyRelease:
-                        // Handle key release event
-                        XLookupString(&event.xkey, text, sizeof(text), &key, nullptr);
-                        for (const onKeyReleaseHandler& onKeyRelease: onKeyReleaseHandlers)
-                            onKeyRelease(eventContext, key);
-                        break;
-
-                    case ButtonPress:
-                        // Handle mouse button press / click / touch / scroll / zoom event
-                        for (const onTouchHandler& onTouch: onTouchHandlers)
-                            onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
-
-                        break;
-
-                    case ButtonRelease:
-                        // Handle mouse button release event
-                        for (const onReleaseHandler& onRelease: onReleaseHandlers)
-                            onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
-                        break;
-
-                    case MotionNotify:
-                        // Handle mouse motion event
-                        for (const onMoveHandler& onMove: onMoveHandlers)
-                            onMove(eventContext, event.xbutton.x, event.xbutton.y);
-                        break;
-
-                    default:
-                        throw ERROR("Unhandled event type: " + to_string(event.type));
-                        break;
-                }
+                handleEvent(event);
             }
+        }
+
+        void setCursor(unsigned int cursor = XC_arrow) const {
+            Cursor blockCursor = XCreateFontCursor(display, cursor);
+            XDefineCursor(display, window, blockCursor);
+            XFlush(display);
+        }
+    
+        void handleEvent(XEvent event) const {
+            setCursor(XC_cross);
+            int width, height;
+            KeySym key;
+            char text[32]; // FlawFinder: ignore
+            switch (event.type) {
+                case Expose:
+                    // Handle expose event (e.g., redraw)
+                    getWindowSize(width, height);
+                    for (const onResizeHandler& onResize: onResizeHandlers)
+                        onResize(eventContext, width, height);
+                    break;
+
+                case KeyPress:
+                    // Handle key press event
+                    XLookupString(&event.xkey, text, sizeof(text), &key, nullptr);
+                    for (const onKeyPressHandler& onKeyPress: onKeyPressHandlers)
+                        onKeyPress(eventContext, key);
+                    break;
+
+                case KeyRelease:
+                    // Handle key release event
+                    XLookupString(&event.xkey, text, sizeof(text), &key, nullptr);
+                    for (const onKeyReleaseHandler& onKeyRelease: onKeyReleaseHandlers)
+                        onKeyRelease(eventContext, key);
+                    break;
+
+                case ButtonPress:
+                    // Handle mouse button press / click / touch / scroll / zoom event
+                    for (const onTouchHandler& onTouch: onTouchHandlers)
+                        onTouch(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+
+                    break;
+
+                case ButtonRelease:
+                    // Handle mouse button release event
+                    for (const onReleaseHandler& onRelease: onReleaseHandlers)
+                        onRelease(eventContext, event.xbutton.button, event.xbutton.x, event.xbutton.y);
+                    break;
+
+                case MotionNotify:
+                    // Handle mouse motion event
+                    for (const onMoveHandler& onMove: onMoveHandlers)
+                        onMove(eventContext, event.xbutton.x, event.xbutton.y);
+                    break;
+
+                default:
+                    throw ERROR("Unhandled event type: " + to_string(event.type));
+                    break;
+            }
+            setCursor();
         }
     };
 
