@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Accordion.hpp"
+
 namespace madlib::graph {
     
     class MultiChartAccordion: public Accordion {

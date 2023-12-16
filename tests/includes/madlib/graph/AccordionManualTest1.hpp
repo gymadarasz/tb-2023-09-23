@@ -2,6 +2,8 @@
 
 #include "../../ManualTestApplication.hpp"
 
+#include "../../../../src/includes/madlib/graph/Accordion.hpp"
+
 
 class AccordionManualTest1: public ManualTestApplication {
 protected:

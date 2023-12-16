@@ -1,7 +1,10 @@
 #pragma once
 
 #include "../../ManualTestApplication.hpp"
+
+#include "../../../../src/includes/madlib/rand.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
+#include "../../../../src/includes/madlib/graph/MultiChartAccordion.hpp"
 
 
 class MultiChartAccordionManualTest1: public ManualTestApplication {

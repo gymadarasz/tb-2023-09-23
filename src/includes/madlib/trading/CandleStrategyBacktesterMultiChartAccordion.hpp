@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../graph/MultiChartAccordion.hpp"
+
 #include "Pair.hpp"
 #include "Strategy.hpp"
 #include "TestExchange.hpp"
