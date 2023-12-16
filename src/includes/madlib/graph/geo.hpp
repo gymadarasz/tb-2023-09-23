@@ -110,4 +110,63 @@ namespace madlib::graph {
         }
     };
 
+    
+    template<typename T>
+    class Range {
+    public:
+        T begin, end;
+
+        Range(T begin, T end): begin(begin), end(end) {}
+
+        bool apply(const Range<T>& other) {
+            bool changed = false;
+            if (&other != this) {
+                changed = begin != other.begin || end != other.end;
+                begin = other.begin;
+                end = other.end;
+            }
+            return changed;
+        }
+
+        bool expand(const Range<T>& other) {
+            bool changed = false;
+            if (&other != this) {
+                T _begin = begin, _end = end;
+                begin = min(other.begin, begin);
+                end = max(other.end, end);
+                changed = begin != _begin || end != _end;
+            }
+            return changed;
+        }
+
+        bool limit(const Range<T>& other) {
+            bool changed = false;
+            if (&other != this) {
+                T _begin = begin, _end = end;
+                begin = max(other.begin, begin);
+                end = min(other.end, end);
+                changed = begin != _begin || end != _end;
+            }
+            return changed;
+        }
+
+    };
+
+    template<typename T>
+    class MinMax {
+    public:
+        T min, max;
+        MinMax(T min, T max): min(min), max(max) {}
+    };
+
+    class TimeRange: public Range<ms_t> {
+    public:
+        TimeRange(
+            ms_t begin, 
+            ms_t end
+        ):
+            Range(begin, end)
+        {}
+    };
+
 }
