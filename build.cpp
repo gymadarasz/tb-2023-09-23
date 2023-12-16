@@ -28,6 +28,7 @@ public:
     string mainPath = "./src";
     string main = "main";
     // -Wshadow
+    // NOTE: add -Wsuggest-final-methods only if no overrides in dynamic libraries
     string flags = 
         "-Wall -Werror -pedantic -Wextra -Wunused -Wuninitialized "
         "-Wformat -Wconversion -Wcast-align -Wnull-dereference "
@@ -38,8 +39,7 @@ public:
     const string flagsLibs = "-lX11 -ldl";
 
     // NOTE: keep it the highest (-O3)
-    // NOTE: add -Wsuggest-final-methods only if no overrides in dynamic libraries
-    const string optimizationFlag = " -O0";
+    const string optimizationFlag = " -O3";
 
     // const string flagsShared = "-shared -fPIC";
     const string cppExtension = ".cpp";

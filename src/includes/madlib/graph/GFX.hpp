@@ -218,14 +218,17 @@ namespace madlib::graph {
             // Cut text to fit into the viewport first
             string txt = text;
             if (!fontInfo) setFont(font);
-            y += fontInfo->ascent;
+            if (!fontInfo) throw ERROR("No font info");
+            int asc = fontInfo->ascent;
+            int desc = fontInfo->descent;
+            y += asc;
             while (!txt.empty()) {
                 int width, height;
                 getTextSize(txt, width, height);
                 int x1 = x;
-                int y1 = y + fontInfo->descent;
+                int y1 = y + desc;
                 int x2 = x + width;
-                int y2 = y - height + fontInfo->descent;
+                int y2 = y - height + desc;
                 if (x1 > x2) swap(x1, x2);
                 if (y1 > y2) swap(y1, y2);
                 
