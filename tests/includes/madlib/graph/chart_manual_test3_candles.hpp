@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../../../../src/includes/madlib/graph/graph.hpp"
+#include "../../../../src/includes/madlib/rand.hpp"
+#include "../../../../src/includes/madlib/graph/GUI.hpp"
+#include "../../../../src/includes/madlib/graph/Button.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 
 using namespace std;

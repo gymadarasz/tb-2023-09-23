@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "includes/ManualTestApplication.hpp"
+
 #include "includes/madlib/MadlibTest.hpp"
 #include "includes/madlib/ToolsTest.hpp"
 #include "includes/madlib/VectorTest.hpp"

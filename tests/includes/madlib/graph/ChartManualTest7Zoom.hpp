@@ -2,8 +2,10 @@
 
 #include "../../ManualTestApplication.hpp"
 
-#include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
+#include "../../../../src/includes/madlib/graph/SlideBar.hpp"
+#include "../../../../src/includes/madlib/graph/ScrollBar.hpp"
+#include "../../../../src/includes/madlib/graph/IntervalBar.hpp"
 #include "../../../../src/includes/madlib/trading/trading.hpp"
 
 using namespace madlib::graph;

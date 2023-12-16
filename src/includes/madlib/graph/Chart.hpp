@@ -5,7 +5,12 @@
 #include "../time.hpp"
 #include "../ERROR.hpp"
 #include "../vectors.hpp"
-#include "graph.hpp"
+
+#include "Color.hpp"
+#include "Theme.hpp"
+#include "Area.hpp"
+#include "Accordion.hpp"
+#include "Frame.hpp"
 
 using namespace std;
 using namespace madlib;

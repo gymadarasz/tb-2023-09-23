@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../../src/includes/madlib/graph/graph.hpp"
+#include "../../src/includes/madlib/graph/FrameApplication.hpp"
+#include "../../src/includes/madlib/graph/Button.hpp"
 
 using namespace madlib::graph;
 

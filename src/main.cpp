@@ -3,6 +3,10 @@
 
 #include "includes/madlib/Factory.hpp"
 // #include "includes/madlib/graph/graph.hpp"
+#include "includes/madlib/graph/FrameApplication.hpp"
+#include "includes/madlib/graph/Select.hpp"
+#include "includes/madlib/graph/DateRange.hpp"
+#include "includes/madlib/graph/Input.hpp"
 #include "includes/madlib/trading/trading.hpp"
 
 using namespace std;

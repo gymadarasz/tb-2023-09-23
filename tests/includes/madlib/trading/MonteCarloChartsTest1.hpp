@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../../../src/includes/madlib/trading/trading.hpp"
-#include "../../../../src/includes/madlib/graph/graph.hpp"
 #include "../../ManualTestApplication.hpp"
 
 using namespace madlib::graph;
@@ -90,9 +89,6 @@ public:
         candleStrategy = candleStrategyFactory.createInstance(
             "build/src/shared/trading/strategy/ACandleStrategy/"
             "ACandleStrategy.so", nullptr 
-            // new CandleStrategy::Args({ 
-            //*testExchange, strategyParameters 
-            // })
         );
     
         backtester = new CandleStrategyBacktesterMultiChartAccordion(

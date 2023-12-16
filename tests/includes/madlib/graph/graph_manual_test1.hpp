@@ -1,10 +1,14 @@
 #pragma once
 
 #include <cassert>
-#include "../../../../src/includes/madlib/graph/graph.hpp"
+
+#include "../../../../src/includes/madlib/graph/GUI.hpp"
+#include "../../../../src/includes/madlib/graph/GFX.hpp"
+#include "../../../../src/includes/madlib/graph/Frame.hpp"
+#include "../../../../src/includes/madlib/graph/Button.hpp"
+#include "../../../../src/includes/madlib/graph/Label.hpp"
 
 using namespace std;
-using namespace madlib;
 using namespace madlib::graph;
 
 GFX* graph_manual_test1_gfxPtr;
