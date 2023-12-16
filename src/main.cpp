@@ -3,7 +3,6 @@
 
 #include "includes/madlib/time.hpp"
 #include "includes/madlib/Factory.hpp"
-// #include "includes/madlib/graph/graph.hpp"
 #include "includes/madlib/graph/FrameApplication.hpp"
 #include "includes/madlib/graph/Select.hpp"
 #include "includes/madlib/graph/DateRange.hpp"
@@ -106,7 +105,7 @@ protected:
     Select* periodSelect = nullptr;
     Select* symbolSelect = nullptr;
     Select* candleStrategySelect = nullptr;
-    Button* downloadButton = nullptr;
+    Button* reloadButton = nullptr;
     Button* startButton = nullptr;
     CandleStrategyBacktesterMultiChartAccordion* candleStrategyBacktesterMultiChartAccordion = nullptr;
 
@@ -168,19 +167,18 @@ protected:
         app->loadStrategyModule();
     }
 
-    static void onDownloadTouch(void*, unsigned int, int, int) {
+    static void onReloadTouch(void*, unsigned int, int, int) {
         const string symbol = app->symbolSelect->getInput()->getText();        
         const ms_t from = datetime_to_ms(app->historyDateRange->getFromInput()->getText());
         const ms_t to = datetime_to_ms(app->historyDateRange->getToInput()->getText());
         const ms_t period = period_to_ms(app->periodSelect->getInput()->getText());
-        const bool override = zenity_question("Override", "Do you want to override if data already exists?");
         
         app->candleHistory->setSymbol(symbol);
         app->candleHistory->setStartTime(from);
         app->candleHistory->setEndTime(to);
         app->candleHistory->setPeriod(period);
-        Progress progress("Download history...", true);
-        app->candleHistory->download(progress, override);
+        Progress progress("Reload history...", true);
+        app->candleHistory->reload(progress);
         progress.close();
     }
 
@@ -210,7 +208,7 @@ protected:
     void createExchangeSelect() {
         vector<string> values = getExchangeClasses();
         string defval = values.size() >= 1 ? values[0] : "";
-        exchangeSelect = new Select(mainFrame, 10, settingsTop + settingsRowHeight, "Exchange", values, defval);
+        exchangeSelect = new Select(mainFrame, 300, settingsTop + settingsRowHeight, "Exchange", values, defval);
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
         if (!defval.empty()) loadExchangeModule();
@@ -224,7 +222,7 @@ protected:
     }
 
     void createSymbolSelect() {
-        symbolSelect = new Select(mainFrame, 300, settingsTop + settingsRowHeight, "Symbol", {}, "", 80);
+        symbolSelect = new Select(mainFrame, 600, settingsTop + settingsRowHeight, "Symbol", {}, "", 80);
         Input* symbolInput = symbolSelect->getInput();
         symbolInput->addTouchHandler(onSymbolSelected);
         loadSymbols();
@@ -233,16 +231,16 @@ protected:
     void createStrategySelect() {
         vector<string> values = getStrategyClasses();
         string defval = values.size() >= 1 ? values[0] : "";
-        candleStrategySelect = new Select(mainFrame, 600, settingsTop + settingsRowHeight, "Strategy", values, defval);
+        candleStrategySelect = new Select(mainFrame, 10, settingsTop + settingsRowHeight, "Strategy", values, defval);
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategyInput->addTouchHandler(onCandleStrategySelected);
         if (!defval.empty()) loadStrategyModule();
     }
 
-    void createDownloadButton() {
-        downloadButton = new Button(gfx, 910, settingsTop, 90, 20, "Download");
-        mainFrame.child(*downloadButton);
-        downloadButton->addTouchHandler(onDownloadTouch);
+    void createReloadButton() {
+        reloadButton = new Button(gfx, 910, settingsTop, 90, 20, "Reload");
+        mainFrame.child(*reloadButton);
+        reloadButton->addTouchHandler(onReloadTouch);
     }
 
     void createStartButton() {
@@ -380,7 +378,7 @@ public:
         delete periodSelect;
         delete symbolSelect;
         delete candleStrategySelect;
-        delete downloadButton;
+        delete reloadButton;
         delete startButton;
         delete candleStrategyBacktesterMultiChartAccordion;
     }
@@ -396,7 +394,7 @@ public:
         createSymbolSelect();
         createHistoryDateRange();
         createHistorySelect();
-        createDownloadButton();
+        createReloadButton();
         createStartButton();
         createCandleStrategyBacktesterMultiChartAccordion();
     }

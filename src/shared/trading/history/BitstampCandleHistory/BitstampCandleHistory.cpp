@@ -187,8 +187,11 @@ namespace madlib::trading::history {
         }
 
         // Note: see more at https://www.cryptodatadownload.com/data/bitstamp/
-        virtual void download(Progress& progress, bool override) override {
+        virtual void reload(Progress& progress) override {
             if (period != MS_PER_MIN) throw ERROR("Period works only on minutes charts"); // TODO: aggregate to other periods
+            
+            const bool override = zenity_question("Override", "Do you want to override if data already exists?");
+        
             int fromYear = parse<int>(ms_to_date(startTime).substr(0, 4));
             int toYear = parse<int>(ms_to_date(endTime).substr(0, 4));
             bitstamp_download_candle_history_csv_all(progress, symbol, fromYear, toYear, "minute", override);

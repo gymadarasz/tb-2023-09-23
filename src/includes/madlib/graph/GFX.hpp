@@ -280,13 +280,13 @@ namespace madlib::graph {
                     continue;
                 }
 
-                XEvent event;
+                XEvent event;                
                 XNextEvent(display, &event);
 
                 // Flush the event queue to discard any pending events
                 while (XPending(display) > 0) { 
                     XNextEvent(display, &event);
-                    if (event.type != MotionNotify) break;
+                    if (event.type == MotionNotify) break;
                 }
 
                 int width, height;

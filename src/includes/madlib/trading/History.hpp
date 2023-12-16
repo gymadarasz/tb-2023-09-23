@@ -52,11 +52,11 @@ namespace madlib::trading {
             this->period = period;
         }
 
-        virtual void download(Progress&, bool) {
+        virtual void load(Progress&) {
             throw ERR_UNIMP;
         }
 
-        virtual void load(Progress&) {
+        virtual void reload(Progress&) {
             throw ERR_UNIMP;
         }
 

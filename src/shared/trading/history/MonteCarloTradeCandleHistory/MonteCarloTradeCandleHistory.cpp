@@ -92,6 +92,10 @@ namespace madlib::trading::history {
             convertToCandles();
         }
 
+        virtual void reload(Progress& progress) override {
+            load(progress);
+        }
+
         // virtual void clear() override {
         //     trades.clear();
         //     candles.clear();

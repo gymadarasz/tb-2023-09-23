@@ -27,6 +27,7 @@ namespace madlib::graph {
                 select->label->getText(),
                 select->values
             );
+            // that->getGFX().injectEvent()
             if (selection.empty()) select->input->setText(select->value);
             else select->input->setText(selection);
             select->input->draw();
