@@ -326,10 +326,7 @@ namespace madlib::graph {
                 XNextEvent(display, &event);
 
                 // Flush the event queue to discard any pending events
-                while (XPending(display) > 0) { 
-                    XNextEvent(display, &event);
-                    if (event.type == MotionNotify) break;
-                }
+                while (XPending(display) > 0) XNextEvent(display, &event);
 
                 handleEvent(event);
             }
@@ -342,7 +339,7 @@ namespace madlib::graph {
         }
     
         void handleEvent(XEvent event) const {
-            setCursor(XC_cross);
+            setCursor(XC_X_cursor);
             int width, height;
             KeySym key;
             char text[32]; // FlawFinder: ignore

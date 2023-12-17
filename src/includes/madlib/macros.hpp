@@ -33,6 +33,7 @@ namespace madlib {
     #define MS_PER_DAY  (24ul * MS_PER_HOUR)
     #define MS_PER_WEEK (7ul * MS_PER_DAY)
 
+    // https://www.codeproject.com/Articles/5329247/How-to-Change-Text-Color-in-a-Linux-Terminal
     #define TEXT_BOLD "\033[1m"
     #define TEXT_DIM "\033[2m"
     #define TEXT_UNDERLINE "\033[4m"
