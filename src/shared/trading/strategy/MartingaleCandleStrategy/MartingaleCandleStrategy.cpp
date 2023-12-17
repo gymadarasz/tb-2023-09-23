@@ -35,12 +35,12 @@ namespace madlib::trading::strategy {
 
         virtual ~MartingaleCandleStrategy() {}
 
-        virtual void onCandleClose(Exchange& exchange, const string& symbol, const Candle& candle) override {
+        virtual void onCandleClose(Exchange*& exchange, const string& symbol, const Candle& candle) override {
             ms_t closeAt = candle.getEnd();
             double price = candle.getClose();
-            double balanceQuotedFull = exchange.getBalanceQuotedFull(symbol);
-            double balanceQuoted = exchange.getBalanceQuoted(symbol);
-            double balanceBase = exchange.getBalanceBase(symbol);
+            double balanceQuotedFull = exchange->getBalanceQuotedFull(symbol);
+            double balanceQuoted = exchange->getBalanceQuoted(symbol);
+            double balanceBase = exchange->getBalanceBase(symbol);
 
             // sell
             if (balanceQuotedFull > sellAbove) {

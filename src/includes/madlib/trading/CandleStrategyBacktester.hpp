@@ -13,7 +13,7 @@ namespace madlib::trading {
         class ProgressContext {
         public:
             
-            void* context = nullptr;
+            void* callerContext = nullptr;
             const Candle* candle = nullptr;
 
             ProgressContext() {}
@@ -25,10 +25,10 @@ namespace madlib::trading {
 
     protected:
 
-        void* context;
+        void* callerContext;
         CandleHistory*& candleHistory;
-        TestExchange& testExchange;
-        CandleStrategy& candleStrategy;
+        TestExchange*& testExchange;
+        CandleStrategy*& candleStrategy;
         const string& symbol;
         ProgressCallback onProgressStart = nullptr;
         ProgressCallback onProgressStep = nullptr;
@@ -37,16 +37,16 @@ namespace madlib::trading {
     public:
 
         CandleStrategyBacktester(
-            void* context,
+            void* callerContext,
             CandleHistory*& candleHistory,
-            TestExchange& testExchange,
-            CandleStrategy& candleStrategy,
+            TestExchange*& testExchange,
+            CandleStrategy*& candleStrategy,
             const string& symbol,
             const ProgressCallback onProgressStart = nullptr,
             const ProgressCallback onProgressStep = nullptr,
             const ProgressCallback onProgressFinish = nullptr
         ):
-            context(context),
+            callerContext(callerContext),
             candleHistory(candleHistory),
             testExchange(testExchange),
             candleStrategy(candleStrategy),
@@ -67,23 +67,23 @@ namespace madlib::trading {
             // **** backtest ****
 
             ProgressContext progressContext;
-            progressContext.context = context;
+            progressContext.callerContext = callerContext;
 
             if (onProgressStart && !onProgressStart(progressContext)) return false;
 
             vector<Candle> candles = candleHistory->getCandles();
-            Pair& pair = testExchange.getPairAt(symbol);
+            Pair& pair = testExchange->getPairAt(symbol);
             
             for (const Candle& candle: candles) {
                 progressContext.candle = &candle;
 
-                testExchange.setCurrentTime(candle.getEnd());
+                testExchange->setCurrentTime(candle.getEnd());
                 pair.setPrice(candle.getClose()); // TODO: set the price to a later price (perhaps next open price) so that, we can emulate some exchange communication latency
 
                 if (onProgressStep && !onProgressStep(progressContext)) 
                     return false;
                 
-                candleStrategy.onCandleClose(testExchange, symbol, candle);
+                candleStrategy->onCandleClose((Exchange*&)testExchange, symbol, candle);
             }
 
             if (onProgressFinish) return onProgressFinish(progressContext);

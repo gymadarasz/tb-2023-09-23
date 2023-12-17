@@ -110,41 +110,45 @@ namespace madlib::trading {
         //     return labelSeries;
         // }
 
+        virtual void onCandleClose(Exchange*&, const string&, const Candle&) {
+            throw ERR_UNIMP;
+        }
+
         void setLabelSeries(LabelSeries* labelSeries) {
             this->labelSeries = labelSeries;
         }
 
-        void addBuyText(Exchange& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
+        void addBuyText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
             if (!labelSeries) return;
-            if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            if (!currentTime) currentTime = exchange->getCurrentTime();
+            if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
             Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
             labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
             // addText(labelSeries.getBuyTextRealChoords(), labelSeries.getBuyTexts(), currentTime, currentPrice, text);
         }
 
-        void addSellText(Exchange& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
+        void addSellText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
             if (!labelSeries) return;
-            if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            if (!currentTime) currentTime = exchange->getCurrentTime();
+            if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
             Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
             labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
             // addText(labelSeries.getSellTextRealChoords(), labelSeries.getSellTexts(), currentTime, currentPrice, text);
         }
 
-        void addErrorText(Exchange& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
+        void addErrorText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
             if (!labelSeries) return;
-            if (!currentTime) currentTime = exchange.getCurrentTime();
-            if (!currentPrice) currentPrice = exchange.getPairAt(symbol).getPrice();
+            if (!currentTime) currentTime = exchange->getCurrentTime();
+            if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
             Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
             labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
             // addText(labelSeries.getErrorTextRealChoords(), labelSeries.getErrorTexts(), currentTime, currentPrice, text);
         }
 
-        bool marketBuy(Exchange& exchange, const string& symbol, double amount) {
-            ms_t currentTime = exchange.getCurrentTime();
-            double currentPrice = exchange.getPairAt(symbol).getPrice();
-            if (exchange.marketBuy(symbol, amount, false)) {
+        bool marketBuy(Exchange*& exchange, const string& symbol, double amount) {
+            ms_t currentTime = exchange->getCurrentTime();
+            double currentPrice = exchange->getPairAt(symbol).getPrice();
+            if (exchange->marketBuy(symbol, amount, false)) {
                 addBuyText(exchange, symbol, currentTime, currentPrice);
                 return true;
             }
@@ -156,10 +160,10 @@ namespace madlib::trading {
             return false;
         }
 
-        bool marketSell(Exchange& exchange, const string& symbol, double amount) {
-            ms_t currentTime = exchange.getCurrentTime();
-            double currentPrice = exchange.getPairAt(symbol).getPrice();
-            if (exchange.marketSell(symbol, amount, false)) {
+        bool marketSell(Exchange*& exchange, const string& symbol, double amount) {
+            ms_t currentTime = exchange->getCurrentTime();
+            double currentPrice = exchange->getPairAt(symbol).getPrice();
+            if (exchange->marketSell(symbol, amount, false)) {
                 addSellText(exchange, symbol, currentTime, currentPrice);
                 return true;
             }

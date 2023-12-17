@@ -19,7 +19,7 @@ namespace madlib::trading::strategy {
 
         // virtual void init(void*) override {}
 
-        virtual void onCandleClose(Exchange& exchange, const string& symbol, const Candle& candle) override {
+        virtual void onCandleClose(Exchange*& exchange, const string& symbol, const Candle& candle) override {
             //const string symbol = parameters.at("symbol").getString();
             // LOG(
             //     ms_to_datetime(candle.getEnd()), 
@@ -36,21 +36,21 @@ namespace madlib::trading::strategy {
             switch (stage)
             {
                 case 0: // buy
-                    balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
+                    balanceBase09 = exchange->getBalanceBase(symbol) * 0.9;
                     orderAmount = buyAmount > balanceBase09 ? balanceBase09 : buyAmount;
-                    balanceQuoted09 = exchange.getBalanceQuoted(symbol) * 0.9;
-                    orderAmountPrice = orderAmount * exchange.getPairAt(symbol).getPrice();
+                    balanceQuoted09 = exchange->getBalanceQuoted(symbol) * 0.9;
+                    orderAmountPrice = orderAmount * exchange->getPairAt(symbol).getPrice();
                     if (orderAmountPrice < balanceQuoted09) {
                         marketBuy(exchange, symbol, orderAmount);
                     }
-                    exitAt = exchange.getBalanceQuotedFull(symbol) * 1.25;
+                    exitAt = exchange->getBalanceQuotedFull(symbol) * 1.25;
                     stage = 1;
                     break;
 
                 case 1: // sell
                     
                     if (tick > 50 /*|| exitAt > exchange.getBalanceQuotedFull(symbol)*/) {
-                        balanceBase09 = exchange.getBalanceBase(symbol) * 0.9;
+                        balanceBase09 = exchange->getBalanceBase(symbol) * 0.9;
                         marketSell(exchange, symbol, buyAmount > balanceBase09 ? balanceBase09 : buyAmount);
                         stage = 2;
                     }

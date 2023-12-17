@@ -262,7 +262,7 @@ protected:
                 multiChartAccordionWidth, 
                 multiChartAccordionFramesHeight,
                 startTime, endTime,
-                candleHistory, *testExchange, *candleStrategy, Config::symbol
+                candleHistory, testExchange, candleStrategy, Config::symbol
             );
         mainFrame.child(*candleStrategyBacktesterMultiChartAccordion);
     }
@@ -278,9 +278,7 @@ protected:
         candleHistory = candleHistoryFactory.updateInstance(
             candleHistory,
             Config::candleHistoryPath + "/" + moduleName + "/" + moduleName + ".so",
-            // new CandleHistory::Args({
             symbol, start, end, period_to_ms(period) 
-            // })
         );
     }
 
@@ -308,9 +306,7 @@ protected:
             testExchange,
             Config::testExchangePath + "/" + moduleName + "/" + moduleName + ".so", 
             // TODO: args from user with a settings form...??
-            // new TestExchange::Args({
             Config::periods, Config::symbols, Config::pairs, Config::balances
-            // })
         );
     }
 
@@ -322,9 +318,7 @@ protected:
             candleStrategy, 
             Config::candleStrategyPath + "/" + moduleName + "/" + moduleName + ".so", 
             // TODO: args from user with a settings form...??
-            // new CandleStrategy::Args({ 
             *testExchange, strategyParameters 
-            // })
         );
     }
 

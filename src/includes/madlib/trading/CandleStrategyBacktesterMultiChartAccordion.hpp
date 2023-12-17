@@ -17,8 +17,8 @@ namespace madlib::trading {
         CandleStrategyBacktester* backtester = nullptr;
 
         CandleHistory*& candleHistory;
-        TestExchange& testExchange;
-        Strategy& candleStrategy;
+        TestExchange*& testExchange;
+        CandleStrategy*& candleStrategy;
         const string& symbol;
         const bool showBalanceQuotedScale;
         const bool logProgress; // TODO: progress callbacks 
@@ -70,7 +70,7 @@ namespace madlib::trading {
         } progressState;
         
         static bool onProgressStart(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
+            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
 
             that->clearCharts();
             that->progressState.balanceQuotedAtCloses = 
@@ -94,13 +94,13 @@ namespace madlib::trading {
                     that->progressState.showProgressStarted = false;
             }
 
-            that->progressState.pair = &that->testExchange.getPairAt(that->symbol);
+            that->progressState.pair = &that->testExchange->getPairAt(that->symbol);
 
             return true;
         }
         
         static bool onProgressStep(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
+            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
 
             // show progress and log
 
@@ -138,25 +138,25 @@ namespace madlib::trading {
             if (that->showBalanceQuotedScale) {
                 that->progressState.balanceQuotedAtCloses->push_back(that->balanceQuotedChart->createPointShape(
                     currentTime,
-                    that->testExchange.getBalanceQuoted(*pair)
+                    that->testExchange->getBalanceQuoted(*pair)
                 ));
             }
             
             that->progressState.balanceQuotedFullAtCloses->push_back(that->balanceQuotedChart->createPointShape(
                 currentTime,
-                that->testExchange.getBalanceQuotedFull(*pair)
+                that->testExchange->getBalanceQuotedFull(*pair)
             ));
 
             // **** balanceBaseChart ****
         
             that->progressState.balanceBaseAtCloses->push_back(that->balanceBaseChart->createPointShape(
                 currentTime,
-                that->testExchange.getBalanceBase(*pair)
+                that->testExchange->getBalanceBase(*pair)
             ));
             
             that->progressState.balanceBaseFullAtCloses->push_back(that->balanceBaseChart->createPointShape(
                 currentTime,
-                that->testExchange.getBalanceBaseFull(*pair)
+                that->testExchange->getBalanceBaseFull(*pair)
             ));
 
             return true;
@@ -166,7 +166,7 @@ namespace madlib::trading {
             CandleStrategyBacktester::ProgressContext& progressContext
         ) {
             CandleStrategyBacktesterMultiChartAccordion* that = 
-                (CandleStrategyBacktesterMultiChartAccordion*)progressContext.context;
+                (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
 
             if (that->logProgress) LOG("Backtest done.");
             if (that->showProgress && that->progressState.progress) 
@@ -182,8 +182,8 @@ namespace madlib::trading {
             const int multiChartAccordionFramesHeight,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
             CandleHistory*& candleHistory,
-            TestExchange& testExchange,
-            CandleStrategy& candleStrategy,
+            TestExchange*& testExchange,
+            CandleStrategy*& candleStrategy,
             const string& symbol,
             const bool showBalanceQuotedScale = true, // TODO
 
@@ -226,7 +226,7 @@ namespace madlib::trading {
             );
 
             // if (!candleStrategy.getLabelSeries())
-            candleStrategy.setLabelSeries(
+            candleStrategy->setLabelSeries(
                 candleHistoryChart.getLabelSeries()
             );
 
