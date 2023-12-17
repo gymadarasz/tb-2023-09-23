@@ -1,5 +1,8 @@
 #pragma once
 
+#include "ScrollBar.hpp"
+#include "Button.hpp"
+
 namespace madlib::graph {
 
     class IntervalBar: public ScrollBar {

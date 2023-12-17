@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Area.hpp"
+#include "Button.hpp"
+
 namespace madlib::graph {
 
     class SlideBar: public Area {

@@ -141,7 +141,7 @@ protected:
     }
 
     static void onHistoryDateRangeToTouch(void*, unsigned int, int, int) {
-        app->loadHistoryData(); // TODO: validate the interval in DateRange handlers (from can not be greater then to!!)
+        app->loadHistoryData();
         app->updateCandleStrategyBacktesterMultiChartAccordion();
     }
 
@@ -389,7 +389,7 @@ public:
         gui.setTitle("Bitstamp History Backtest");
         app = this;
 
-        createExchangeSelect(); // TODO: !@# test each form element and fix them
+        createExchangeSelect(); // TODO: test each form element and fix them
         createStrategySelect();
         createPeriodSelect();
         createSymbolSelect();

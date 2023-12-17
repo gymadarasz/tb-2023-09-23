@@ -1,6 +1,9 @@
 #pragma once
 
+#include "SlideBar.hpp"
+
 namespace madlib::graph {
+
     class ScrollBar: public SlideBar {
     protected:
         double valueSize;
