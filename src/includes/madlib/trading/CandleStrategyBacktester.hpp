@@ -1,5 +1,10 @@
 #pragma once
 
+#include "Candle.hpp"
+#include "CandleHistory.hpp"
+#include "TestExchange.hpp"
+#include "CandleStrategy.hpp"
+
 namespace madlib::trading {
     
     class CandleStrategyBacktester {
@@ -68,6 +73,7 @@ namespace madlib::trading {
 
             vector<Candle> candles = candleHistory->getCandles();
             Pair& pair = testExchange.getPairAt(symbol);
+            
             for (const Candle& candle: candles) {
                 progressContext.candle = &candle;
 
