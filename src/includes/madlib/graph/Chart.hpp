@@ -231,7 +231,7 @@ namespace madlib::graph {
             drawTimeRange();
         }
 
-        PointSeries* createPointSeries(
+        virtual PointSeries* createPointSeries(
             Projector* alignToProjector = nullptr,
             bool alignExtends = true,
             Color color = Theme::defaultChartSeriesColor
@@ -252,7 +252,7 @@ namespace madlib::graph {
             return pointSeries;
         }
 
-        CandleSeries* createCandleSeries(
+        virtual CandleSeries* createCandleSeries(
             Projector* alignToProjector = nullptr,
             bool alignExtends = true,
             Color colorUp = Theme::defaultChartCandleColorUp, 
@@ -267,7 +267,7 @@ namespace madlib::graph {
             return candleSeries;
         }
 
-        LabelSeries* createLabelSeries(
+        virtual LabelSeries* createLabelSeries(
             Projector* alignToProjector = nullptr,
             bool alignExtends = true
         ) {

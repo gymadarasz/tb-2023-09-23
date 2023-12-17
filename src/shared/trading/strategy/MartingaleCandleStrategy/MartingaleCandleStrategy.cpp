@@ -20,33 +20,54 @@ namespace madlib::trading::strategy {
         double buyPc = initialBuyPc;
         double buyBellow = INFINITY;
 
-        void reinit(double price = 0) {
-            dontBuyUntil = 0;
+        void reinit(double price, ms_t closeAt) {
+            dontBuyUntil = closeAt + waitBeforeBuyAgain;
             sellAbove = INFINITY;
             buyPc = initialBuyPc;
-            buyBellow = price;// * buyBellowPc;
+            buyBellow = price * buyBellowPc;
         }
 
     public:
 
-        MartingaleCandleStrategy(): CandleStrategy() {
-            reinit();
-        }
+        PointSeries* emaProjector = nullptr;
+
+        MartingaleCandleStrategy(): CandleStrategy() {}
 
         virtual ~MartingaleCandleStrategy() {}
 
-        virtual void onCandleClose(Exchange*& exchange, const string& symbol, const Candle& candle) override {
+        bool first = true;
+        double ema = 0;
+
+        virtual void onCandleClose(Exchange*& exchange, const string& symbol, const Candle& candle) override {            
             ms_t closeAt = candle.getEnd();
             double price = candle.getClose();
             double balanceQuotedFull = exchange->getBalanceQuotedFull(symbol);
             double balanceQuoted = exchange->getBalanceQuoted(symbol);
             double balanceBase = exchange->getBalanceBase(symbol);
 
+            // ema
+            if (first) {
+                // first cycle only
+                emaProjector = candleHistoryChart->createPointSeries(
+                    nullptr, true, blue
+                );
+                ema = price;
+                first = false;
+                reinit(price, closeAt);
+                return;
+            }
+            const double emaLength = 2000;
+            ema = (ema * emaLength + price) / (emaLength + 1);
+            emaProjector->getShapes().push_back(
+                candleHistoryChart->createPointShape(closeAt, ema)
+            );
+
+
             // sell
             if (balanceQuotedFull > sellAbove) {
                 double amount = balanceBase * sellPc;
                 marketSell(exchange, symbol, amount); // TODO couldn't sell?
-                reinit(price);
+                reinit(price, closeAt);
                 return;
             }
 

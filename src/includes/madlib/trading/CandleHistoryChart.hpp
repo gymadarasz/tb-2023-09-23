@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CandleHistory.hpp"
+
 namespace madlib::trading {
     
     class CandleHistoryChart: public Chart {
@@ -45,6 +47,22 @@ namespace madlib::trading {
             volumeColor(volumeColor) //,
             // labelSeries(labelSeries)
         {
+            init(
+                showCandles,
+                showPrices,
+                showVolumes,
+                showTexts,
+                generate
+            );
+        }
+
+        void init(
+            const bool showCandles,
+            const bool showPrices,
+            const bool showVolumes,
+            const bool showTexts,
+            const bool generate
+        ) {
             if (showCandles)
                 mainProjector = candleSeries = createCandleSeries();
             if (showPrices) {
@@ -64,6 +82,39 @@ namespace madlib::trading {
         }
 
         virtual ~CandleHistoryChart() {}
+
+        virtual PointSeries* createPointSeries(
+            Projector* alignToProjector = nullptr,
+            bool alignExtends = true,
+            Color color = Theme::defaultChartSeriesColor
+        ) override {
+            return Chart::createPointSeries(
+                alignToProjector ? alignToProjector : mainProjector,
+                alignExtends, color
+            );
+        }
+
+        virtual CandleSeries* createCandleSeries(
+            Projector* alignToProjector = nullptr,
+            bool alignExtends = true,
+            Color colorUp = Theme::defaultChartCandleColorUp, 
+            Color colorDown = Theme::defaultChartCandleColorDown
+        ) override {
+            return Chart::createCandleSeries(
+                alignToProjector ? alignToProjector : mainProjector,
+                alignExtends, colorUp, colorDown
+            );
+        }
+
+        virtual LabelSeries* createLabelSeries(
+            Projector* alignToProjector = nullptr,
+            bool alignExtends = true
+        ) override {
+            return Chart::createLabelSeries(
+                alignToProjector ? alignToProjector : mainProjector,
+                alignExtends
+            );
+        }
 
         LabelSeries* getLabelSeries() const {
             return labelSeries;

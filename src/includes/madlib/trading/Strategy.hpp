@@ -6,6 +6,7 @@
 #include "../graph/Chart.hpp"
 
 #include "Exchange.hpp"
+#include "CandleHistoryChart.hpp"
 
 namespace madlib::trading {
   
@@ -93,16 +94,10 @@ namespace madlib::trading {
     protected:
 
         // map<string, Parameter>& parameters;
-        LabelSeries* labelSeries = nullptr;
+        CandleHistoryChart* candleHistoryChart = nullptr;
 
     public:
-        Strategy(
-            // map<string, Parameter>& parameters,
-            // LabelSeries* labelSeries = nullptr
-        )//:
-            // parameters(parameters),
-            // labelSeries(labelSeries)
-        {}
+        Strategy() {}
         
         virtual ~Strategy() {}
 
@@ -114,11 +109,13 @@ namespace madlib::trading {
             throw ERR_UNIMP;
         }
 
-        void setLabelSeries(LabelSeries* labelSeries) {
-            this->labelSeries = labelSeries;
+        void setCandleHistoryChart(CandleHistoryChart* candleHistoryChart) {
+            this->candleHistoryChart = candleHistoryChart;
         }
 
         void addBuyText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
+            if (!candleHistoryChart) return;
+            LabelSeries* labelSeries = candleHistoryChart->getLabelSeries();
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange->getCurrentTime();
             if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
@@ -128,6 +125,8 @@ namespace madlib::trading {
         }
 
         void addSellText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "SELL", Color color = Theme::defaultTradeLabelSellColor) {
+            if (!candleHistoryChart) return;
+            LabelSeries* labelSeries = candleHistoryChart->getLabelSeries();
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange->getCurrentTime();
             if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
@@ -137,6 +136,8 @@ namespace madlib::trading {
         }
 
         void addErrorText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "ERROR", Color color = Theme::defaultTradeLabelErrorColor) {
+            if (!candleHistoryChart) return;
+            LabelSeries* labelSeries = candleHistoryChart->getLabelSeries();
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange->getCurrentTime();
             if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();

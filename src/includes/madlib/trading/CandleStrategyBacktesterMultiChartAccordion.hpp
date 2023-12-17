@@ -225,9 +225,8 @@ namespace madlib::trading {
                 "History", candleHistoryChart, multiChartAccordionFramesHeight
             );
 
-            // if (!candleStrategy.getLabelSeries())
-            candleStrategy->setLabelSeries(
-                candleHistoryChart.getLabelSeries()
+            candleStrategy->setCandleHistoryChart(
+                &candleHistoryChart
             );
 
             multiChart.attach(candleHistoryChart);

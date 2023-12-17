@@ -1,6 +1,8 @@
 #pragma once
-
 #include "../../ManualTestApplication.hpp"
+
+#include "../../../../src/includes/madlib/Factory.hpp"
+#include "../../../../src/includes/madlib/trading/periods.hpp"
 #include "../../../../src/includes/madlib/trading/CandleStrategyBacktesterMultiChartAccordion.hpp"
 
 using namespace madlib::graph;
@@ -91,12 +93,16 @@ public:
             "ACandleStrategy.so", nullptr 
         );
     
+            // CandleHistory*& candleHistory,
+            // TestExchange*& testExchange,
+            // CandleStrategy*& candleStrategy,
+
         backtester = new CandleStrategyBacktesterMultiChartAccordion(
             gfx, 10, 50, 1000, 340,
             startTime, endTime,
             // multiChartAccordion,
             history, // tradeHistoryChart,
-            *testExchange, *candleStrategy, symbol, 
+            testExchange, candleStrategy, symbol, 
             // multiChartAccordionFramesHeight,
             showBalanceQuotedScale
         );
