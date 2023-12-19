@@ -225,9 +225,7 @@ namespace madlib::trading {
                 "History", candleHistoryChart, multiChartAccordionFramesHeight
             );
 
-            candleStrategy->setCandleHistoryChart(
-                &candleHistoryChart
-            );
+            candleStrategy->setCandleHistoryChart(&candleHistoryChart);
 
             multiChart.attach(candleHistoryChart);
 
@@ -239,13 +237,19 @@ namespace madlib::trading {
             balanceQuotedFullScale = balanceQuotedChart->createPointSeries(nullptr, true, lightGreen);
             balanceQuotedScale = balanceQuotedChart->createPointSeries(balanceQuotedFullScale, true, green);
 
+            candleStrategy->setBalanceQuotedChart(balanceQuotedChart);
+
             // **** balanceBaseChart ****
 
             balanceBaseChart = createChart(
-                "Balance (base)", multiChartAccordionFramesHeight
+                "Balance (base)", multiChartAccordinFramesHeight
             );
             balanceBaseFullScale = balanceBaseChart->createPointSeries(nullptr, true, yellow);
             balanceBaseScale = balanceBaseChart->createPointSeries(balanceBaseFullScale, true, orange);
+
+            candleStrategy->setBalanceBaseChart(balanceBaseChart);
+
+            // TODO: !@# pass some reference to the strategy that allows inject more charts for e.g indicators...
 
             openAll(false);
         }

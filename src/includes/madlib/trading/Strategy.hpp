@@ -13,6 +13,8 @@ namespace madlib::trading {
     class Strategy {
     public:
 
+        typedef void (*ChartInjector)(void*, Chart&);
+
         template<typename T>
         class Limited {
         protected:
@@ -95,6 +97,8 @@ namespace madlib::trading {
 
         // map<string, Parameter>& parameters;
         CandleHistoryChart* candleHistoryChart = nullptr;
+        Chart* balanceQuotedChart = nullptr;
+        Chart* balanceBaseChart = nullptr;
 
     public:
         Strategy() {}
@@ -111,6 +115,14 @@ namespace madlib::trading {
 
         void setCandleHistoryChart(CandleHistoryChart* candleHistoryChart) {
             this->candleHistoryChart = candleHistoryChart;
+        }
+
+        void setBalanceQuotedChart(Chart* balanceQuotedChart) {
+            this->balanceQuotedChart = balanceQuotedChart;
+        }
+
+        void setBalanceBaseChart(Chart* balanceBaseChart) {
+            this->balanceBaseChart = balanceBaseChart;
         }
 
         void addBuyText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {

@@ -49,7 +49,7 @@ namespace madlib::trading::strategy {
             if (first) {
                 // first cycle only
                 emaProjector = candleHistoryChart->createPointSeries(
-                    nullptr, true, blue
+                    candleHistoryChart->getMainProjector(), true, blue
                 );
                 ema = price;
                 first = false;
