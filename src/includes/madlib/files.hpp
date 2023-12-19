@@ -49,12 +49,16 @@ namespace madlib {
         // Find the position of the last dot (.) in the file name
         size_t lastDotPos = filename.find_last_of('.');
 
-        // Create a string with the part before the last dot and the extension
-        if (lastDotPos != string::npos)
-            return filename.substr(0, lastDotPos) + "." + extension;
-        
-        // If there's no dot in the file name, simply append the extension
-        return filename + "." + extension;
+        // Check if the lastDotPos is not at the end of the filename
+        if (lastDotPos != string::npos && lastDotPos != filename.length() - 1) {
+            // If the extension already has a leading dot, use it as is
+            // Otherwise, add a leading dot
+            return filename.substr(0, lastDotPos) + (extension[0] == '.' ? "" : ".") + extension;
+        }
+
+        // If there's no dot in the file name or the dot is at the end,
+        // simply append the extension with a leading dot if needed
+        return filename + (extension[0] == '.' ? "" : ".") + extension;
     }
 
     bool file_exists(const string& filePath) {

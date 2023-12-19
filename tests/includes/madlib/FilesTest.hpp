@@ -65,15 +65,19 @@ public:
     static void testFiles_replaceExtension() {
         // Test replacing extension
         assert(file_replace_extension("file.txt", "jpg") == "file.jpg");
+        assert(file_replace_extension("file.txt", ".jpg") == "file.jpg");
 
         // Test with no extension
         assert(file_replace_extension("file", "jpg") == "file.jpg");
+        assert(file_replace_extension("file", ".jpg") == "file.jpg");
 
         // Test with empty filename
         assert(file_replace_extension("", "jpg") == ".jpg");
+        assert(file_replace_extension("", ".jpg") == ".jpg");
 
         // Test replacing extension with an empty one
         assert(file_replace_extension("file.txt", "") == "file.");
+        assert(file_replace_extension("file", "") == "file.");
     }
 
     static void testFiles_normalizePath() {

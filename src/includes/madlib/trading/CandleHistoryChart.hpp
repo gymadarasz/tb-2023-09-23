@@ -83,38 +83,38 @@ namespace madlib::trading {
 
         virtual ~CandleHistoryChart() {}
 
-        virtual PointSeries* createPointSeries(
-            Projector* alignToProjector = nullptr,
-            bool alignExtends = true,
-            Color color = Theme::defaultChartSeriesColor
-        ) override {
-            return Chart::createPointSeries(
-                alignToProjector ? alignToProjector : mainProjector,
-                alignExtends, color
-            );
-        }
+        // virtual PointSeries* createPointSeries(
+        //     Projector* alignToProjector = nullptr,
+        //     bool alignExtends = true,
+        //     Color color = Theme::defaultChartSeriesColor
+        // ) override {
+        //     return Chart::createPointSeries(
+        //         alignToProjector ? alignToProjector : mainProjector,
+        //         alignExtends, color
+        //     );
+        // }
 
-        virtual CandleSeries* createCandleSeries(
-            Projector* alignToProjector = nullptr,
-            bool alignExtends = true,
-            Color colorUp = Theme::defaultChartCandleColorUp, 
-            Color colorDown = Theme::defaultChartCandleColorDown
-        ) override {
-            return Chart::createCandleSeries(
-                alignToProjector ? alignToProjector : mainProjector,
-                alignExtends, colorUp, colorDown
-            );
-        }
+        // virtual CandleSeries* createCandleSeries(
+        //     Projector* alignToProjector = nullptr,
+        //     bool alignExtends = true,
+        //     Color colorUp = Theme::defaultChartCandleColorUp, 
+        //     Color colorDown = Theme::defaultChartCandleColorDown
+        // ) override {
+        //     return Chart::createCandleSeries(
+        //         alignToProjector ? alignToProjector : mainProjector,
+        //         alignExtends, colorUp, colorDown
+        //     );
+        // }
 
-        virtual LabelSeries* createLabelSeries(
-            Projector* alignToProjector = nullptr,
-            bool alignExtends = true
-        ) override {
-            return Chart::createLabelSeries(
-                alignToProjector ? alignToProjector : mainProjector,
-                alignExtends
-            );
-        }
+        // virtual LabelSeries* createLabelSeries(
+        //     Projector* alignToProjector = nullptr,
+        //     bool alignExtends = true
+        // ) override {
+        //     return Chart::createLabelSeries(
+        //         alignToProjector ? alignToProjector : mainProjector,
+        //         alignExtends
+        //     );
+        // }
 
         LabelSeries* getLabelSeries() const {
             return labelSeries;

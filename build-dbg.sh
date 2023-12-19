@@ -1,4 +1,5 @@
 #!/bin/bash
+unset GTK_PATH
 cppcheck . \
 --enable=all \
 --suppress=useStlAlgorithm \
