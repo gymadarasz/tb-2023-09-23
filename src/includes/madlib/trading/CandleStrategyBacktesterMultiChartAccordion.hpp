@@ -242,7 +242,7 @@ namespace madlib::trading {
             // **** balanceBaseChart ****
 
             balanceBaseChart = createChart(
-                "Balance (base)", multiChartAccordinFramesHeight
+                "Balance (base)", multiChartAccordionFramesHeight
             );
             balanceBaseFullScale = balanceBaseChart->createPointSeries(nullptr, true, yellow);
             balanceBaseScale = balanceBaseChart->createPointSeries(balanceBaseFullScale, true, orange);
