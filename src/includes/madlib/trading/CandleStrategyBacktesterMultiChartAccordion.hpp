@@ -252,10 +252,10 @@ namespace madlib::trading {
 
             candleStrategy->setBalanceBaseChart(balanceBaseChart);
 
-            // TODO: !@# pass some reference to the strategy that allows inject more charts for e.g indicators...
+            // pass some reference to the strategy that allows inject more charts for e.g indicators...
             candleStrategy->setMultiChartAccordion(this);
 
-            openAll(false);
+            // openAll(false);
         }
 
 

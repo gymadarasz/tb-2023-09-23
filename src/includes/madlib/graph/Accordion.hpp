@@ -102,9 +102,9 @@ namespace madlib::graph {
                     innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
                     width, 0, false, false, NONE, accordion->getBackgroundColor());
             
+                accordion->height = togglerHeight * ((int)accordionContainerAt + 1);
                 accordion->child(toggler);
                 accordion->child(frame);
-                accordion->height = togglerHeight * ((int)accordionContainerAt + 1);
             }
 
             virtual ~Container() {
@@ -210,6 +210,14 @@ namespace madlib::graph {
             for (size_t i = 0; i < containersSize; i++) {
                 if (i != exceptIndex) closeAt(i, false);
                 else openAt(i, false);
+            }
+            if (redraw) getParentOrSelf()->draw();
+        }
+
+        void closeAll(bool redraw) {
+            size_t containersSize = containers.size();
+            for (size_t i = 0; i < containersSize; i++) {
+                closeAt(i, false);
             }
             if (redraw) getParentOrSelf()->draw();
         }

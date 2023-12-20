@@ -58,9 +58,10 @@ namespace madlib::trading::strategy {
                     balanceQuotedChart->getProjectorAt(0), true, darkGray
                 );
 
-                rsiChart = multichartAccordion->createChart("RSI", 300);
+                // multichartAccordion->closeAll(false);
+                rsiChart = multichartAccordion->createChart("RSI", 200);
                 rsiProjector = rsiChart->createPointSeries();
-                multichartAccordion->openAll(false);
+                // multichartAccordion->openAll(false);
                 // candleHistoryChart->setHeight(200);
 
                 ema = price;
@@ -74,7 +75,9 @@ namespace madlib::trading::strategy {
                 candleHistoryChart->createPointShape(closeAt, ema)
             );
 
-            // rsiChart->createPointShape(closeAt, price);
+            rsiProjector->getShapes().push_back(
+                rsiChart->createPointShape(closeAt, price)
+            );
 
 
             // sell

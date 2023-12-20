@@ -12,7 +12,9 @@ namespace madlib::graph {
         ms_t timeRangeEnd;
 
         void createChartFrame(const string& title, Chart* chart, int frameHeight) {
+            closeAll(false); // TODO: it's a hack to fix sizing (BUG: when strategy adds new charts the screen scroll size is not updated)
             Frame* cntrFrame = createContainer(title, frameHeight)->getFrame();
+            openAll(false);
             cntrFrame->setScrollFixed(true);
             int frameWidth = cntrFrame->getWidth();
             chart->setTop(0);
