@@ -1,7 +1,9 @@
 #include "../../../../includes/madlib/trading/CandleStrategy.hpp"
 #include "../../../../includes/madlib/trading/Exchange.hpp"
+#include "../../../../includes/madlib/trading/inicators/EmaIndicator.hpp"
 
 namespace madlib::trading::strategy {
+
 
     class MartingaleCandleStrategy: public CandleStrategy {
     protected:
@@ -29,17 +31,41 @@ namespace madlib::trading::strategy {
 
     public:
 
-        PointSeries* emaProjector = nullptr;
         PointSeries* sellAboveProjector = nullptr;
         Chart* rsiChart = nullptr;
         PointSeries* rsiProjector = nullptr;
 
+        EmaIndicator* emaIndicator1 = nullptr;
+        EmaIndicator* emaIndicator2 = nullptr;
+        EmaIndicator* emaIndicator3 = nullptr;
+
         MartingaleCandleStrategy(): CandleStrategy() {}
 
-        virtual ~MartingaleCandleStrategy() {}
+        virtual ~MartingaleCandleStrategy() {
+            delete emaIndicator1;
+            delete emaIndicator2;
+            delete emaIndicator3;
+        }
 
         bool first = true;
-        double ema = 0;
+
+        virtual void onFirstCandleClose(Exchange*&, const string&, const Candle& candle) override {            
+            ms_t closeAt = candle.getEnd();
+            double price = candle.getClose();
+
+            sellAboveProjector = balanceQuotedChart->createPointSeries(
+                balanceQuotedChart->getProjectorAt(0), true, darkGray
+            );
+
+            emaIndicator1 = new EmaIndicator(candleHistoryChart, price, 2000, blue);
+            emaIndicator2 = new EmaIndicator(candleHistoryChart, price, 4000, green);
+            emaIndicator3 = new EmaIndicator(candleHistoryChart, price, 16000, orange);
+
+            rsiChart = multichartAccordion->createChart("RSI", 200);
+            rsiProjector = rsiChart->createPointSeries();
+
+            reinit(price, closeAt);
+        }
 
         virtual void onCandleClose(Exchange*& exchange, const string& symbol, const Candle& candle) override {            
             ms_t closeAt = candle.getEnd();
@@ -48,32 +74,9 @@ namespace madlib::trading::strategy {
             double balanceQuoted = exchange->getBalanceQuoted(symbol);
             double balanceBase = exchange->getBalanceBase(symbol);
 
-            // ema
-            if (first) {
-                // first cycle only
-                emaProjector = candleHistoryChart->createPointSeries(
-                    candleHistoryChart->getMainProjector(), true, blue
-                );
-                sellAboveProjector = balanceQuotedChart->createPointSeries(
-                    balanceQuotedChart->getProjectorAt(0), true, darkGray
-                );
-
-                // multichartAccordion->closeAll(false);
-                rsiChart = multichartAccordion->createChart("RSI", 200);
-                rsiProjector = rsiChart->createPointSeries();
-                // multichartAccordion->openAll(false);
-                // candleHistoryChart->setHeight(200);
-
-                ema = price;
-                first = false;
-                reinit(price, closeAt);
-                return;
-            }
-            const double emaLength = 2000;
-            ema = (ema * emaLength + price) / (emaLength + 1);
-            emaProjector->getShapes().push_back(
-                candleHistoryChart->createPointShape(closeAt, ema)
-            );
+            emaIndicator1->calc(closeAt, price);
+            emaIndicator2->calc(closeAt, price);
+            emaIndicator3->calc(closeAt, price);
 
             rsiProjector->getShapes().push_back(
                 rsiChart->createPointShape(closeAt, price)

@@ -109,6 +109,14 @@ namespace madlib::trading {
         //     return labelSeries;
         // }
 
+        virtual void onStart(Exchange*&, const string&) {
+            LOG("Warning: onStart is not implemented");
+        }
+
+        virtual void onFirstCandleClose(Exchange*&, const string&, const Candle&) {
+            LOG("Warning: onFirstCandleClose is not implemented");
+        }
+
         virtual void onCandleClose(Exchange*&, const string&, const Candle&) {
             throw ERR_UNIMP;
         }

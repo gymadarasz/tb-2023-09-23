@@ -70,6 +70,9 @@ namespace madlib::trading {
             const vector<Candle>& candles = candleHistory->getCandles();
             Pair& pair = testExchange->getPairAt(symbol);
             
+            candleStrategy->onStart((Exchange*&)testExchange, symbol);
+
+            bool first = true;
             for (const Candle& candle: candles) {
                 progressContext.candle = &candle;
 
@@ -79,6 +82,11 @@ namespace madlib::trading {
                 if (onProgressStep && !onProgressStep(progressContext)) 
                     return false;
                 
+                if (first) {
+                    candleStrategy->onFirstCandleClose((Exchange*&)testExchange, symbol, candle);
+                    first = false;
+                    continue;
+                }
                 candleStrategy->onCandleClose((Exchange*&)testExchange, symbol, candle);
             }
 

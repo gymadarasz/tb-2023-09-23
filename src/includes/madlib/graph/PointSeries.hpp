@@ -1,5 +1,9 @@
 #pragma once
 
+#include "defs.hpp"
+#include "TimeRangeArea.hpp"
+#include "Color.hpp"
+#include "Projector.hpp"
 #include "PointShape.hpp"
 
 namespace madlib::graph {
