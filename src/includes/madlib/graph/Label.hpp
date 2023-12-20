@@ -6,7 +6,7 @@ namespace madlib::graph {
 
     class Label: public Area {
     public:
-        Label(GFX& gfx, int left, int top, int width, int height,
+        Label(GFX* gfx, int left, int top, int width, int height,
             const string &text, 
             const Align textAlign = Theme::defaultLabelTextAlign,
             const Border border = Theme::defaultLabelBorder,

@@ -32,19 +32,19 @@ namespace madlib::graph {
 
             virtual ~MultiChart() {}
 
-            void attach(Chart& chart) {
-                charts.push_back(&chart);
-                chart.join(this);
+            void attach(Chart* chart) {
+                charts.push_back(chart);
+                chart->join(this);
                 follow(chart);
             }
 
-            void follow(const Chart& that) {
+            void follow(Chart* that) {
                 for (Chart* chart: charts)
-                    if (chart != &that) {
+                    if (chart != that) {
                         bool changed = false;
-                        if (chart->getTimeRangeFull().expand(that.getTimeRangeFull())) changed = true;
-                        if (chart->getTimeRange().apply(that.getTimeRange())) changed = true;
-                        if (chart->getTimeRange().limit(chart->getTimeRangeFull())) changed = true;
+                        if (chart->getTimeRangeFull()->expand(*that->getTimeRangeFull())) changed = true;
+                        if (chart->getTimeRange()->apply(*that->getTimeRange())) changed = true;
+                        if (chart->getTimeRange()->limit(*chart->getTimeRangeFull())) changed = true;
                         if (changed) {
                             chart->resetProjectorsPrepared();
                             chart->draw();
@@ -88,10 +88,10 @@ namespace madlib::graph {
             if (zoomAtLeft) chart->timeRange->end += (ms_t)diff;                
             if (zoomAtRight) chart->timeRange->begin -= (ms_t)diff;
 
-            chart->timeRange->limit(chart->getTimeRangeFull());
+            chart->timeRange->limit(*chart->getTimeRangeFull());
             chart->resetProjectorsPrepared();
             chart->draw();
-            if (chart->multiChart) chart->multiChart->follow(*chart);
+            if (chart->multiChart) chart->multiChart->follow(chart);
         }
 
         void resetProjectorsPrepared() const {
@@ -114,10 +114,10 @@ namespace madlib::graph {
             chart->timeRange->end -= diff;
             chart->dragTimeRangeStartedX = x;
 
-            chart->getTimeRange().limit(chart->getTimeRangeFull());
+            chart->getTimeRange()->limit(*chart->getTimeRangeFull());
             chart->resetProjectorsPrepared();
             chart->draw();
-            if (chart->multiChart) chart->multiChart->follow(*chart);
+            if (chart->multiChart) chart->multiChart->follow(chart);
         }
 
         static void dragStopHandler(void* context, unsigned int button, int, int) {
@@ -160,13 +160,13 @@ namespace madlib::graph {
     public:
 
         Chart(
-            GFX &gfx, 
+            GFX* gfx, 
             int left, int top, int width, int height,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
             const Border border = Theme::defaultChartBorder,
             const Color backgroundColor = Theme::defaultChartBackgroundColor,
             const Color borderColor = Theme::defaultChartBorderColor,
-            void *eventContext = nullptr
+            void* eventContext = nullptr
         ):
             TimeRangeArea(
                 gfx, left, top, width, height,
@@ -191,6 +191,10 @@ namespace madlib::graph {
             vector_destroy(candleShapes);
             vector_destroy(labelShapes);
             alignments.clear();
+        }
+
+        Projector* getProjectorAt(size_t at) {
+            return projectors.size() > at ? projectors.at(at) : nullptr;
         }
 
         void setTimeRangeFullAndApply(const TimeRange& newTimeRangeFull) {
@@ -237,7 +241,7 @@ namespace madlib::graph {
             Color color = Theme::defaultChartSeriesColor
         ) {
             PointSeries* pointSeries = new PointSeries(
-                *this, color
+                this, color
             );
             pointSeriesProjectors.push_back(pointSeries);
             // alignToProjector = alignToProjector
@@ -259,7 +263,7 @@ namespace madlib::graph {
             Color colorDown = Theme::defaultChartCandleColorDown
         ) {
             CandleSeries* candleSeries = new CandleSeries(
-                *this, colorUp, colorDown
+                this, colorUp, colorDown
             );
             candleSeriesProjectors.push_back(candleSeries);
             projectors.push_back(candleSeries);
@@ -271,7 +275,7 @@ namespace madlib::graph {
             Projector* alignToProjector = nullptr,
             bool alignExtends = true
         ) {
-            LabelSeries* labelSeries = new LabelSeries(*this);
+            LabelSeries* labelSeries = new LabelSeries(this);
             labelSeriesProjectors.push_back(labelSeries);
             projectors.push_back(labelSeries);
             alignments.push_back(Alignment(labelSeries, alignToProjector, alignExtends));

@@ -27,7 +27,7 @@ int chart_manual_test5_zoom()
 {
     GFX gfx;
     chart_manual_test5_gfxPtr = &gfx;
-    GUI gui(gfx, 1600, 600, "chart_manual_test5_zoom");
+    GUI gui(&gfx, 1600, 600, "chart_manual_test5_zoom");
     // Chart chart(gfx, zoom, 10, 10, 1580, 580, PUSHED, black);
     // gui.child(chart);
     // chart.setZoom(zoom);
@@ -35,12 +35,12 @@ int chart_manual_test5_zoom()
     // chart.addDrawHandler(chart_manual_test5_draw);
 
 
-    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(&gfx, 15, 15, 100, 30, "Ok");
     chart_manual_test5_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(chart_manual_test5_close);
-    gui.child(closeOkBtn);
+    gui.child(&closeOkBtn);
 
 
     // Define parameters and desired time range
@@ -74,11 +74,11 @@ int chart_manual_test5_zoom()
     progress.close();
 
     CandleHistoryChart chart(
-        gfx, 10, 10, 1580, 580,
+        &gfx, 10, 10, 1580, 580,
         history
     );
     chart.setZoomRatio(1.5, 1.5);
-    gui.child(chart);
+    gui.child(&chart);
     chart_manual_test5_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test5_draw);
     chart.draw();

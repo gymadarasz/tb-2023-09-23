@@ -4,6 +4,7 @@
 
 #include "../Log.hpp"
 #include "../graph/Chart.hpp"
+#include "../graph/MultiChartAccordion.hpp"
 
 #include "Exchange.hpp"
 #include "CandleHistoryChart.hpp"
@@ -12,8 +13,6 @@ namespace madlib::trading {
   
     class Strategy {
     public:
-
-        typedef void (*ChartInjector)(void*, Chart&);
 
         template<typename T>
         class Limited {
@@ -99,6 +98,7 @@ namespace madlib::trading {
         CandleHistoryChart* candleHistoryChart = nullptr;
         Chart* balanceQuotedChart = nullptr;
         Chart* balanceBaseChart = nullptr;
+        MultiChartAccordion* multichartAccordion = nullptr;
 
     public:
         Strategy() {}
@@ -125,14 +125,18 @@ namespace madlib::trading {
             this->balanceBaseChart = balanceBaseChart;
         }
 
+        void setMultiChartAccordion(MultiChartAccordion* multichartAccordion) {
+            this->multichartAccordion = multichartAccordion;
+        }
+
         void addBuyText(Exchange*& exchange, const string& symbol, ms_t currentTime = 0, double currentPrice = 0, const string& text = "BUY", Color color = Theme::defaultTradeLabelBuyColor) {
             if (!candleHistoryChart) return;
             LabelSeries* labelSeries = candleHistoryChart->getLabelSeries();
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange->getCurrentTime();
             if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
-            Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
-            labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            Chart* chart = (Chart*)labelSeries->getTimeRangeArea();
+            labelSeries->getShapes().push_back(chart->createLabelShape(currentTime, currentPrice, text, color));
             // addText(labelSeries.getBuyTextRealChoords(), labelSeries.getBuyTexts(), currentTime, currentPrice, text);
         }
 
@@ -142,8 +146,8 @@ namespace madlib::trading {
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange->getCurrentTime();
             if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
-            Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
-            labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            Chart* chart = (Chart*)labelSeries->getTimeRangeArea();
+            labelSeries->getShapes().push_back(chart->createLabelShape(currentTime, currentPrice, text, color));
             // addText(labelSeries.getSellTextRealChoords(), labelSeries.getSellTexts(), currentTime, currentPrice, text);
         }
 
@@ -153,8 +157,8 @@ namespace madlib::trading {
             if (!labelSeries) return;
             if (!currentTime) currentTime = exchange->getCurrentTime();
             if (!currentPrice) currentPrice = exchange->getPairAt(symbol).getPrice();
-            Chart& chart = (Chart&)labelSeries->getTimeRangeArea();
-            labelSeries->getShapes().push_back(chart.createLabelShape(currentTime, currentPrice, text, color));
+            Chart* chart = (Chart*)labelSeries->getTimeRangeArea();
+            labelSeries->getShapes().push_back(chart->createLabelShape(currentTime, currentPrice, text, color));
             // addText(labelSeries.getErrorTextRealChoords(), labelSeries.getErrorTexts(), currentTime, currentPrice, text);
         }
 

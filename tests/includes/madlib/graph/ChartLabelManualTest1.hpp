@@ -28,7 +28,7 @@ public:
 
     virtual void init() override {
         ManualTestApplication::init();
-        gui.setTitle("ChartLabelManualTest1");
+        gui->setTitle("ChartLabelManualTest1");
 
         rand_init_seed(42);
 
@@ -46,7 +46,7 @@ public:
 
         double close = randd(0, 100);
         const ms_t step = hour;
-        for (ms_t at = chart1.getTimeRange().begin; at <= chart1.getTimeRange().end; at += step) {
+        for (ms_t at = chart1.getTimeRange()->begin; at <= chart1.getTimeRange()->end; at += step) {
             double open = close + randd(-3, 3);
             double low = open - randd(0, 50);
             double high = open + randd(-50, 100);
@@ -70,7 +70,7 @@ public:
             points3.push_back(chart1.createPointShape(at, randd(100, 200)));
         }
 
-        mainFrame.child(label1);
-        mainFrame.child(chart1);
+        mainFrame->child(&label1);
+        mainFrame->child(&chart1);
     }
 };

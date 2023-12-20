@@ -16,11 +16,11 @@ namespace madlib::trading {
 
         virtual ~CandleHistory() {}
 
-        virtual vector<Trade> getTrades() const {
+        virtual const vector<Trade>& getTrades() const {
             throw ERR_UNIMP;
         }
 
-        virtual vector<Candle> getCandles() const {
+        virtual const vector<Candle>& getCandles() const {
             return candles;
         }
         

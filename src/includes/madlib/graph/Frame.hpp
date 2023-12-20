@@ -10,7 +10,7 @@ namespace madlib::graph {
         // bool scrollFixed = false;
 
         Frame(
-            GFX& gfx, 
+            GFX* gfx, 
             int left, int top, 
             int width, int height, 
             bool scrollFixed = false,

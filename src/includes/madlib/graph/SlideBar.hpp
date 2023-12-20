@@ -74,7 +74,7 @@ namespace madlib::graph {
 
     public:
         SlideBar(
-            GFX& gfx, int left, int top, int length, bool direction,
+            GFX* gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, double value = 0,
             int thickness = Theme::defaultBarThickness,
             void* eventContext = nullptr
@@ -99,7 +99,7 @@ namespace madlib::graph {
             handler = direction == HORIZONTAL ?
                 new Button(gfx, position, 1, thickness - 2, thickness - 2):
                 new Button(gfx, 1, position, thickness - 2, thickness - 2);
-            this->child(*handler);
+            this->child(handler);
             addTouchHandler(handlerTouch);
             addReleaseHandler(handlerRelease);
             addMoveHandler(handlerMove);

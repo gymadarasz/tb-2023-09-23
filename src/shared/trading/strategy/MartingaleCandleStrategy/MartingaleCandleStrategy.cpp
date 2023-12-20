@@ -9,7 +9,7 @@ namespace madlib::trading::strategy {
         // params:
         double initialBuyPc = 0.01;
         double buyIncPc = 1.8;
-        double profitPc = 1.01;
+        double profitPc = 1.09;
         double sellPc = 0.9;
         double buyBellowPc = 0.9;
         ms_t waitBeforeBuyAgain = 120 * minute;
@@ -30,6 +30,9 @@ namespace madlib::trading::strategy {
     public:
 
         PointSeries* emaProjector = nullptr;
+        PointSeries* sellAboveProjector = nullptr;
+        Chart* rsiChart = nullptr;
+        PointSeries* rsiProjector = nullptr;
 
         MartingaleCandleStrategy(): CandleStrategy() {}
 
@@ -51,6 +54,15 @@ namespace madlib::trading::strategy {
                 emaProjector = candleHistoryChart->createPointSeries(
                     candleHistoryChart->getMainProjector(), true, blue
                 );
+                sellAboveProjector = balanceQuotedChart->createPointSeries(
+                    balanceQuotedChart->getProjectorAt(0), true, darkGray
+                );
+
+                rsiChart = multichartAccordion->createChart("RSI", 300);
+                rsiProjector = rsiChart->createPointSeries();
+                multichartAccordion->openAll(false);
+                // candleHistoryChart->setHeight(200);
+
                 ema = price;
                 first = false;
                 reinit(price, closeAt);
@@ -61,6 +73,8 @@ namespace madlib::trading::strategy {
             emaProjector->getShapes().push_back(
                 candleHistoryChart->createPointShape(closeAt, ema)
             );
+
+            // rsiChart->createPointShape(closeAt, price);
 
 
             // sell
@@ -80,6 +94,9 @@ namespace madlib::trading::strategy {
                     // sellAbove > _sellAbove ? 
                     // sellAbove : 
                     _sellAbove;
+                sellAboveProjector->getShapes().push_back(
+                    balanceQuotedChart->createPointShape(closeAt, sellAbove)
+                );
                 buyPc *= buyIncPc;
                 dontBuyUntil = closeAt + waitBeforeBuyAgain;
                 buyBellow = price * buyBellowPc;

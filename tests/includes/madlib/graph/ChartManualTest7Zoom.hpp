@@ -30,13 +30,13 @@ protected:
 
     // test sliders...
 
-    SlideBar slideBarHorizontal = SlideBar(gfx, 10, 60, 200, HORIZONTAL);
-    ScrollBar scrollBarHorizontal = ScrollBar(gfx, 10, 90, 200, HORIZONTAL);
-    IntervalBar intervalBarHorizontal = IntervalBar(gfx, 10, 120, 200, HORIZONTAL);
+    SlideBar* slideBarHorizontal = nullptr;
+    ScrollBar* scrollBarHorizontal = nullptr;
+    IntervalBar* intervalBarHorizontal = nullptr;
 
-    SlideBar slideBarVertical = SlideBar(gfx, 260, 60, 200, VERTICAL);
-    ScrollBar scrollBarVertical = ScrollBar(gfx, 290, 60, 200, VERTICAL);
-    IntervalBar intervalBarVertical = IntervalBar(gfx, 320, 60, 200, VERTICAL);
+    SlideBar* slideBarVertical = nullptr;
+    ScrollBar* scrollBarVertical = nullptr;
+    IntervalBar* intervalBarVertical = nullptr;
 
     Factory<CandleHistory> candleHistoryFactory = Factory<CandleHistory>();
     CandleHistory* history = nullptr;
@@ -52,7 +52,15 @@ public:
 
     virtual void init() override {
         ManualTestApplication::init();
-        gui.setTitle("ChartManualTest7Zoom");
+        gui->setTitle("ChartManualTest7Zoom");
+
+        slideBarHorizontal = new SlideBar(gfx, 10, 60, 200, HORIZONTAL);
+        scrollBarHorizontal = new ScrollBar(gfx, 10, 90, 200, HORIZONTAL);
+        intervalBarHorizontal = new IntervalBar(gfx, 10, 120, 200, HORIZONTAL);
+
+        slideBarVertical = new SlideBar(gfx, 260, 60, 200, VERTICAL);
+        scrollBarVertical = new ScrollBar(gfx, 290, 60, 200, VERTICAL);
+        intervalBarVertical = new IntervalBar(gfx, 320, 60, 200, VERTICAL);
 
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
         history = candleHistoryFactory.createInstance(
@@ -74,13 +82,13 @@ public:
             gfx, 300, 300, 1000, 300, history
         );
 
-        mainFrame.child(slideBarHorizontal);
-        mainFrame.child(scrollBarHorizontal);
-        mainFrame.child(intervalBarHorizontal);
-        mainFrame.child(slideBarVertical);
-        mainFrame.child(scrollBarVertical);
-        mainFrame.child(intervalBarVertical);
+        mainFrame->child(slideBarHorizontal);
+        mainFrame->child(scrollBarHorizontal);
+        mainFrame->child(intervalBarHorizontal);
+        mainFrame->child(slideBarVertical);
+        mainFrame->child(scrollBarVertical);
+        mainFrame->child(intervalBarVertical);
 
-        mainFrame.child(*chart);
+        mainFrame->child(chart);
     }
 };

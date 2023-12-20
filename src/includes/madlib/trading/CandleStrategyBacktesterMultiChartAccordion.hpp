@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../graph/MultiChartAccordion.hpp"
+#include "../graph/ChartInjector.hpp"
 
 #include "Pair.hpp"
 #include "Strategy.hpp"
@@ -28,10 +29,7 @@ namespace madlib::trading {
 
         // **** tradeHistoryChart ****
         
-        CandleHistoryChart candleHistoryChart = CandleHistoryChart(
-            gfx, 0, 0, 0, 0, candleHistory, //candleStrategy.getLabelSeries(),
-            true, false, false
-        );
+        CandleHistoryChart* candleHistoryChart = nullptr;
 
         // **** balanceQuotedChart ****
 
@@ -70,7 +68,8 @@ namespace madlib::trading {
         } progressState;
         
         static bool onProgressStart(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
+            CandleStrategyBacktesterMultiChartAccordion* that = 
+                (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
 
             that->clearCharts();
             that->progressState.balanceQuotedAtCloses = 
@@ -100,7 +99,8 @@ namespace madlib::trading {
         }
         
         static bool onProgressStep(CandleStrategyBacktester::ProgressContext& progressContext) {
-            CandleStrategyBacktesterMultiChartAccordion* that = (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
+            CandleStrategyBacktesterMultiChartAccordion* that = 
+                (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
 
             // show progress and log
 
@@ -162,9 +162,7 @@ namespace madlib::trading {
             return true;
         }
         
-        static bool onProgressFinish(
-            CandleStrategyBacktester::ProgressContext& progressContext
-        ) {
+        static bool onProgressFinish(CandleStrategyBacktester::ProgressContext& progressContext) {
             CandleStrategyBacktesterMultiChartAccordion* that = 
                 (CandleStrategyBacktesterMultiChartAccordion*)progressContext.callerContext;
 
@@ -178,7 +176,7 @@ namespace madlib::trading {
     public:
 
         CandleStrategyBacktesterMultiChartAccordion(
-            GFX& gfx, int left, int top, int width,
+            GFX* gfx, int left, int top, int width,
             const int multiChartAccordionFramesHeight,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
             CandleHistory*& candleHistory,
@@ -219,13 +217,18 @@ namespace madlib::trading {
                 onProgressStart, onProgressStep, onProgressFinish
             );
 
+            candleHistoryChart = new CandleHistoryChart(
+                gfx, 0, 0, 0, 0, candleHistory, //candleStrategy.getLabelSeries(),
+                true, false, false
+            );
+
             // **** tradeCandleHistoryChart ****
 
             createChartFrame(
                 "History", candleHistoryChart, multiChartAccordionFramesHeight
             );
 
-            candleStrategy->setCandleHistoryChart(&candleHistoryChart);
+            candleStrategy->setCandleHistoryChart(candleHistoryChart);
 
             multiChart.attach(candleHistoryChart);
 
@@ -250,6 +253,7 @@ namespace madlib::trading {
             candleStrategy->setBalanceBaseChart(balanceBaseChart);
 
             // TODO: !@# pass some reference to the strategy that allows inject more charts for e.g indicators...
+            candleStrategy->setMultiChartAccordion(this);
 
             openAll(false);
         }
@@ -257,14 +261,10 @@ namespace madlib::trading {
 
         virtual ~CandleStrategyBacktesterMultiChartAccordion() {
             delete backtester;
+            delete candleHistoryChart;
         }
 
-        // void setCandleHistory(const CandleHistory& candleHistory) {
-        //     this->candleHistory = candleHistory;
-        //     this->backtester->setCandleHistory(candleHistory);
-        // }
-
-        CandleHistoryChart& getCandleHistoryChart() {
+        CandleHistoryChart* getCandleHistoryChart() {
             return candleHistoryChart;
         }        
 
@@ -279,13 +279,13 @@ namespace madlib::trading {
 
         virtual void clearCharts() override {
             MultiChartAccordion::clearCharts();
-            candleHistoryChart.clearProjectors();
+            candleHistoryChart->clearProjectors();
         }
 
         void resetTimeRangeToHistoryChart() {
             for (Chart* chart: charts) 
                 chart->setTimeRangeFullAndApply(
-                    candleHistoryChart.getTimeRangeFull()
+                    *candleHistoryChart->getTimeRangeFull()
                 );
         }
     };

@@ -20,13 +20,13 @@ namespace madlib::graph {
         
         bool prepared = false;
 
-        TimeRangeArea& timeRangeArea;
+        TimeRangeArea* timeRangeArea;
         vector<Shape*> shapes;
 
     public:
 
         explicit Projector(
-            TimeRangeArea& timeRangeArea
+            TimeRangeArea* timeRangeArea
         ): 
             timeRangeArea(timeRangeArea)
         {}
@@ -39,7 +39,7 @@ namespace madlib::graph {
             this->prepared = prepared;
         }
 
-        TimeRangeArea& getTimeRangeArea() const {
+        TimeRangeArea* getTimeRangeArea() const {
             return timeRangeArea;
         }
 
@@ -75,23 +75,23 @@ namespace madlib::graph {
             if (shapes.size() == 0) return false;
             if (other && !other->prepared && !other->align(nullptr, extends)) other = nullptr;
 
-            chartHeight = timeRangeArea.getHeight() - 
-                (timeRangeArea.getMargin()->top + timeRangeArea.getMargin()->bottom);
-            chartWidth = timeRangeArea.getWidth() - 
-                (timeRangeArea.getMargin()->left + timeRangeArea.getMargin()->right);
+            chartHeight = timeRangeArea->getHeight() - 
+                (timeRangeArea->getMargin().top + timeRangeArea->getMargin().bottom);
+            chartWidth = timeRangeArea->getWidth() - 
+                (timeRangeArea->getMargin().left + timeRangeArea->getMargin().right);
 
             if (other) {
-                timeRangeArea.getTimeRange().begin = min(
-                    timeRangeArea.getTimeRange().begin,
-                    other->timeRangeArea.getTimeRange().begin
+                timeRangeArea->getTimeRange()->begin = min(
+                    timeRangeArea->getTimeRange()->begin,
+                    other->timeRangeArea->getTimeRange()->begin
                 );
-                timeRangeArea.getTimeRange().end = max(
-                    timeRangeArea.getTimeRange().end,
-                    other->timeRangeArea.getTimeRange().end
+                timeRangeArea->getTimeRange()->end = max(
+                    timeRangeArea->getTimeRange()->end,
+                    other->timeRangeArea->getTimeRange()->end
                 );
             }
-            chartBegin = timeRangeArea.getTimeRange().begin;
-            chartEnd = timeRangeArea.getTimeRange().end;
+            chartBegin = timeRangeArea->getTimeRange()->begin;
+            chartEnd = timeRangeArea->getTimeRange()->end;
             chartInterval = chartEnd - chartBegin;
             if (other) {
                 other->chartBegin = chartBegin;

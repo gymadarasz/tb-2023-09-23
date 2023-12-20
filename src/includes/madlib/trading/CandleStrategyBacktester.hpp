@@ -58,10 +58,6 @@ namespace madlib::trading {
 
         virtual ~CandleStrategyBacktester() {}
 
-        // void setCandleHistory(const CandleHistory& candleHistory) {
-        //     this->candleHistory = candleHistory;
-        // }
-
         bool backtest() {
 
             // **** backtest ****
@@ -71,7 +67,7 @@ namespace madlib::trading {
 
             if (onProgressStart && !onProgressStart(progressContext)) return false;
 
-            vector<Candle> candles = candleHistory->getCandles();
+            const vector<Candle>& candles = candleHistory->getCandles();
             Pair& pair = testExchange->getPairAt(symbol);
             
             for (const Candle& candle: candles) {

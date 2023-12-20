@@ -63,7 +63,7 @@ public:
 
     virtual void init() override {
         ManualTestApplication::init();
-        gui.setTitle("MonteCarloChartsTest1");
+        gui->setTitle("MonteCarloChartsTest1");
 
         testExchange = testExchangeFactory.createInstance(
             "build/src/shared/trading/exchange/test/DefaultTestExchange/"
@@ -111,6 +111,6 @@ public:
 
         // ----------------
 
-        mainFrame.child(*backtester);
+        mainFrame->child(backtester);
     }
 };

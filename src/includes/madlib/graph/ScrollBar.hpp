@@ -24,7 +24,7 @@ namespace madlib::graph {
 
     public:
         ScrollBar(
-            GFX& gfx, int left, int top, int length, bool direction,
+            GFX* gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::defaultBarThickness,

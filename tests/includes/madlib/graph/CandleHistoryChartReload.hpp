@@ -17,7 +17,7 @@ public:
 
     virtual void init() override {
         ManualTestApplication::init();
-        gui.setTitle("CandleHistoryChartReload");
+        gui->setTitle("CandleHistoryChartReload");
 
         
     }

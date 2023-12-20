@@ -27,20 +27,20 @@ int chart_manual_test2()
     const ms_t finish = datetime_to_ms("2020-01-07");
     GFX gfx;
     chart_manual_test2_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test2", black);
-    Chart chart(gfx, 5, 5, 790, 590, start, finish);
+    GUI gui(&gfx, 800, 600, "chart_manual_test2", black);
+    Chart chart(&gfx, 5, 5, 790, 590, start, finish);
     PointSeries* mainSeriesProjector = chart.createPointSeries(nullptr, true, green);
     chart_manual_test2_chartPtr = &chart;
     gui.addDrawHandler(chart_manual_test2_draw);
     LabelSeries* textSeriesProjector = chart.createLabelSeries(mainSeriesProjector);
 
 
-    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(&gfx, 10, 10, 100, 30, "Ok");
     chart_manual_test2_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(chart_manual_test2_close);
-    gui.child(closeOkBtn);
+    gui.child(&closeOkBtn);
 
 
     vector<Shape*>& coords = mainSeriesProjector->getShapes();

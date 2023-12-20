@@ -31,15 +31,15 @@ int chart_manual_test4_history()
 {
     GFX gfx;
     chart_manual_test4_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test4_history");
+    GUI gui(&gfx, 800, 600, "chart_manual_test4_history");
 
 
-    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(&gfx, 15, 15, 100, 30, "Ok");
     chart_manual_test4_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(chart_manual_test4_close);
-    gui.child(closeOkBtn);
+    gui.child(&closeOkBtn);
 
 
     // Define parameters and desired time range
@@ -83,10 +83,10 @@ int chart_manual_test4_history()
 
     // Zoom zoom;
     CandleHistoryChart chart(
-        gfx, 10, 10, 780, 580,
+        &gfx, 10, 10, 780, 580,
         history
     );
-    gui.child(chart);
+    gui.child(&chart);
     chart_manual_test4_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test4_draw);
 

@@ -244,19 +244,19 @@ protected:
     }
 
 public:
-    Builder(BuildArguments& args, const string& mainArgs):
-        sourcePaths(args.sourcePaths),
-        sharedPaths(args.sharedPaths),
-        buildPath(args.buildPath),
-        mainPath(args.mainPath),
-        main(args.main),
-        flags(args.flags),
-        flagsLibs(args.flagsLibs),
+    Builder(BuildArguments* args, const string& mainArgs):
+        sourcePaths(args->sourcePaths),
+        sharedPaths(args->sharedPaths),
+        buildPath(args->buildPath),
+        mainPath(args->mainPath),
+        main(args->main),
+        flags(args->flags),
+        flagsLibs(args->flagsLibs),
         // flagsShared(args.flagsShared),
-        hExtension(args.hExtension),
-        cppExtension(args.cppExtension),
-        soExtension(args.soExtension),
-        executeMain(args.executeMain),
+        hExtension(args->hExtension),
+        cppExtension(args->cppExtension),
+        soExtension(args->soExtension),
+        executeMain(args->executeMain),
         mainArgs(mainArgs)
     {
         int errors = 0;
@@ -331,7 +331,7 @@ int main(int argc, const char *argv[]) {
         const string mainArgs = vector_concat(mainArgsVector, " ");
 
         BuildArguments args(mode);
-        Builder builder(args, mainArgs);
+        Builder builder(&args, mainArgs);
         static_cast<void>(builder); // hax to fix a cppcheck style warning
     } catch (exception &e) {
         const string errmsg = "Exception in build process: " + string(e.what());

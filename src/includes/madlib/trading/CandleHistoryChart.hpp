@@ -8,8 +8,8 @@ namespace madlib::trading {
     protected:
         CandleHistory*& candleHistory;
         // LabelSeries* labelSeries = nullptr;
-        const Color& priceColor;
-        const Color& volumeColor;
+        const Color priceColor;
+        const Color volumeColor;
 
         Projector* mainProjector = nullptr;
         CandleSeries* candleSeries = nullptr;
@@ -20,7 +20,7 @@ namespace madlib::trading {
     public:
 
         CandleHistoryChart(
-            GFX& gfx, int left, int top, int width, int height,
+            GFX* gfx, int left, int top, int width, int height,
             // ms_t timeRangeBegin, ms_t timeRangeEnd,
             CandleHistory*& candleHistory,
             // LabelSeries* labelSeries = nullptr, // TODO: add labelTexts
@@ -29,8 +29,8 @@ namespace madlib::trading {
             const bool showVolumes = true, // TODO
             const bool showTexts = true, // TODO
             const bool generate = true,
-            const Color& priceColor = Theme::defaultTradeHistoryChartPriceColor,
-            const Color& volumeColor = Theme::defaultTradeHistoryChartVolumeColor,
+            const Color priceColor = Theme::defaultTradeHistoryChartPriceColor,
+            const Color volumeColor = Theme::defaultTradeHistoryChartVolumeColor,
             void* eventContext = nullptr
         ):  
             Chart(
@@ -94,7 +94,7 @@ namespace madlib::trading {
         void generateFromHistory() {
             
             if (candleSeries) {
-                vector<Candle> candles = candleHistory->getCandles();
+                const vector<Candle>& candles = candleHistory->getCandles();
                 vector<Shape*>& candleShapes = candleSeries->getShapes();
                 for (const Candle& candle: candles) {
                     candleShapes.push_back(createCandleShape(
@@ -109,7 +109,7 @@ namespace madlib::trading {
             }
 
             if (priceSeries || volumeSeries) {
-                vector<Trade> trades = candleHistory->getTrades();
+                const vector<Trade>& trades = candleHistory->getTrades();
                 if (trades.size()) {
                     mainProjector = priceSeries;
                     for (const Trade& trade: trades) {

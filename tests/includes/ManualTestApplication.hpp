@@ -10,25 +10,29 @@ public:
 
     static void closeHandler(void* context, unsigned int, int, int) {
         Button* closeBtn = (Button*)context;
-        closeBtn->getRoot()->getGFX().close = true;
+        closeBtn->getRoot()->getGFX()->close = true;
     }
 
 protected:
 
-    Button closeBtn = Button(gfx, 10, 10, 100, 30, "OK");
+    Button* closeBtn = nullptr; // Button(gfx, 10, 10, 100, 30, "OK");
 
 public:
 
     using FrameApplication::FrameApplication;
 
-    virtual ~ManualTestApplication() {}
+    virtual ~ManualTestApplication() {
+        delete closeBtn;
+    }
 
     virtual void init() override {
         FrameApplication::init();
+
+        closeBtn = new Button(gfx, 10, 10, 100, 30, "OK");
         
-        closeBtn.setBackgroundColor(green);
-        closeBtn.setTextColor(white);
-        closeBtn.addTouchHandler(closeHandler);
-        mainFrame.child(closeBtn);
+        closeBtn->setBackgroundColor(green);
+        closeBtn->setTextColor(white);
+        closeBtn->addTouchHandler(closeHandler);
+        mainFrame->child(closeBtn);
     }
 };

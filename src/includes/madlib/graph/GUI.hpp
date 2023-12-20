@@ -34,17 +34,17 @@ namespace madlib::graph {
             const char* title = Theme::defaultWindowTitle, 
             Color color = Theme::defaultWindowColor
         ) {
-            gfx.openWindow(width, height, title, color);
-            gfx.setEventContext(this);
-            gfx.addResizeHandler(resizeHandler);
-            gfx.addTouchHandler(touchHandler);
-            gfx.addReleaseHandler(releaseHandler);
-            gfx.addMoveHandler(moveHandler);
+            gfx->openWindow(width, height, title, color);
+            gfx->setEventContext(this);
+            gfx->addResizeHandler(resizeHandler);
+            gfx->addTouchHandler(touchHandler);
+            gfx->addReleaseHandler(releaseHandler);
+            gfx->addMoveHandler(moveHandler);
         }
 
     public:
         GUI(
-            GFX& gfx, 
+            GFX* gfx, 
             int width, int height,
             const char* title = Theme::defaultWindowTitle, 
             Color color = Theme::defaultWindowColor,
@@ -66,15 +66,15 @@ namespace madlib::graph {
         }
 
         void close() {
-            gfx.closeWindow();
+            gfx->closeWindow();
         }
 
         void loop(unsigned long ms = Theme::defaultGFXEventLoopMs) const {
-            gfx.eventLoop(ms);
+            gfx->eventLoop(ms);
         }
 
         void setTitle(const char* title) {
-            gfx.setWindowTitle(title);
+            gfx->setWindowTitle(title);
         }
     };
 

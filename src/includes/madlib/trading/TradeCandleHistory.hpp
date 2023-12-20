@@ -49,7 +49,7 @@ namespace madlib::trading {
 
         virtual ~TradeCandleHistory() {}
 
-        virtual vector<Trade> getTrades() const override {
+        virtual const vector<Trade>& getTrades() const override {
             return trades;
         }
     };

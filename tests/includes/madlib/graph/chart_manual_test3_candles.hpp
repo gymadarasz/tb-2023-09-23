@@ -26,19 +26,19 @@ int chart_manual_test3_candles()
     const ms_t chartFinish = datetime_to_ms("2020-01-07");
     GFX gfx;
     chart_manual_test3_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test3_candles");
-    Chart chart(gfx, 10, 10, 780, 580, chartStart, chartFinish);
-    gui.child(chart);
+    GUI gui(&gfx, 800, 600, "chart_manual_test3_candles");
+    Chart chart(&gfx, 10, 10, 780, 580, chartStart, chartFinish);
+    gui.child(&chart);
     chart_manual_test3_chartPtr = &chart;
     chart.addDrawHandler(chart_manual_test3_draw);
 
 
-    Button closeOkBtn(gfx, 15, 15, 100, 30, "Ok");
+    Button closeOkBtn(&gfx, 15, 15, 100, 30, "Ok");
     chart_manual_test3_closeOkBtnPtr = &closeOkBtn;
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(chart_manual_test3_close);
-    gui.child(closeOkBtn);
+    gui.child(&closeOkBtn);
 
     CandleSeries* candleSeries = chart.createCandleSeries();
     vector<Shape*>& candlesRealPoints = candleSeries->getShapes();

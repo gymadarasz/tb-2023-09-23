@@ -17,7 +17,7 @@ namespace madlib::graph {
     class GFX: public EventHandler {
     protected:
 
-        static Display *display;
+        Display *display = nullptr;
         Window window;
         GC gc;
         const char* font = nullptr;
@@ -32,6 +32,10 @@ namespace madlib::graph {
         bool close = false;
 
         GFX(void* context = nullptr): context(context) {}
+
+        virtual ~GFX() {
+
+        }
 
         void* getContext() const {
             return context;
@@ -52,8 +56,10 @@ namespace madlib::graph {
             const char* font = Theme::defaultWindowFont
         ) {
             // Initialize the X display
-            if (!display) display = XOpenDisplay(nullptr);
-            if (!display) throw ERROR("Unable to open display.");
+            if (!display) 
+                display = XOpenDisplay(nullptr);
+            if (!display) 
+                throw ERROR("Unable to open display.");
 
             // int screen = DefaultScreen(display);
 
@@ -391,7 +397,5 @@ namespace madlib::graph {
             setCursor();
         }
     };
-
-    Display* GFX::display = nullptr;
 
 }

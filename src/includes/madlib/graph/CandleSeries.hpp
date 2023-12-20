@@ -14,23 +14,23 @@ namespace madlib::graph {
             string text;
 
             const CandleShape* first = (const CandleShape*)shapes[shapeIndexFrom];
-            timeRangeArea.brush(
+            timeRangeArea->brush(
                 first->open() > first->close() ? colorDown : colorUp
             );
             text = to_string(first->open());
-            TextSize textSize = timeRangeArea.getTextSize(text);
-            timeRangeArea.write(
+            TextSize textSize = timeRangeArea->getTextSize(text);
+            timeRangeArea->write(
                 -textSize.width, 
                 chartHeight - translateY(first->open()), 
                 text
             );
 
             const CandleShape* last = (const CandleShape*)shapes[shapeIndexTo];
-            timeRangeArea.brush(
+            timeRangeArea->brush(
                 last->open() > last->close() ? colorDown : colorUp
             );
             text = to_string(last->close());
-            timeRangeArea.write(
+            timeRangeArea->write(
                 chartWidth, 
                 chartHeight - translateY(last->close()), 
                 text
@@ -40,7 +40,7 @@ namespace madlib::graph {
     public:
 
         explicit CandleSeries(
-            TimeRangeArea& area,
+            TimeRangeArea* area,
             const Color colorUp = Theme::defaultChartCandleColorUp,
             const Color colorDown = Theme::defaultChartCandleColorDown
         ):
@@ -62,24 +62,24 @@ namespace madlib::graph {
                     double candleClose = candle->close();
                     if (!prevClose) prevClose = candleClose;
                     Color color = prevClose > candleClose ? colorDown : colorUp;
-                    timeRangeArea.brush(color);
+                    timeRangeArea->brush(color);
                     int x = translateX(candle->end());
                     int y1 = chartHeight - translateY(prevClose);
                     int y2 = chartHeight - translateY(candleClose);
-                    timeRangeArea.vLine(x, y1, y2);
+                    timeRangeArea->vLine(x, y1, y2);
                     prevClose = candleClose;
                     continue;
                 }
 
                 Color color = candle->open() > candle->close() ? colorDown : colorUp;
-                timeRangeArea.brush(color);
+                timeRangeArea->brush(color);
 
                 const ms_t mid = candle->begin() + (candle->end() - candle->begin()) / 2;
                 int wick = translateX(mid);
                 int high = translateY(candle->high());
                 int low = translateY(candle->low());
 
-                timeRangeArea.vLine(
+                timeRangeArea->vLine(
                     wick, 
                     chartHeight - high, 
                     chartHeight - low
@@ -94,7 +94,7 @@ namespace madlib::graph {
                 }
                 int open = translateY(candle->open());
                 int close = translateY(candle->close());
-                timeRangeArea.fRect(
+                timeRangeArea->fRect(
                     left, chartHeight - open, 
                     right, chartHeight - close
                 );

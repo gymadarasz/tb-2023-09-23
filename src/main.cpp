@@ -180,7 +180,7 @@ protected:
         Progress progress("Reload history...", true);
         app->candleHistory->reload(progress);
         progress.close();
-        app->gfx.triggerFakeEvent({ GFX::RELEASE });
+        app->gfx->triggerFakeEvent({ GFX::RELEASE });
     }
 
     static void onStartTouch(void*, unsigned int, int, int) {
@@ -240,13 +240,13 @@ protected:
 
     void createReloadButton() {
         reloadButton = new Button(gfx, 910, settingsTop, 90, 20, "Reload");
-        mainFrame.child(*reloadButton);
+        mainFrame->child(reloadButton);
         reloadButton->addTouchHandler(onReloadTouch);
     }
 
     void createStartButton() {
         startButton = new Button(gfx, 910, settingsTop + settingsRowHeight, 90, 20, "Start");
-        mainFrame.child(*startButton);
+        mainFrame->child(startButton);
         startButton->addTouchHandler(onStartTouch);
     }
 
@@ -264,7 +264,7 @@ protected:
                 startTime, endTime,
                 candleHistory, testExchange, candleStrategy, Config::symbol
             );
-        mainFrame.child(*candleStrategyBacktesterMultiChartAccordion);
+        mainFrame->child(candleStrategyBacktesterMultiChartAccordion);
     }
 
     void loadHistoryModule() {
@@ -357,8 +357,8 @@ protected:
 
     void updateCandleStrategyBacktesterMultiChartAccordion() {
         candleStrategyBacktesterMultiChartAccordion->clearCharts();
-        candleStrategyBacktesterMultiChartAccordion->getCandleHistoryChart().generateFromHistory();
-        candleStrategyBacktesterMultiChartAccordion->getCandleHistoryChart().fitTimeRangeToHistory();
+        candleStrategyBacktesterMultiChartAccordion->getCandleHistoryChart()->generateFromHistory();
+        candleStrategyBacktesterMultiChartAccordion->getCandleHistoryChart()->fitTimeRangeToHistory();
         candleStrategyBacktesterMultiChartAccordion->draw();
     }
 
@@ -380,7 +380,7 @@ public:
 
     virtual void init() override {
         FrameApplication::init();
-        gui.setTitle("Bitstamp History Backtest");
+        gui->setTitle("Bitstamp History Backtest");
         app = this;
 
         createExchangeSelect(); // TODO: test each form element and fix them
@@ -398,7 +398,9 @@ BitstampHistoryApplication* BitstampHistoryApplication::app = nullptr;
 
 int backtest(int, const char* []) {
     // TODO: pass arguments
-    delete (new BitstampHistoryApplication)->run();
+    BitstampHistoryApplication* app = new BitstampHistoryApplication();
+    app->run();
+    delete app;
     return 0;
 }
 

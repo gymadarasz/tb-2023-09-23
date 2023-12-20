@@ -52,7 +52,7 @@ namespace madlib::graph {
 
     public:
         DateRange(
-            Area& parent,
+            Area* parent,
             const int left, 
             const int top,
             const string& title = "Period",
@@ -65,7 +65,7 @@ namespace madlib::graph {
             fromValue(fromValue),
             toValue(toValue)
         {
-            GFX& gfx = parent.getGFX();
+            GFX* gfx = parent->getGFX();
             int x = left, y = top;
             fromLabel = new Label(gfx, x, y, labelWidth, height, title);
             x += labelWidth;
@@ -74,10 +74,10 @@ namespace madlib::graph {
             toLabel = new Label(gfx, x, y, 20, height, "-", CENTER);
             x += 20;
             toInput = new Input(gfx, x, y, inputWidth, height, ms_to_date(toValue));
-            parent.child(*fromLabel);
-            parent.child(*fromInput);
-            parent.child(*toLabel);
-            parent.child(*toInput);
+            parent->child(fromLabel);
+            parent->child(fromInput);
+            parent->child(toLabel);
+            parent->child(toInput);
             fromInput->setEventContext(this);
             toInput->setEventContext(this);
             fromInput->addTouchHandler(onFromDateTouchHandler);

@@ -27,7 +27,7 @@ namespace madlib::graph {
                 select->label->getText(),
                 select->values
             );
-            that->getGFX().triggerFakeEvent({ GFX::RELEASE });
+            that->getGFX()->triggerFakeEvent({ GFX::RELEASE });
             if (selection.empty()) select->input->setText(select->value);
             else select->input->setText(selection);
             select->input->draw();
@@ -35,7 +35,7 @@ namespace madlib::graph {
 
     public:
         Select(
-            Area& parent,
+            Area* parent,
             int left, int top, 
             const string& title = "Select", 
             const vector<string>& values = {},
@@ -47,11 +47,11 @@ namespace madlib::graph {
             values(values), 
             value(value)
         {
-            GFX& gfx = parent.getGFX();
+            GFX* gfx = parent->getGFX();
             label = new Label(gfx, left, top, labelWidth, height, title);
             input = new Input(gfx, left + labelWidth, top, inputWidth, height, value);
-            parent.child(*label);
-            parent.child(*input);
+            parent->child(label);
+            parent->child(input);
             input->setEventContext(this);
             input->addTouchHandler(onSelectTouchHandler);
         }

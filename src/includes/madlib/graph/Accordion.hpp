@@ -15,10 +15,10 @@ namespace madlib::graph {
             
             static void toggleHandler(void* context, unsigned int, int, int) {
                 Toggler* that = (Toggler*)context;
-                Accordion& accordion = that->container.getAccordion(); 
+                Accordion* accordion = that->container->getAccordion(); 
                 
-                if (accordion.isSingle()) {
-                    accordion.closeAllExcept(that->containerIndex, true);
+                if (accordion->isSingle()) {
+                    accordion->closeAllExcept(that->containerIndex, true);
                     return;
                 }
 
@@ -27,20 +27,20 @@ namespace madlib::graph {
                 //     return;
                 // }
                 
-                Container* container = accordion.getContainers().at(that->containerIndex);
+                Container* container = accordion->getContainers().at(that->containerIndex);
                 if (container->isOpened()) {
                     // if (accordion.isOne()) 
-                        accordion.closeAt(that->containerIndex, true);
+                        accordion->closeAt(that->containerIndex, true);
                 } else {
-                    accordion.openAt(that->containerIndex, true);
+                    accordion->openAt(that->containerIndex, true);
                 }
             }
 
-            Container& container;
+            Container* container = nullptr;
             size_t containerIndex;
         public:
             Toggler(
-                Container& container, GFX& gfx,
+                Container* container, GFX* gfx,
                 size_t containerIndex, 
                 int left, int top, int width, int height, 
                 const string &text, 
@@ -56,7 +56,7 @@ namespace madlib::graph {
 
             virtual ~Toggler() {}
 
-            Container& getContainer() const {
+            Container* getContainer() const {
                 return container;
             }
 
@@ -72,13 +72,13 @@ namespace madlib::graph {
             Toggler* toggler = nullptr;
             Frame* frame = nullptr;
 
-            Accordion& accordion;
+            Accordion* accordion = nullptr;
             int frameHeight;
             int togglerHeight;
             bool opened = false;
         public:
             Container(
-                Accordion& accordion,
+                Accordion* accordion,
                 const string& title, const Align textAlign, 
                 int frameHeight,
                 int togglerHeight = Theme::defaultAccordionContainterTogglerHeight
@@ -87,12 +87,12 @@ namespace madlib::graph {
                 frameHeight(frameHeight), 
                 togglerHeight(togglerHeight)
             {
-                GFX& gfx = accordion.getGFX();
-                const int width = accordion.width;
-                size_t accordionContainerAt = accordion.getContainers().size();
-                const int togglerTop = accordion.height + innerBorderSize;
+                GFX* gfx = accordion->getGFX();
+                const int width = accordion->width;
+                size_t accordionContainerAt = accordion->getContainers().size();
+                const int togglerTop = accordion->height + innerBorderSize;
 
-                toggler = new Toggler(*this, gfx, accordionContainerAt,
+                toggler = new Toggler(this, gfx, accordionContainerAt,
                     innerBorderSize, togglerTop, 
                     width - innerBorderSize*2, 
                     togglerHeight - innerBorderSize*2, 
@@ -100,11 +100,11 @@ namespace madlib::graph {
 
                 frame = new Frame(gfx, 
                     innerBorderSize, togglerTop + togglerHeight - innerBorderSize*2,
-                    width, 0, false, false, NONE, accordion.getBackgroundColor());
+                    width, 0, false, false, NONE, accordion->getBackgroundColor());
             
-                accordion.child(*toggler);
-                accordion.child(*frame);
-                accordion.height = togglerHeight * ((int)accordionContainerAt + 1);
+                accordion->child(toggler);
+                accordion->child(frame);
+                accordion->height = togglerHeight * ((int)accordionContainerAt + 1);
             }
 
             virtual ~Container() {
@@ -136,7 +136,7 @@ namespace madlib::graph {
                 opened = false;
             }
 
-            Accordion& getAccordion() const {
+            Accordion* getAccordion() const {
                 return accordion;
             }
 
@@ -159,7 +159,7 @@ namespace madlib::graph {
 
     public:
         Accordion(
-            GFX& gfx, int left, int top, int width,
+            GFX* gfx, int left, int top, int width,
             bool single = false,
             const Border border = Theme::defaultAccordionBorder,
             const Color backgroundColor = Theme::defaultAccordionBackgroundColor,
@@ -175,27 +175,12 @@ namespace madlib::graph {
                 Theme::defaultAreaTextColor,
                 eventContext
             ),
-            // sticky(sticky),
-            single(single)//,
-            // one(one)
+            single(single)
         {}
 
         virtual ~Accordion() {
             vector_destroy<Container>(containers);
         }
-
-        // bool isSticky() const {
-        //     return sticky;
-        // }
-
-        // void setSticky(bool sticky) {
-        //     this->sticky = sticky;
-        //     for (const Container* container: containers) {
-        //         Toggler& toggler = container->getToggler();
-        //         toggler.setSticky(sticky);
-        //         if (sticky && container->isOpened()) toggler.push();
-        //     }
-        // }
 
         bool isSingle() const {
             return single;
@@ -220,15 +205,6 @@ namespace madlib::graph {
             if (redraw) getParentOrSelf()->draw();
         }
 
-        // bool isOne() const {
-        //     return one;
-        // }
-
-        // void setOne(bool one) {
-        //     if (one) setSingle(true);
-        //     this->one = one;
-        // }
-
         void closeAllExcept(size_t exceptIndex, bool redraw) {
             size_t containersSize = containers.size();
             for (size_t i = 0; i < containersSize; i++) {
@@ -248,7 +224,7 @@ namespace madlib::graph {
 
         Container* createContainer(const string& title, int frameHeight) {
             // return vector_create(containers, *this, title, textAlign, frameHeight);
-            Container* container = new Container(*this, title, textAlign, frameHeight);
+            Container* container = new Container(this, title, textAlign, frameHeight);
             containers.push_back(container);
             return container;
         }

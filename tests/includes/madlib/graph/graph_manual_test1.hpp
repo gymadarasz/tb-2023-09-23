@@ -57,42 +57,42 @@ int graph_manual_test1()
 {
     GFX gfx;
     graph_manual_test1_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "graph_manual_test1");
-    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
-    Button button(gfx, 10, 10, 80, 30, "Hello");
-    Button button2(gfx, 110, 10, 80, 30, "Click!");
+    GUI gui(&gfx, 800, 600, "graph_manual_test1");
+    Button closeOkBtn(&gfx, 10, 10, 100, 30, "Ok");
+    Button button(&gfx, 10, 10, 80, 30, "Hello");
+    Button button2(&gfx, 110, 10, 80, 30, "Click!");
     graph_manual_test1_button2Ptr = &button2;
-    Frame frame2(gfx, 320, 100, 200, 200);
+    Frame frame2(&gfx, 320, 100, 200, 200);
     graph_manual_test1_frame2Ptr = &frame2;
-    Button lbtn(gfx, 50, 50, 100, 30, "Hello");
+    Button lbtn(&gfx, 50, 50, 100, 30, "Hello");
 
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(graph_manual_test1_close);
-    gui.child(closeOkBtn);
+    gui.child(&closeOkBtn);
 
-    Frame frame(gfx, 100, 100, 200, 200);
+    Frame frame(&gfx, 100, 100, 200, 200);
     button2.addTouchHandler(graph_manual_test1_doit);
-    Button button3(gfx, 210, 10, 80, 30, "Sticky");
+    Button button3(&gfx, 210, 10, 80, 30, "Sticky");
     button3.setSticky(true);
-    Button button4(gfx, 310, 10, 80, 30, "Hello4");
-    Button button5(gfx, 10, 50, 250, 50, "Big Willy");
-    Button button6(gfx, 210, 210, 80, 30, "Close");
+    Button button4(&gfx, 310, 10, 80, 30, "Hello4");
+    Button button5(&gfx, 10, 50, 250, 50, "Big Willy");
+    Button button6(&gfx, 210, 210, 80, 30, "Close");
     button6.addTouchHandler(graph_manual_test1_close);
-    Label label1(gfx, 100, 130, 100, 20, "Label1", LEFT, PUSHED);
-    frame.child(button);
-    frame.child(button2);
-    frame.child(button3);
-    frame.child(button4);
-    frame.child(button5);
-    frame.child(button6);
-    frame.child(label1);
-    gui.child(frame);
+    Label label1(&gfx, 100, 130, 100, 20, "Label1", LEFT, PUSHED);
+    frame.child(&button);
+    frame.child(&button2);
+    frame.child(&button3);
+    frame.child(&button4);
+    frame.child(&button5);
+    frame.child(&button6);
+    frame.child(&label1);
+    gui.child(&frame);
 
-    frame2.child(lbtn);
+    frame2.child(&lbtn);
     frame2.setScrollXYMax(350, 350);
     frame2.addDrawHandler(graph_manual_test1_draw);
-    gui.child(frame2);
+    gui.child(&frame2);
 
     lbtn.addDrawHandler(graph_manual_test1_lbtn_draw);
 

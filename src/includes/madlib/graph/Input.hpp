@@ -5,7 +5,7 @@ namespace madlib::graph {
     class Input: public Area {
     public:
         Input(
-            GFX& gfx, 
+            GFX* gfx, 
             int left, int top, 
             int width, int height,
             const string& text = "",

@@ -34,21 +34,21 @@ int chart_manual_test1()
 {
     GFX gfx;
     chart_manual_test1_gfxPtr = &gfx;
-    GUI gui(gfx, 800, 600, "chart_manual_test1");
-    Chart chart(gfx, 50, 50, 700, 500, 
+    GUI gui(&gfx, 800, 600, "chart_manual_test1");
+    Chart chart(&gfx, 50, 50, 700, 500, 
         chart_manual_test1_scaleXMin, 
         chart_manual_test1_scaleXMax
     );
 
-    Button closeOkBtn(gfx, 10, 10, 100, 30, "Ok");
+    Button closeOkBtn(&gfx, 10, 10, 100, 30, "Ok");
     closeOkBtn.setBackgroundColor(green);
     closeOkBtn.setTextColor(white);
     closeOkBtn.addTouchHandler(chart_manual_test1_close);
-    gui.child(closeOkBtn);
+    gui.child(&closeOkBtn);
 
     // set up UI
     chart.setBackgroundColor(black);
-    gui.child(chart);
+    gui.child(&chart);
     
     // generate data and show on scales
     PointSeries* mainProjector = chart.createPointSeries(nullptr, true, lightGreen);

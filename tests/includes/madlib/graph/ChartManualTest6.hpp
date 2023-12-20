@@ -37,7 +37,7 @@ public:
 
     virtual void init() override {
         ManualTestApplication::init();
-        gui.setTitle("ChartManualTest6");
+        gui->setTitle("ChartManualTest6");
 
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
         history = candleHistoryFactory.createInstance(
@@ -59,7 +59,7 @@ public:
             gfx, 10, 60, 1580, 780, history
         );
 
-        mainFrame.child(*chart);
+        mainFrame->child(chart);
 
         chart->draw();
     }

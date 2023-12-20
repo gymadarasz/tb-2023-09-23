@@ -102,7 +102,7 @@ namespace madlib::graph {
         Button* handlerMax = nullptr;
     public:
         IntervalBar(
-            GFX& gfx, int left, int top, int length, bool direction,
+            GFX* gfx, int left, int top, int length, bool direction,
             double minValue = 0, double maxValue = 1, 
             double value = 0, double valueSize = .3,
             int thickness = Theme::defaultBarThickness
@@ -117,8 +117,8 @@ namespace madlib::graph {
             handlerMax = direction == HORIZONTAL ?
                 new Button(gfx, size - thickness / 3, 0, thickness / 3, thickness):
                 new Button(gfx, 0, size - thickness / 3, thickness, thickness / 3);
-            handler->child(*handlerMin);
-            handler->child(*handlerMax);
+            handler->child(handlerMin);
+            handler->child(handlerMax);
             handlerMin->addTouchHandler(handlerMinTouch);
             handlerMax->addTouchHandler(handlerMaxTouch);
             addReleaseHandler(handlerRelease);

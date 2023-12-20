@@ -45,7 +45,7 @@ namespace madlib::graph {
         }
 
 
-        GFX& gfx;
+        GFX* gfx;
 
         int left, top;
         string text;
@@ -74,7 +74,7 @@ namespace madlib::graph {
             Viewport viewport;
             getViewport(viewport);
             reduceViewport(viewport);
-            gfx.setViewport(viewport);
+            gfx->setViewport(viewport);
         }
 
         void prepare(int &x, int &y) const {
@@ -98,12 +98,12 @@ namespace madlib::graph {
     public:
 
         Area(
-            GFX& gfx, 
+            GFX* gfx, 
             int left, int top, 
             int width, int height, 
             bool scrollFixed = true,
             bool zoomFixed = true,
-            const string &text = "", 
+            const string& text = "", 
             const Align textAlign = Theme::defaultAreaTextAlign,
             const Border border = Theme::defaultAreaBorder,
             const Color backgroundColor = Theme::defaultAreaBackgroundColor,
@@ -147,64 +147,64 @@ namespace madlib::graph {
         }
 
         virtual void brush(Color color) const override {
-            gfx.setColor(color);
+            gfx->setColor(color);
         }
 
         virtual void point(int x, int y) override {
             setScrollXYMinMax(x, y);
             prepare(x, y);
-            gfx.drawPoint(x, y);
+            gfx->drawPoint(x, y);
         }
 
         virtual void rect(int x1, int y1, int x2, int y2) override {
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx.drawRectangle(x1, y1, x2, y2);
+            gfx->drawRectangle(x1, y1, x2, y2);
         }
 
         virtual void fRect(int x1, int y1, int x2, int y2) override {
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx.fillRectangle(x1, y1, x2, y2);
+            gfx->fillRectangle(x1, y1, x2, y2);
         }
 
         virtual void line(int x1, int y1, int x2, int y2) override {
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx.drawLine(x1, y1, x2, y2);
+            gfx->drawLine(x1, y1, x2, y2);
         }
 
         virtual void hLine(int x1, int y1, int x2) override {
             int y2 = y1;
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx.drawHorizontalLine(x1, y1, x2);
+            gfx->drawHorizontalLine(x1, y1, x2);
         }
 
         virtual void vLine(int x1, int y1, int y2) override {
             int x2 = x1;
             setScrollXY12MinMax(x1, y1, x2, y2);
             prepare(x1, y1, x2, y2);
-            gfx.drawVerticalLine(x1, y1, y2);
+            gfx->drawVerticalLine(x1, y1, y2);
         }
 
         virtual void font(const char* font) const override {
-            gfx.setFont(font);
+            gfx->setFont(font);
         }
 
         virtual void write(int x, int y, const string &text) override {
             setScrollXYMinMax(x, y);
             prepare(x, y);
-            gfx.writeText(x, y, text);
+            gfx->writeText(x, y, text);
         }
 
         virtual TextSize getTextSize(const string& text) const override {
             TextSize textSize;
-            gfx.getTextSize(text, textSize.width, textSize.height);
+            gfx->getTextSize(text, textSize.width, textSize.height);
             return textSize;
         }
 
-        GFX& getGFX() const {
+        GFX* getGFX() const {
             return gfx;
         }
 
@@ -224,13 +224,13 @@ namespace madlib::graph {
             return parent ? parent->getRoot() : this;
         }
 
-        Area& child(Area& area) {
+        Area* child(Area* area) {
             setScrollXYMinMax(
-                area.left + area.width + areaMargin,
-                area.top + area.height + areaMargin
+                area->left + area->width + areaMargin,
+                area->top + area->height + areaMargin
             );
-            area.setParent(this);
-            areas.push_back(&area);
+            area->setParent(this);
+            areas.push_back(area);
             return area;
         }
 
@@ -379,8 +379,8 @@ namespace madlib::graph {
                     break;
 
                 case SIMPLE:
-                    gfx.setColor(getBorderColor());
-                    gfx.drawRectangle(left, top, right, bottom);
+                    gfx->setColor(getBorderColor());
+                    gfx->drawRectangle(left, top, right, bottom);
                     break;
 
                 case RELEASED:
@@ -388,12 +388,12 @@ namespace madlib::graph {
                     bColor = getBackgroundColor();
                     bColorLight = ColorMixer::light(bColor);
                     bColorDark = ColorMixer::dark(bColor);
-                    gfx.setColor(bColorLight);
-                    gfx.drawHorizontalLine(left, top, right);
-                    gfx.drawVerticalLine(left, top, bottom);
-                    gfx.setColor(bColorDark);
-                    gfx.drawHorizontalLine(left, bottom, right);
-                    gfx.drawVerticalLine(right, top, bottom);
+                    gfx->setColor(bColorLight);
+                    gfx->drawHorizontalLine(left, top, right);
+                    gfx->drawVerticalLine(left, top, bottom);
+                    gfx->setColor(bColorDark);
+                    gfx->drawHorizontalLine(left, bottom, right);
+                    gfx->drawVerticalLine(right, top, bottom);
                     break;
 
                 case PUSHED:
@@ -401,12 +401,12 @@ namespace madlib::graph {
                     bColor = getBackgroundColor();
                     bColorLight = ColorMixer::light(bColor);
                     bColorDark = ColorMixer::dark(bColor);
-                    gfx.setColor(bColorLight);
-                    gfx.drawHorizontalLine(left, bottom, right);
-                    gfx.drawVerticalLine(right, top, bottom);
-                    gfx.setColor(bColorDark);
-                    gfx.drawHorizontalLine(left, top, right);
-                    gfx.drawVerticalLine(left, top, bottom);
+                    gfx->setColor(bColorLight);
+                    gfx->drawHorizontalLine(left, bottom, right);
+                    gfx->drawVerticalLine(right, top, bottom);
+                    gfx->setColor(bColorDark);
+                    gfx->drawHorizontalLine(left, top, right);
+                    gfx->drawVerticalLine(left, top, bottom);
                     break;
 
                 default:
@@ -423,7 +423,7 @@ namespace madlib::graph {
 
             Viewport viewport(l, t, r, b);
             reduceViewport(viewport);
-            gfx.setViewport(viewport);
+            gfx->setViewport(viewport);
 
             drawBorder(l, t, r, b);
         }
@@ -438,16 +438,16 @@ namespace madlib::graph {
 
             Viewport viewport(l, t, r, b);
             reduceViewport(viewport);
-            gfx.setViewport(viewport);
+            gfx->setViewport(viewport);
             
-            gfx.setColor(getBackgroundColor());
-            gfx.fillRectangle(l, t, r, b);
+            gfx->setColor(getBackgroundColor());
+            gfx->fillRectangle(l, t, r, b);
 
             drawBorder(l, t, r, b);
 
             if(!text.empty()) {
                 int txtWidth, txtHeight;
-                gfx.getTextSize(text, txtWidth, txtHeight);
+                gfx->getTextSize(text, txtWidth, txtHeight);
                 int txtLeft;
                 Align txtAlign = getTextAlign();
                 switch (txtAlign) {
@@ -469,8 +469,8 @@ namespace madlib::graph {
                         break;
                 }
                 int txtTop = t + ((h - txtHeight) / 2); // + 16; // ??16
-                gfx.setColor(textColor);
-                gfx.writeText(txtLeft, txtTop, text);
+                gfx->setColor(textColor);
+                gfx->writeText(txtLeft, txtTop, text);
             }
 
             for (Area* area: areas)

@@ -11,20 +11,26 @@ namespace madlib::graph {
     class Application {
     protected:
 
-        GFX gfx = GFX(this);
-        GUI gui = GUI(gfx, 1600, 900, "Application");
+        GFX* gfx = nullptr;
+        GUI* gui = nullptr;
 
     public:
-    
-        Application() {}
 
-        virtual ~Application() {}
+        Application() {
+            gfx = new GFX(this);
+            gui = new GUI(gfx, 1600, 900, "Application");
+        }
+
+        virtual ~Application() {
+            delete gfx;
+            delete gui;
+        }
 
         Application* run() {
             try {
                 init();
-                gui.draw();
-                gui.loop();
+                gui->draw();
+                gui->loop();
             } catch (exception& e) {
                 string errmsg = "Application error: " + string(e.what());
                 LOG(errmsg);

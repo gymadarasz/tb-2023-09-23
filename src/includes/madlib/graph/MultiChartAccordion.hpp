@@ -11,23 +11,23 @@ namespace madlib::graph {
         ms_t timeRangeBegin;
         ms_t timeRangeEnd;
 
-        void createChartFrame(const string& title, Chart& chart, int frameHeight) {
+        void createChartFrame(const string& title, Chart* chart, int frameHeight) {
             Frame* cntrFrame = createContainer(title, frameHeight)->getFrame();
             cntrFrame->setScrollFixed(true);
             int frameWidth = cntrFrame->getWidth();
-            chart.setTop(0);
-            chart.setLeft(0);
-            chart.setWidth(frameWidth - 2);
-            chart.setHeight(frameHeight - 1);
-            chart.setBorder(PUSHED);
-            chart.setBackgroundColor(black);
+            chart->setTop(0);
+            chart->setLeft(0);
+            chart->setWidth(frameWidth - 2);
+            chart->setHeight(frameHeight - 1);
+            chart->setBorder(PUSHED);
+            chart->setBackgroundColor(black);
             cntrFrame->child(chart);
         }
 
     public:
     
         MultiChartAccordion(
-            GFX& gfx, int left, int top, int width,
+            GFX* gfx, int left, int top, int width,
             ms_t timeRangeBegin,
             ms_t timeRangeEnd,
             bool single = false,
@@ -55,8 +55,8 @@ namespace madlib::graph {
         Chart* createChart(const string& title, int frameHeight) { // TODO bubble up params default
             Chart* chart = new Chart(gfx, 0, 0, 0, 0, timeRangeBegin, timeRangeEnd);
             charts.push_back(chart);
-            createChartFrame(title, *chart, frameHeight);
-            multiChart.attach(*chart);
+            createChartFrame(title, chart, frameHeight);
+            multiChart.attach(chart);
             return chart;
         }
 

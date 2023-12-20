@@ -22,13 +22,13 @@ namespace madlib::graph {
     public:
         
         TimeRangeArea(
-            GFX &gfx, 
+            GFX* gfx, 
             int left, int top, int width, int height,
             ms_t timeRangeBegin, ms_t timeRangeEnd,
             const Border border = Theme::defaultChartBorder,
             const Color backgroundColor = Theme::defaultChartBackgroundColor,
             const Color borderColor = Theme::defaultChartBorderColor,
-            void *eventContext = nullptr
+            void* eventContext = nullptr
         ): 
             Area(
                 gfx, left, top, width, height, 
@@ -49,16 +49,16 @@ namespace madlib::graph {
             delete timeRange;
         }
 
-        TimeRange& getTimeRange() const {
-            return *timeRange;
+        TimeRange* getTimeRange() const {
+            return timeRange;
         }
 
-        TimeRange& getTimeRangeFull() const {
-            return *timeRangeFull;
+        TimeRange* getTimeRangeFull() const {
+            return timeRangeFull;
         }
 
-        Margin* getMargin() {
-            return &margin;
+        Margin& getMargin() {
+            return margin;
         }
 
         virtual void point(int x, int y) override { 
