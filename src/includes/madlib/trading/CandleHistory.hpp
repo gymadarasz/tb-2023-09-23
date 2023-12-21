@@ -12,7 +12,7 @@ namespace madlib::trading {
         vector<Candle> candles;
 
     public:
-        using History::History;
+        using History::History; // TODO: bug: some history having overlaping period that may runs multiple times in tests
 
         virtual ~CandleHistory() {}
 
