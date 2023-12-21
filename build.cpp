@@ -46,7 +46,7 @@ public:
 
     // const string flagsShared = "-shared -fPIC";
     const string hExtension = ".h";
-    const string cppExtension = ".cpp";
+    const vector<string> cppExtensions = { ".cpp" };
     const string soExtension = ".so";
     bool executeMain = true;
 
@@ -128,7 +128,7 @@ protected:
     const string flagsLibs;
     // const string flagsShared;
     const string hExtension;
-    const string cppExtension;
+    const vector<string> cppExtensions;
     const string soExtension;
     const bool executeMain;
     const string mainArgs;
@@ -147,7 +147,7 @@ protected:
 
     static void collectDependencies(
         const string& filename, vector<string>& deps,
-        const string& hExtension, const string& cppExtension
+        const string& hExtension, const vector<string>& cppExtensions
     ) {
         
         vector<string> matches;
@@ -158,13 +158,15 @@ protected:
             if (vector_contains(deps, filepath)) continue;
             deps.push_back(filepath);
             if (str_ends_with(hExtension, filepath)) {
-                string cppFile = file_replace_extension(filepath, cppExtension);
-                if (file_exists(cppFile)) {
-                    if (vector_contains(deps, filepath)) continue;
-                    deps.push_back(cppFile);
+                for (const string& cppExtension: cppExtensions) {
+                    string cppFile = file_replace_extension(filepath, cppExtension);
+                    if (file_exists(cppFile)) {
+                        if (vector_contains(deps, filepath)) continue;
+                        deps.push_back(cppFile);
+                    }
                 }
             }
-            collectDependencies(filepath, deps, hExtension, cppExtension);
+            collectDependencies(filepath, deps, hExtension, cppExtensions);
         }
         vector_unique(deps);
     }
@@ -172,11 +174,11 @@ protected:
     static ms_t getLatestModification(
         const string& filename,
         const string& hExtension,
-        const string& cppExtension,
+        const vector<string>& cppExtensions,
         vector<string>& dependencies
     ) {
         ms_t lastModAt = file_get_mtime(filename);
-        collectDependencies(filename, dependencies, hExtension, cppExtension);
+        collectDependencies(filename, dependencies, hExtension, cppExtensions);
         for (const string& dependency: dependencies) {
             ms_t depLastModAt = file_get_mtime(dependency);
             if (depLastModAt > lastModAt) lastModAt = depLastModAt;
@@ -191,7 +193,7 @@ protected:
         const string& main,
         const string& flagsLibs,
         const string& hExtension,
-        const string& cppExtension
+        const vector<string>& cppExtensions
     ) {
         int errors = 0;
         vector<string> oFiles;
@@ -203,7 +205,7 @@ protected:
             vector<string> dependencies;
             if (
                 !file_exists(oFile) ||
-                file_get_mtime(oFile) < getLatestModification(file, hExtension, cppExtension, dependencies)  // file_get_mtime(file)
+                file_get_mtime(oFile) < getLatestModification(file, hExtension, cppExtensions, dependencies)  // file_get_mtime(file)
             ) {
                 errors += !exec_cmd("g++ " + flags + " -c " + file + " -o " + oFile);
             }
@@ -254,7 +256,7 @@ public:
         flagsLibs(args->flagsLibs),
         // flagsShared(args.flagsShared),
         hExtension(args->hExtension),
-        cppExtension(args->cppExtension),
+        cppExtensions(args->cppExtensions),
         soExtension(args->soExtension),
         executeMain(args->executeMain),
         mainArgs(mainArgs)
@@ -263,14 +265,14 @@ public:
         ms_t startAt = now();
         cout << "Build start at: " COLOR_DATETIME << ms_to_datetime(startAt) << COLOR_DEFAULT << endl;
         // build source files
-        vector<string> files = collectFiles(sourcePaths, { cppExtension });
-        files.push_back(mainPath + "/" + main + cppExtension);
+        vector<string> files = collectFiles(sourcePaths, cppExtensions);
+        files.push_back(mainPath + "/" + main + cppExtensions.at(0));
 
         // vector<string> oFiles = 
-        buildFiles(files, buildPath, flags, main, flagsLibs, hExtension, cppExtension);
+        buildFiles(files, buildPath, flags, main, flagsLibs, hExtension, cppExtensions);
         
         // build shared files
-        vector<string> sharedFiles = collectFiles(sharedPaths, { cppExtension });
+        vector<string> sharedFiles = collectFiles(sharedPaths, cppExtensions);
 
         vector<string> osFiles;
         for (const string& file: sharedFiles) {
@@ -278,13 +280,13 @@ public:
             if (!file_exists(path)) file_create_path(path);
             string osFile = buildPath + path_normalize(file_replace_extension(file, soExtension));
             vector<string> dependencies;
-            ms_t latestMod = getLatestModification(file, hExtension, cppExtension, dependencies);
+            ms_t latestMod = getLatestModification(file, hExtension, cppExtensions, dependencies);
             if (
                 !file_exists(osFile) ||
                 file_get_mtime(osFile) < latestMod // file_get_mtime(file)
             ) {
                 
-                vector<string> soDeps = rebuildHdependenciesAsShared(dependencies, buildPath, flags, hExtension, cppExtension, soExtension);
+                vector<string> soDeps = rebuildHdependenciesAsShared(dependencies, buildPath, flags, hExtension, cppExtensions.at(0), soExtension);
                 errors += !exec_cmd("g++ " + flags + " -shared -fPIC " + vector_concat(soDeps) + " " + file + " -o " + osFile);
             }
             osFiles.push_back(osFile);
