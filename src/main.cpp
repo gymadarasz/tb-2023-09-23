@@ -179,7 +179,6 @@ protected:
         app->candleHistory->setPeriod(period);
         Progress progress("Reload history...", true);
         app->candleHistory->reload(progress);
-        progress.close();
         app->gfx->triggerFakeEvent({ GFX::RELEASE });
     }
 
@@ -302,7 +301,6 @@ protected:
         candleHistory->setPeriod(period);
         Progress progress("Loading history...");
         candleHistory->load(progress);
-        progress.close();
     }
 
     void loadExchangeModule() {

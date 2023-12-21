@@ -6,6 +6,7 @@
 
 #include "../ERROR.hpp"
 #include "../time.hpp"
+#include "../zenity.hpp"
 
 #include "defs.hpp"
 #include "Color.hpp"
@@ -334,7 +335,11 @@ namespace madlib::graph {
                 // Flush the event queue to discard any pending events
                 while (XPending(display) > 0) XNextEvent(display, &event);
 
-                handleEvent(event);
+                try {
+                    handleEvent(event);
+                } catch (exception &e) {
+                    handleError(e);
+                }
             }
         }
 
@@ -345,7 +350,7 @@ namespace madlib::graph {
         }
     
         void handleEvent(XEvent event) const {
-            setCursor(XC_X_cursor);
+            if (event.type != MotionNotify) setCursor(XC_X_cursor);
             int width, height;
             KeySym key;
             char text[32]; // FlawFinder: ignore
@@ -395,6 +400,11 @@ namespace madlib::graph {
                     break;
             }
             setCursor();
+        }
+
+        void handleError(const exception& e) {
+            const string errmsg = e.what();
+            zenity_dialogue(errmsg);
         }
     };
 
