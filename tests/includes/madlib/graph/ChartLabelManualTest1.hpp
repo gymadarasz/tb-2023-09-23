@@ -33,9 +33,9 @@ public:
         rand_init_seed(42);
 
         CandleSeries* candleSeries1 = chart1.createCandleSeries();
-        PointSeries* pointSeries1 = chart1.createPointSeries(candleSeries1, true, yellow);
-        PointSeries* pointSeries2 = chart1.createPointSeries(candleSeries1, true, blue);
-        PointSeries* pointSeries3 = chart1.createPointSeries(candleSeries1, true, green);
+        PointSeries* pointSeries1 = chart1.createPointSeries(candleSeries1, yellow);
+        PointSeries* pointSeries2 = chart1.createPointSeries(candleSeries1, blue);
+        PointSeries* pointSeries3 = chart1.createPointSeries(candleSeries1, green);
         LabelSeries* labelSeries1 = chart1.createLabelSeries(candleSeries1);
 
         vector<Shape*>& candles1 = candleSeries1->getShapes();

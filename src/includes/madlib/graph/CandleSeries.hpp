@@ -13,7 +13,7 @@ namespace madlib::graph {
         void projectFirstLastValue() {
             string text;
 
-            const CandleShape* first = (const CandleShape*)shapes[shapeIndexFrom];
+            const CandleShape* first = (const CandleShape*)shapes[canvas.shapeIndexFrom];
             timeRangeArea->brush(
                 first->open() > first->close() ? colorDown : colorUp
             );
@@ -21,18 +21,18 @@ namespace madlib::graph {
             TextSize textSize = timeRangeArea->getTextSize(text);
             timeRangeArea->write(
                 -textSize.width, 
-                chartHeight - translateY(first->open()), 
+                canvas.chartHeight - translateY(first->open()), 
                 text
             );
 
-            const CandleShape* last = (const CandleShape*)shapes[shapeIndexTo];
+            const CandleShape* last = (const CandleShape*)shapes[canvas.shapeIndexTo];
             timeRangeArea->brush(
                 last->open() > last->close() ? colorDown : colorUp
             );
             text = to_string(last->close());
             timeRangeArea->write(
-                chartWidth, 
-                chartHeight - translateY(last->close()), 
+                canvas.chartWidth,
+                canvas.chartHeight - translateY(last->close()), 
                 text
             );
         }
@@ -40,11 +40,11 @@ namespace madlib::graph {
     public:
 
         explicit CandleSeries(
-            TimeRangeArea* area,
+            TimeRangeArea* timeRangeArea,
             const Color colorUp = Theme::defaultChartCandleColorUp,
             const Color colorDown = Theme::defaultChartCandleColorDown
         ):
-            Projector(area),
+            Projector(timeRangeArea),
             colorUp(colorUp),
             colorDown(colorDown)
         {}
@@ -52,10 +52,10 @@ namespace madlib::graph {
         virtual ~CandleSeries() {}
 
         virtual void project() override {
-            size_t step = (shapeIndexTo - shapeIndexFrom) / (size_t)chartWidth;
+            size_t step = (canvas.shapeIndexTo - canvas.shapeIndexFrom) / (size_t)canvas.chartWidth;
             double prevClose = 0;
             if (step < 1) step = 1;
-            for (size_t i = shapeIndexFrom; i < shapeIndexTo; i += step) {
+            for (size_t i = canvas.shapeIndexFrom; i < canvas.shapeIndexTo; i += step) {
                 const CandleShape* candle = (const CandleShape*)shapes[i];
 
                 if (step > 1) { 
@@ -64,8 +64,8 @@ namespace madlib::graph {
                     Color color = prevClose > candleClose ? colorDown : colorUp;
                     timeRangeArea->brush(color);
                     int x = translateX(candle->end());
-                    int y1 = chartHeight - translateY(prevClose);
-                    int y2 = chartHeight - translateY(candleClose);
+                    int y1 = canvas.chartHeight - translateY(prevClose);
+                    int y2 = canvas.chartHeight - translateY(candleClose);
                     timeRangeArea->vLine(x, y1, y2);
                     prevClose = candleClose;
                     continue;
@@ -81,8 +81,8 @@ namespace madlib::graph {
 
                 timeRangeArea->vLine(
                     wick, 
-                    chartHeight - high, 
-                    chartHeight - low
+                    canvas.chartHeight - high, 
+                    canvas.chartHeight - low
                 );
                 
                 int left = translateX(candle->begin());
@@ -95,8 +95,8 @@ namespace madlib::graph {
                 int open = translateY(candle->open());
                 int close = translateY(candle->close());
                 timeRangeArea->fRect(
-                    left, chartHeight - open, 
-                    right, chartHeight - close
+                    left, canvas.chartHeight - open, 
+                    right, canvas.chartHeight - close
                 );
             }
 

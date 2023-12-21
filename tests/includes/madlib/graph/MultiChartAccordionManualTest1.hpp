@@ -83,8 +83,8 @@ public:
         multiChartAccordion.openAt(0, true);
         mainFrame->child(&multiChartAccordion);
 
-        PointSeries* scale0 = testChart.createPointSeries(nullptr, true, lightBlue);
-        PointSeries* scale1 = testChart.createPointSeries(scale0, true, lightGreen);
+        PointSeries* scale0 = testChart.createPointSeries(nullptr, lightBlue);
+        PointSeries* scale1 = testChart.createPointSeries(scale0, lightGreen);
         generateRealPoints(testChart, scale0->getShapes(), -1, 1);
         generateRealPoints(testChart, scale1->getShapes(), 0, 1);
         multiChartAccordion.getMultiChart().attach(&testChart);

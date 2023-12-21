@@ -54,7 +54,7 @@ namespace madlib::trading::strategy {
             double price = candle.getClose();
 
             sellAboveProjector = balanceQuotedChart->createPointSeries(
-                balanceQuotedChart->getProjectorAt(0), true, darkGray
+                balanceQuotedChart->getProjectorAt(0), darkGray
             );
 
             emaIndicator1 = new EmaIndicator(candleHistoryChart, price, 2000, blue);

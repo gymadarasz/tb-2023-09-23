@@ -237,8 +237,8 @@ namespace madlib::trading {
             balanceQuotedChart = createChart(
                 "Balance (quoted)", multiChartAccordionFramesHeight
             );
-            balanceQuotedFullScale = balanceQuotedChart->createPointSeries(nullptr, true, lightGreen);
-            balanceQuotedScale = balanceQuotedChart->createPointSeries(balanceQuotedFullScale, true, green);
+            balanceQuotedFullScale = balanceQuotedChart->createPointSeries(nullptr, lightGreen);
+            balanceQuotedScale = balanceQuotedChart->createPointSeries(balanceQuotedFullScale, green);
 
             candleStrategy->setBalanceQuotedChart(balanceQuotedChart);
 
@@ -247,8 +247,8 @@ namespace madlib::trading {
             balanceBaseChart = createChart(
                 "Balance (base)", multiChartAccordionFramesHeight
             );
-            balanceBaseFullScale = balanceBaseChart->createPointSeries(nullptr, true, yellow);
-            balanceBaseScale = balanceBaseChart->createPointSeries(balanceBaseFullScale, true, orange);
+            balanceBaseFullScale = balanceBaseChart->createPointSeries(nullptr, yellow);
+            balanceBaseScale = balanceBaseChart->createPointSeries(balanceBaseFullScale, orange);
 
             candleStrategy->setBalanceBaseChart(balanceBaseChart);
 

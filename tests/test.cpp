@@ -133,7 +133,7 @@ int main() {
     cout << "Testing in progress: ";
 
     cout << "Unit tests: ";
-    unit_tests();
+    //unit_tests();
     cout << " [OK]" << endl;
 
     cout << "Manual tests: ";

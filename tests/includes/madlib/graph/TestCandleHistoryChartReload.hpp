@@ -5,6 +5,7 @@
 #include "../../../../src/includes/madlib/time.hpp"
 #include "../../../../src/includes/madlib/Factory.hpp"
 #include "../../../../src/includes/madlib/graph/MultiChartAccordion.hpp"
+#include "../../../../src/includes/madlib/trading/inicators/EmaIndicator.hpp"
 
 using namespace madlib::graph;
 
@@ -59,15 +60,32 @@ public:
             gfx, 0, 0, 0, 0, candleHistory, //candleStrategy.getLabelSeries(),
             true, false, false
         );
-        multiChartAccordion->createChartFrame("History", candleHistoryChart, 300);
-        multiChartAccordion->createChart("Second", 300);
-        multiChartAccordion->createChart("Third", 300);
+        multiChartAccordion->createChartFrame("History", candleHistoryChart, 600);
+        // multiChartAccordion->createChart("Second", 300);
+        // multiChartAccordion->createChart("Third", 300);
 
         addChartButton = new Button(gfx, 150, 10, 100, 30, "Add..");
         addChartButton->addTouchHandler(addChartTouchHandler);
         
         mainFrame->child(multiChartAccordion);
         mainFrame->child(addChartButton);
+
+        
+        const vector<Candle>& candles = candleHistory->getCandles();
+        EmaIndicator emaIndicator1 = EmaIndicator(
+            candleHistoryChart, candles[0].getOpen(), 2000, blue
+        );
+        EmaIndicator emaIndicator2 = EmaIndicator(
+            candleHistoryChart, candles[0].getOpen(), 4000, green
+        );
+        EmaIndicator emaIndicator3 = EmaIndicator(
+            candleHistoryChart, candles[0].getOpen(), 16000, orange
+        );
+        for (const Candle& candle: candles) {
+            emaIndicator1.calc(candle.getEnd(), candle.getClose());    
+            emaIndicator2.calc(candle.getEnd(), candle.getClose());    
+            emaIndicator3.calc(candle.getEnd(), candle.getClose());    
+        }
     }
 };
 TestCandleHistoryChartReload* TestCandleHistoryChartReload::app = nullptr;

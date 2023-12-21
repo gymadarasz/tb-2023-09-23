@@ -46,7 +46,7 @@ namespace madlib::graph {
                         if (chart->getTimeRange()->apply(*that->getTimeRange())) changed = true;
                         if (chart->getTimeRange()->limit(*chart->getTimeRangeFull())) changed = true;
                         if (changed) {
-                            chart->resetProjectorsPrepared();
+                            // chart->resetProjectorsPrepared();
                             chart->draw();
                         }
                     }
@@ -89,15 +89,15 @@ namespace madlib::graph {
             if (zoomAtRight) chart->timeRange->begin -= (ms_t)diff;
 
             chart->timeRange->limit(*chart->getTimeRangeFull());
-            chart->resetProjectorsPrepared();
+            // chart->resetProjectorsPrepared();
             chart->draw();
             if (chart->multiChart) chart->multiChart->follow(chart);
         }
 
-        void resetProjectorsPrepared() const {
-            for (Projector* projector: projectors) 
-                projector->setPrepared(false);
-        }
+        // void resetProjectorsPrepared() const {
+        //     for (Projector* projector: projectors) 
+        //         projector->setPrepared(false);
+        // }
 
         static void dragStartHandler(void* context, unsigned int button, int x, int) {
             if (button != Theme::touchButton) return;
@@ -115,7 +115,7 @@ namespace madlib::graph {
             chart->dragTimeRangeStartedX = x;
 
             chart->getTimeRange()->limit(*chart->getTimeRangeFull());
-            chart->resetProjectorsPrepared();
+            // chart->resetProjectorsPrepared();
             chart->draw();
             if (chart->multiChart) chart->multiChart->follow(chart);
         }
@@ -220,16 +220,37 @@ namespace madlib::graph {
 
         virtual void draw() override {
             TimeRangeArea::draw();
-        
-            for (const Alignment& alignment: alignments)
-                alignment.getProjector()->align(
-                    alignment.getAlignToProjector(), 
-                    alignment.isExtends()
-                );
+
+            // for (const Alignment& alignment: alignments) {
+            //     LOG("Aligning: " + to_string((unsigned long long)alignment.getProjector()) + " to: " + to_string((unsigned long long)alignment.getAlignToProjector()));
+            //     alignment.getProjector()->align(
+            //         alignment.getAlignToProjector(), 
+            //         alignment.isExtends()
+            //     );
+            // }
+
+            for (Projector* projector: projectors) {
+                projector->calculateCanvasEdges();
+                projector->searchShapeIndexFromToAndValueMinMax();
+            }
+            bool finish = false;
+            while (!finish) {
+                finish = true;
+                for (const Projector* projector: projectors) {
+                    for (const Alignment& alignment: alignments) {                    
+                        if (
+                            (
+                                alignment.getProjector() == projector ||
+                                alignment.getAlignToProjector() == projector
+                            ) && !alignment.fitProjectorsCanvas()
+                        ) finish = false;
+                    }
+                }
+            }
 
             for (Projector* projector: projectors)
-                if (!projector) continue;
-                else if (!projector->isPrepared()) continue;
+                if (!projector->getCanvas().stretched) continue;
+                // else if (!projector->isPrepared()) continue;
                 else projector->project();
 
             drawTimeRange();
@@ -237,7 +258,7 @@ namespace madlib::graph {
 
         virtual PointSeries* createPointSeries(
             Projector* alignToProjector = nullptr,
-            bool alignExtends = true,
+            // bool alignExtends = true,
             Color color = Theme::defaultChartSeriesColor
         ) {
             PointSeries* pointSeries = new PointSeries(
@@ -250,15 +271,15 @@ namespace madlib::graph {
             projectors.push_back(pointSeries);
             alignments.push_back(Alignment(
                 pointSeries, 
-                alignToProjector, 
-                alignExtends
+                alignToProjector //, 
+                // alignExtends
             ));
             return pointSeries;
         }
 
         virtual CandleSeries* createCandleSeries(
             Projector* alignToProjector = nullptr,
-            bool alignExtends = true,
+            // bool alignExtends = true,
             Color colorUp = Theme::defaultChartCandleColorUp, 
             Color colorDown = Theme::defaultChartCandleColorDown
         ) {
@@ -267,18 +288,18 @@ namespace madlib::graph {
             );
             candleSeriesProjectors.push_back(candleSeries);
             projectors.push_back(candleSeries);
-            alignments.push_back(Alignment(candleSeries, alignToProjector, alignExtends));
+            alignments.push_back(Alignment(candleSeries, alignToProjector/*, alignExtends*/));
             return candleSeries;
         }
 
         virtual LabelSeries* createLabelSeries(
-            Projector* alignToProjector = nullptr,
-            bool alignExtends = true
+            Projector* alignToProjector = nullptr //,
+            // bool alignExtends = true
         ) {
             LabelSeries* labelSeries = new LabelSeries(this);
             labelSeriesProjectors.push_back(labelSeries);
             projectors.push_back(labelSeries);
-            alignments.push_back(Alignment(labelSeries, alignToProjector, alignExtends));
+            alignments.push_back(Alignment(labelSeries, alignToProjector/*, alignExtends*/));
             return labelSeries;
         }
 

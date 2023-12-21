@@ -67,13 +67,13 @@ namespace madlib::trading {
                 mainProjector = candleSeries = createCandleSeries();
             if (showPrices) {
                 priceSeries = createPointSeries(
-                    mainProjector, true, priceColor
+                    mainProjector, priceColor
                 );
             }
             if (showVolumes)
-                volumeSeries = createPointSeries(nullptr, true, volumeColor);
+                volumeSeries = createPointSeries(nullptr, volumeColor);
             if (showTexts)
-                labelSeries = createLabelSeries(mainProjector, true);
+                labelSeries = createLabelSeries(mainProjector);
             
             if (generate) {
                 generateFromHistory();

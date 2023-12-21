@@ -26,8 +26,9 @@ namespace madlib::trading {
             Projector* mainProjector = candleHistoryChart->getMainProjector();
             if (!mainProjector) mainProjector = candleHistoryChart->getProjectorAt(0);
             emaProjector = candleHistoryChart->createPointSeries(
-                mainProjector, true, color
+                mainProjector, color
             );
+            LOG("emaProjector (" + to_string((unsigned long long)emaProjector) + ") should align to: " + to_string((unsigned long long)mainProjector));
         }
 
         virtual ~EmaIndicator() {}
