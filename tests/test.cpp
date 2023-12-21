@@ -21,7 +21,7 @@
 #include "includes/madlib/graph/MultiChartAccordionManualTest1.hpp"
 #include "includes/madlib/trading/MonteCarloChartsTest1.hpp"
 #include "includes/madlib/graph/ChartLabelManualTest1.hpp"
-#include "includes/madlib/graph/CandleHistoryChartReload.hpp"
+#include "includes/madlib/graph/TestCandleHistoryChartReload.hpp"
 
 using namespace std;
 
@@ -110,7 +110,7 @@ void unit_tests() {
 }
 
 void manual_tests() {
-    TEST(new CandleHistoryChartReload);
+    TEST(new TestCandleHistoryChartReload);
     TEST(new ChartLabelManualTest1);
     TEST(new ChartManualTest7Zoom);
     TEST(new MonteCarloChartsTest1);

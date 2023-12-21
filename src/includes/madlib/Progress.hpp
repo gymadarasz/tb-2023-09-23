@@ -44,9 +44,12 @@ namespace madlib {
             return closed = zenity_progress_update(pipe, status);
         }
 
-        bool update(double at, double from, double to) {
+        bool update(double at, double from, double to, bool autoclose = true) {
             double ratio =  (at - from) / (to - from);
             double percent = ratio * 100;
+            if (percent <= 1) percent = 1;
+            if (percent >= 100) percent = 100;
+            if (!autoclose && percent >= 100) percent = 99;
             return update((int)percent);
         }
 

@@ -11,21 +11,6 @@ namespace madlib::graph {
         ms_t timeRangeBegin;
         ms_t timeRangeEnd;
 
-        void createChartFrame(const string& title, Chart* chart, int frameHeight) {
-            closeAll(false); // TODO: it's a hack to fix sizing (BUG: when strategy adds new charts the screen scroll size is not updated)
-            Frame* cntrFrame = createContainer(title, frameHeight)->getFrame();
-            openAll(false);
-            cntrFrame->setScrollFixed(true);
-            int frameWidth = cntrFrame->getWidth();
-            chart->setTop(0);
-            chart->setLeft(0);
-            chart->setWidth(frameWidth - 2);
-            chart->setHeight(frameHeight - 1);
-            chart->setBorder(PUSHED);
-            chart->setBackgroundColor(black);
-            cntrFrame->child(chart);
-        }
-
     public:
     
         MultiChartAccordion(
@@ -54,12 +39,37 @@ namespace madlib::graph {
             return multiChart;
         }
 
+        Container* createChartFrame(const string& title, Chart* chart, int frameHeight) {
+            vector<size_t> wasOpens = closeAll(false); // TODO: it's a hack to fix sizing (BUG: when strategy adds new charts the screen scroll size is not updated)
+            Container* container = createContainer(title, frameHeight);
+            Frame* frame = container->getFrame();
+            openAll(false);
+            closeAllExcept(wasOpens, false);            
+            frame->setScrollFixed(true);
+            int frameWidth = frame->getWidth();
+            chart->setTop(0);
+            chart->setLeft(0);
+            chart->setWidth(frameWidth - 2);
+            chart->setHeight(frameHeight - 1);
+            chart->setBorder(PUSHED);
+            chart->setBackgroundColor(black);
+            frame->child(chart);
+            Area* parent = frame->getParent();
+            if (parent) parent->adaptScrollSize(frame);
+            return container;
+        }
+
         Chart* createChart(const string& title, int frameHeight) { // TODO bubble up params default
             Chart* chart = new Chart(gfx, 0, 0, 0, 0, timeRangeBegin, timeRangeEnd);
             charts.push_back(chart);
             createChartFrame(title, chart, frameHeight);
             multiChart.attach(chart);
             return chart;
+        }
+
+        Chart* getLastChart() {
+            size_t size = charts.size();
+            return size ? charts[size - 1] : nullptr;
         }
 
         virtual void clearCharts() {

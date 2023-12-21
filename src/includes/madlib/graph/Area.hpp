@@ -225,13 +225,17 @@ namespace madlib::graph {
         }
 
         Area* child(Area* area) {
+            adaptScrollSize(area);
+            area->setParent(this);
+            areas.push_back(area);
+            return area;
+        }
+
+        void adaptScrollSize(Area* area) {
             setScrollXYMinMax(
                 area->left + area->width + areaMargin,
                 area->top + area->height + areaMargin
             );
-            area->setParent(this);
-            areas.push_back(area);
-            return area;
         }
 
         int getTop(bool withParent = true) const {

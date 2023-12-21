@@ -110,7 +110,7 @@ bool exec_cmd(string cmd) {
         }
     }
     if (exec_last_exit_code != 0) {
-        LOG("Command exit code is non-zero: " + exec_last_exit_code);
+        LOG("Command exit code is non-zero: " + to_string(exec_last_exit_code));
         return false;
     }
     return true;

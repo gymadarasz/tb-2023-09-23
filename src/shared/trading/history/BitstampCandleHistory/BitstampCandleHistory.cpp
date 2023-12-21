@@ -140,11 +140,11 @@ namespace madlib::trading::history {
             string _datFileTpl = str_replace(datFileTpl, repl);
             string _csvFileTpl = str_replace(csvFileTpl, repl);            
             for (int year = fromYear; year <= toYear; year++) {
-                progress.update(year, fromYear, toYear);
                 progress.update("Parse data " + to_string(year) + "...");
                 const string csvFile = str_replace(_csvFileTpl, "{year}", to_string(year));
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
                 bitstamp_parse_candle_history_csv(progress, csvFile, datFile, false, false);
+                progress.update(year, fromYear, toYear, false);
             }
         }
 
@@ -167,7 +167,6 @@ namespace madlib::trading::history {
             string _datFileTpl = str_replace(datFileTpl, repl);
             candles.clear();
             for (int year = fromYear; year <= toYear; year++) {
-                progress.update(year, fromYear, toYear);
                 progress.update("Loading data " + to_string(year) + "...");
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
                 if (!file_exists(datFile)) {
@@ -183,7 +182,9 @@ namespace madlib::trading::history {
                     if (startTime <= candle.getStart() && endTime >= candle.getEnd())
                         candles.push_back(candle);
                 }
+                progress.update(year, fromYear, toYear, false);
             }
+            progress.close();
         }
 
         // Note: see more at https://www.cryptodatadownload.com/data/bitstamp/
@@ -196,6 +197,7 @@ namespace madlib::trading::history {
             int toYear = parse<int>(ms_to_date(endTime).substr(0, 4));
             bitstamp_download_candle_history_csv_all(progress, symbol, fromYear, toYear, "minute", override);
             bitstamp_parse_candle_history_csv_all(progress, symbol, fromYear, toYear, "minute");
+            progress.close();
         }
 
     };

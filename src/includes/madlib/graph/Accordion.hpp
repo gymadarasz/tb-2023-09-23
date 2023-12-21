@@ -105,6 +105,8 @@ namespace madlib::graph {
                 accordion->height = togglerHeight * ((int)accordionContainerAt + 1);
                 accordion->child(toggler);
                 accordion->child(frame);
+                Area* parent = accordion->getParent();
+                if (parent) parent->adaptScrollSize(frame);
             }
 
             virtual ~Container() {
@@ -214,12 +216,24 @@ namespace madlib::graph {
             if (redraw) getParentOrSelf()->draw();
         }
 
-        void closeAll(bool redraw) {
+        void closeAllExcept(const vector<size_t>& exceptIndexes, bool redraw) {
             size_t containersSize = containers.size();
             for (size_t i = 0; i < containersSize; i++) {
+                if (!vector_contains(exceptIndexes, i)) closeAt(i, false);
+                else openAt(i, false);
+            }
+            if (redraw) getParentOrSelf()->draw();
+        }
+
+        vector<size_t> closeAll(bool redraw) {
+            vector<size_t> wasOpens;
+            size_t containersSize = containers.size();
+            for (size_t i = 0; i < containersSize; i++) {
+                if (containers[i]->isOpened()) wasOpens.push_back(i);
                 closeAt(i, false);
             }
             if (redraw) getParentOrSelf()->draw();
+            return wasOpens;
         }
 
         void openAll(bool redraw) {
@@ -256,6 +270,8 @@ namespace madlib::graph {
                 frame->setTop(frame->getTop(false) + frameHeight);
             }
             height += frameHeight;
+            Area* parent = getParent();
+            if (parent) parent->adaptScrollSize(this);
             if (redraw) getParentOrSelf()->draw();
         }
 
@@ -274,6 +290,8 @@ namespace madlib::graph {
                 frame->setTop(frame->getTop(false) - frameHeight);
             }
             height -= frameHeight;
+            Area* parent = getParent();
+            if (parent) parent->adaptScrollSize(this);
             if (redraw) getParentOrSelf()->draw();
         }
 
