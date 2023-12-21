@@ -231,6 +231,13 @@ namespace madlib::graph {
             return area;
         }
 
+        void remove(Area* area) {
+            auto it = std::remove_if(areas.begin(), areas.end(), [area](const Area* a) {
+                return a == area;
+            });
+            areas.erase(it, areas.end());
+        }
+
         void adaptScrollSize(Area* area) {
             setScrollXYMinMax(
                 area->left + area->width + areaMargin,

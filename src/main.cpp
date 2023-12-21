@@ -184,6 +184,8 @@ protected:
     }
 
     static void onStartTouch(void*, unsigned int, int, int) {
+        app->destroyCandleStrategyBacktesterMultiChartAccordion();
+        app->createCandleStrategyBacktesterMultiChartAccordion();
         app->candleStrategyBacktesterMultiChartAccordion->backtest();
         app->candleStrategyBacktesterMultiChartAccordion->draw();
     }
@@ -265,6 +267,11 @@ protected:
                 candleHistory, testExchange, candleStrategy, Config::symbol
             );
         mainFrame->child(candleStrategyBacktesterMultiChartAccordion);
+    }
+
+    void destroyCandleStrategyBacktesterMultiChartAccordion() {
+        mainFrame->remove(candleStrategyBacktesterMultiChartAccordion);
+        delete candleStrategyBacktesterMultiChartAccordion;
     }
 
     void loadHistoryModule() {

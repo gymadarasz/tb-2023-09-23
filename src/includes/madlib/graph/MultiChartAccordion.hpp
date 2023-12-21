@@ -40,11 +40,12 @@ namespace madlib::graph {
         }
 
         Container* createChartFrame(const string& title, Chart* chart, int frameHeight) {
-            vector<size_t> wasOpens = closeAll(false); // TODO: it's a hack to fix sizing (BUG: when strategy adds new charts the screen scroll size is not updated)
+            // vector<size_t> wasOpens = 
+            closeAll(false); // TODO: it's a hack to fix sizing (BUG: when strategy adds new charts the screen scroll size is not updated)
             Container* container = createContainer(title, frameHeight);
             Frame* frame = container->getFrame();
             openAll(false);
-            closeAllExcept(wasOpens, false);            
+            // closeAllExcept(wasOpens, false);            
             frame->setScrollFixed(true);
             int frameWidth = frame->getWidth();
             chart->setTop(0);
