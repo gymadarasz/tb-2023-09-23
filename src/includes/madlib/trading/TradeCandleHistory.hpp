@@ -9,7 +9,8 @@ namespace madlib::trading {
         vector<Trade> trades;
 
         // TODO: yagni??
-        void convertToCandles() {
+        void convertToCandles(Progress& progress) {
+            progress.update("Converting candles..");
 
             auto tradeEventIter = trades.begin();
             

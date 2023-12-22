@@ -19,7 +19,7 @@ namespace madlib {
         
         explicit Progress(
             const string& title = "Loading...",
-            bool noCancel = false,
+            bool noCancel = true,
             bool autoClose = true,
             bool timeRemaining = true
         ):  
@@ -40,11 +40,27 @@ namespace madlib {
             return closed = zenity_progress_update(pipe, percent);
         }
 
-        bool update(const string& status) {
+        bool update(
+            const string& status, 
+            ms_t* next = nullptr, ms_t step = MS_PER_SEC
+        ) {
+            if (next) {
+                ms_t n = now();
+                if (*next < n) *next = n + step;
+                else return closed;
+            }
             return closed = zenity_progress_update(pipe, status);
         }
 
-        bool update(double at, double from, double to, bool autoclose = true) {
+        bool update(
+            double at, double from, double to, bool autoclose = true, 
+            ms_t* next = nullptr, ms_t step = MS_PER_SEC
+        ) {
+            if (next) {
+                ms_t n = now();
+                if (*next < n) *next = n + step;
+                else return closed;
+            }
             double ratio =  (at - from) / (to - from);
             double percent = ratio * 100;
             if (percent <= 1) percent = 1;

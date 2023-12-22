@@ -185,16 +185,7 @@ namespace madlib::graph {
         
     public:
 
-        MixedInputList() {} //: mixeds({}) {}
-
-        // MixedInputList(const MixedInputList& other): mixeds(other.mixeds) {}
-
-        // MixedInputList& operator=(const MixedInputList& other) {
-        //     if (this != &other) {
-        //         mixeds = other.mixeds;
-        //     }
-        //     return *this;
-        // }
+        MixedInputList() {} 
 
         virtual ~MixedInputList() {}
 
@@ -282,7 +273,7 @@ namespace madlib::graph {
 
 
     class MixedInputListHolder {
-    protected:
+    private:
 
         MixedInputList list;
 
@@ -294,6 +285,38 @@ namespace madlib::graph {
 
         MixedInputList& getList() {
             return list;
+        }
+
+        void add(const string& key, const string& name, bool value) {
+            list.add(key, name, value);
+        }
+
+        void add(const string& key, const string& name, long value) {
+            list.add(key, name, value);
+        }
+
+        void add(const string& key, const string& name, double value) {
+            list.add(key, name, value);
+        }
+
+        void add(const string& key, const string& name, const string& value) {
+            list.add(key, name, value);
+        }
+
+        void set(const string& key, const string& name, bool value) {
+            list.set(key, name, value);
+        }
+
+        void set(const string& key, const string& name, long value) {
+            list.set(key, name, value);
+        }
+
+        void set(const string& key, const string& name, double value) {
+            list.set(key, name, value);
+        }
+
+        void set(const string& key, const string& name, const string& value) {
+            list.set(key, name, value);
         }
 
         bool getBool(const string& key) {

@@ -15,6 +15,7 @@ namespace madlib::trading::history {
         const double defaultVolumeStdDeviation = 10;
         const double defaultPriceMean = 100;  // Initial price
         const double defaultPriceStdDeviation = 10;
+        const double defaultPriceBottom = 1000;
         const double defaultTimeLambda = MS_PER_SEC;  // Mean time in milliseconds (60 seconds)
         const bool defaultUseRandomDevice = true;
         const unsigned int defaultSeed = 1;
@@ -22,15 +23,16 @@ namespace madlib::trading::history {
         
 
         // Function to init events within a specified time range
-        void generateTrades() {
+        void generateTrades(Progress& progress) {
+            progress.update("Generate trades..");
+
             const double priceMean = getDouble("priceMean");
             const double volumeMean = getDouble("volumeMean");
-            const double timeLambda = getDouble("timeLambda");
             const double priceStdDeviation = getDouble("priceStdDeviation");
             const double volumeStdDeviation = getDouble("volumeStdDeviation");
-            const unsigned int seed = getBool("useRandomDevice") 
-                ? random_device()() 
-                : (unsigned int)getLong("seed");
+            const double timeLambda = getDouble("timeLambda");
+            const double priceBottom = getDouble("priceBottom");
+            const unsigned int seed = getBool("useRandomDevice") ? random_device()() : (unsigned int)getLong("seed");
 
 
             mt19937 gen = mt19937(seed);
@@ -39,8 +41,10 @@ namespace madlib::trading::history {
             double previousPrice = priceMean;
             double previousVolume = volumeMean;
             
+            double priceMin = INFINITY;
             trades.clear();
-            while (previousTime < endTime) {
+            ms_t next = 0;
+            while (previousTime < endTime) {                
                 Trade trade;
 
                 // Generate elapsed time using exponential distribution
@@ -56,6 +60,7 @@ namespace madlib::trading::history {
 
                 // Calculate the price based on the previous price and movement
                 trade.price = previousPrice + priceMovement;
+                if (priceMin > trade.price) priceMin = trade.price;
 
                 // Generate volume movement
                 normal_distribution<double> volumeDistribution(0, volumeStdDeviation);
@@ -73,7 +78,12 @@ namespace madlib::trading::history {
 
                 previousPrice = trade.price;  // Update the previous_price
                 previousVolume = trade.volume;  // Update the previous_volume
+
+                progress.update((double)trade.timestamp, (double)startTime, (double)endTime, false, &next);
             }
+            progress.update("Align history to price bottom..");
+            double priceInc = priceBottom - priceMin;
+            if (priceInc > 0) for (Trade& trade: trades) trade.price += priceInc;
         }
 
     public:
@@ -104,22 +114,24 @@ namespace madlib::trading::history {
         ): 
             TradeCandleHistory(symbol, startTime, endTime, period)
         {
-            list.add("volumeMean", "Volume Mean", defaultVolumeMean);
-            list.add("volumeStdDeviation", "Volume Standard Deviation", defaultVolumeStdDeviation);
-            list.add("priceMean", "Price Mean", defaultPriceMean);
-            list.add("priceStdDeviation", "Price Standard Deviation", defaultPriceStdDeviation);
-            list.add("timeLambda", "Time Lambda (ms)", defaultTimeLambda);
-            list.add("useRandomDevice", "Use random device", defaultUseRandomDevice);
-            list.add("seed", "Use seed number", (long)defaultSeed);
+            add("volumeMean", "Volume Mean", defaultVolumeMean);
+            add("volumeStdDeviation", "Volume Standard Deviation", defaultVolumeStdDeviation);
+            add("priceMean", "Price Mean", defaultPriceMean);
+            add("priceStdDeviation", "Price Standard Deviation", defaultPriceStdDeviation);
+            add("priceBottom", "Price Bottom", defaultPriceBottom);
+            add("timeLambda", "Time Lambda (ms)", defaultTimeLambda);
+            add("useRandomDevice", "Use random device", defaultUseRandomDevice);
+            add("seed", "Use seed number", (long)defaultSeed);
         }
         
         virtual ~MonteCarloTradeCandleHistory() {}
 
         // virtual void init(void* = nullptr) override {}
 
-        virtual void load(Progress&) override {
-            generateTrades();
-            convertToCandles();
+        virtual void load(Progress& progress) override {
+            generateTrades(progress);
+            convertToCandles(progress);
+            progress.close();
         }
 
         virtual void reload(Progress& progress) override {
