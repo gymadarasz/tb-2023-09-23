@@ -8,7 +8,6 @@ namespace madlib::trading {
     
     class CandleHistory: public History {
     protected:
-
         vector<Candle> candles;
 
     public:

@@ -1,10 +1,13 @@
 #pragma once
 
 #include "../Progress.hpp"
+#include "../graph/SettingsHolder.hpp"
+
+using namespace madlib::graph;
 
 namespace madlib::trading {
     
-    class History {
+    class History: public SettingsHolder {
     protected:
 
         string symbol;
@@ -20,6 +23,7 @@ namespace madlib::trading {
             const ms_t endTime,
             const ms_t period
         ): 
+            SettingsHolder(),
             symbol(symbol),
             startTime(startTime),
             endTime(endTime),

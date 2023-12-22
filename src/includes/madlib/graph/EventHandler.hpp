@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "../maps.hpp"
+
 namespace madlib::graph {
 
     class EventHandler {
@@ -15,10 +17,12 @@ namespace madlib::graph {
         typedef void (*onMoveHandler)(void*, int, int);
         typedef void (*onLoopHandler)(void*);
         typedef void (*onDrawHandler)(void*);
+        typedef void (*onCloseHandler)(void*);
 
     protected:
 
         void* eventContext = nullptr;
+        map<const string, void*> eventContexts;
         
         vector<onResizeHandler> onResizeHandlers;
         vector<onKeyPressHandler> onKeyPressHandlers;
@@ -28,6 +32,7 @@ namespace madlib::graph {
         vector<onMoveHandler> onMoveHandlers;
         vector<onLoopHandler> onLoopHandlers;
         vector<onDrawHandler> onDrawHandlers;
+        vector<onCloseHandler> onCloseHandlers;
 
     public:
 
@@ -39,8 +44,15 @@ namespace madlib::graph {
             this->eventContext = eventContext;
         }
 
-        void* getEventContext() const {
-            return eventContext;
+        void setEventContext(const string& key, void* eventContext) {
+            if (map_has(eventContexts, key)) throw ERROR("Event context key conflicts: " + key);
+            eventContexts[key] = eventContext;
+            this->eventContext = eventContext;
+        }
+
+        void* getEventContext(const string& key) const {
+            if (!map_has(eventContexts, key)) throw ERROR("Event context key is not set: " + key);
+            return eventContexts.at(key);
         }
 
         vector<onResizeHandler> getResizeHandlers() {
@@ -105,6 +117,14 @@ namespace madlib::graph {
 
         void addDrawHandler(onDrawHandler handler) {
             onDrawHandlers.push_back(handler);
+        }
+
+        vector<onCloseHandler> getCloseHandlers() {
+            return onCloseHandlers;
+        }
+
+        void addCloseHandler(onCloseHandler handler) {
+            onCloseHandlers.push_back(handler);
         }
 
     };

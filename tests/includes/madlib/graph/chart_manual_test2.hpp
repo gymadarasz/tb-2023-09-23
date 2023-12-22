@@ -18,7 +18,7 @@ void chart_manual_test2_draw(void* /*context*/) {
 }
 
 void chart_manual_test2_close(void*, unsigned int, int, int) {
-    chart_manual_test2_gfxPtr->close = true;
+    chart_manual_test2_gfxPtr->close();
 }
 
 int chart_manual_test2()
@@ -56,7 +56,7 @@ int chart_manual_test2()
         }
     }
 
-    gui.loop();
+    gui.loop(false);
     
     return 0;
 }

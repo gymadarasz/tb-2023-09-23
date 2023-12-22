@@ -17,7 +17,7 @@ void chart_manual_test3_draw(void*) {
 }
 
 void chart_manual_test3_close(void*, unsigned int, int, int) {
-    chart_manual_test3_gfxPtr->close = true;
+    chart_manual_test3_gfxPtr->close();
 }
 
 int chart_manual_test3_candles()
@@ -64,7 +64,7 @@ int chart_manual_test3_candles()
         candlesRealPoints.push_back(chart.createCandleShape(start, end, open, low, high, close));
     }
 
-    gui.loop();
+    gui.loop(false);
     
     return 0;
 }

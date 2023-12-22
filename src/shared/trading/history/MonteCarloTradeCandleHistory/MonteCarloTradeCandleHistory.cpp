@@ -1,7 +1,9 @@
 #include "../../../../includes/madlib/rand.hpp"
 #include "../../../../includes/madlib/time.hpp"
 #include "../../../../includes/madlib/Progress.hpp"
+#include "../../../../includes/madlib/graph/Mixed.hpp"
 #include "../../../../includes/madlib/trading/TradeCandleHistory.hpp"
+
 
 namespace madlib::trading::history {
 
@@ -9,17 +11,30 @@ namespace madlib::trading::history {
     protected:
         // TODO: load config somehow..??
         // const string symbol = "MONTECARLO";
-        const double volumeMean = 50;  // Initial volume
-        const double volumeStdDeviation = 5;
-        const double priceMean = 10000;  // Initial price
-        const double priceStdDeviation = 50;
-        const double timeLambda = MS_PER_SEC * 20;  // Mean time in milliseconds (60 seconds)
-        const unsigned int seed = random_device()(); // 12312334
+        const double defaultVolumeMean = 50;  // Initial volume
+        const double defaultVolumeStdDeviation = 5;
+        const double defaultPriceMean = 10000;  // Initial price
+        const double defaultPriceStdDeviation = 50;
+        const double defaultTimeLambda = MS_PER_SEC * 20;  // Mean time in milliseconds (60 seconds)
+        const bool defaultUseRandomDevice = true;
+        const unsigned int defaultSeed = 121234l;
+        // const unsigned int defaultSeedRandomDevice = random_device()(); // 12312334
         
-        mt19937 gen = mt19937(seed);
 
         // Function to init events within a specified time range
         void generateTrades() {
+            const double priceMean = getSettingsValueAsDouble("Price Mean");
+            const double volumeMean = getSettingsValueAsDouble("Volume Mean");
+            const double timeLambda = getSettingsValueAsDouble("Time Lambda (sec)") * MS_PER_SEC;
+            const double priceStdDeviation = getSettingsValueAsDouble("Price Standard Deviation");
+            const double volumeStdDeviation = getSettingsValueAsDouble("Volume Standard Deviation");
+            const unsigned int seed = getSettingsValueAsBool("Use random device") 
+                ? random_device()() 
+                : (unsigned int)getSettingsValueAsLong("Use seed number");
+
+
+            mt19937 gen = mt19937(seed);
+
             ms_t previousTime = startTime;
             double previousPrice = priceMean;
             double previousVolume = volumeMean;
@@ -81,7 +96,22 @@ namespace madlib::trading::history {
         //     gen(((Args*)context)->seed)
         // {}
 
-        using TradeCandleHistory::TradeCandleHistory;
+        MonteCarloTradeCandleHistory(
+            const string& symbol,
+            const ms_t startTime,
+            const ms_t endTime,
+            const ms_t period
+        ): 
+            TradeCandleHistory(symbol, startTime, endTime, period)
+        {
+            settings.push_back(Mixed("Volume Mean", defaultVolumeMean));
+            settings.push_back(Mixed("Volume Standard Deviation", defaultVolumeStdDeviation));
+            settings.push_back(Mixed("Price Mean", defaultPriceMean));
+            settings.push_back(Mixed("Price Standard Deviation", defaultPriceStdDeviation));
+            settings.push_back(Mixed("Time Lambda (sec)", defaultTimeLambda));
+            settings.push_back(Mixed("Use random device", defaultUseRandomDevice));
+            settings.push_back(Mixed("Use seed number", (long)defaultSeed));
+        }
         
         virtual ~MonteCarloTradeCandleHistory() {}
 
@@ -94,6 +124,21 @@ namespace madlib::trading::history {
 
         virtual void reload(Progress& progress) override {
             load(progress);
+        }
+
+        virtual bool isValidSettings(const vector<Mixed>&) override {
+            // DBG("TODO: validate settings");
+            // dumpSettings();
+            // throw ERR_UNIMP;
+            return true;
+        }
+
+        virtual bool setSettings(const vector<Mixed>& settings) override {
+            // DBG("TODO: store settings");
+            // dumpSettings();
+            // throw ERR_UNIMP;
+            this->settings = settings;
+            return true;
         }
 
         // virtual void clear() override {

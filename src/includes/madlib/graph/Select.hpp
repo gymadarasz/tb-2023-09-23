@@ -20,7 +20,7 @@ namespace madlib::graph {
 
         static void onSelectTouchHandler(void* context, unsigned int, int, int) {
             Area* that = (Area*)context;
-            Select* select = (Select*)that->getEventContext();
+            Select* select = (Select*)that->getEventContext("Select");
             string selection = zenity_combo(
                 select->label->getText(),
                 select->prompt,
@@ -52,7 +52,7 @@ namespace madlib::graph {
             input = new Input(gfx, left + labelWidth, top, inputWidth, height, value);
             parent->child(label);
             parent->child(input);
-            input->setEventContext(this);
+            input->setEventContext("Select", this);
             input->addTouchHandler(onSelectTouchHandler);
         }
 

@@ -18,7 +18,7 @@ namespace madlib::graph {
     class GFX: public EventHandler {
     protected:
 
-        Display *display = nullptr;
+        static Display* display;
         Window window;
         GC gc;
         const char* font = nullptr;
@@ -28,19 +28,33 @@ namespace madlib::graph {
 
         void* context = nullptr;
 
-    public:
+        bool closing = false;
 
-        bool close = false;
+    public:
 
         GFX(void* context = nullptr): context(context) {}
 
-        virtual ~GFX() {
-
-        }
+        virtual ~GFX() {}
 
         void* getContext() const {
             return context;
         }
+
+        // static int errorHandler(	    /* WARNING, this type not in Xlib spec */
+        //     Display*		/* display */,
+        //     XErrorEvent* errorEvent	/* error_event */
+        // ) {
+        //     DBG(
+        //         "type: " + to_string(errorEvent->type) + "\n"
+        //         "display: " + to_string((unsigned long long)errorEvent->display) + "\n"
+        //         "resourceid: " + to_string(errorEvent->resourceid) + "\n"
+        //         "serial: " + to_string(errorEvent->serial) + "\n"
+        //         "error_code: " + to_string((int)errorEvent->error_code) + "\n"
+        //         "request_code: " + to_string((int)errorEvent->request_code) + "\n"
+        //         "minor_code: " + to_string((int)errorEvent->minor_code)
+        //     );
+        //     return 0;
+        // }
 
         void setColor(Color color) const {
             XSetForeground(display, gc, color);
@@ -88,9 +102,13 @@ namespace madlib::graph {
 
         void closeWindow(bool closeDisplay = true) const {            
             if (fontInfo) XFreeFont(display, fontInfo);
-            XFreeGC(display, gc);
+            XFreeGC(display, gc);            
             XDestroyWindow(display, window);
             if (closeDisplay) XCloseDisplay(display);
+        }
+
+        void close() {
+            closing = true;
         }
 
         void getWindowSize(int &width, int &height) const {
@@ -311,7 +329,7 @@ namespace madlib::graph {
 
         void eventLoop(unsigned long ms = Theme::defaultGFXEventLoopMs) {
 
-            while (!close) {
+            while (!closing) {
 
                 if (!onLoopHandlers.empty() && XPending(display) <= 0) {
                     sleep_ms(ms);
@@ -349,11 +367,17 @@ namespace madlib::graph {
             XFlush(display);
         }
     
-        void handleEvent(XEvent event) const {
+        void handleEvent(XEvent event) {
             if (event.type != MotionNotify) setCursor(XC_X_cursor);
+
             int width, height;
             KeySym key;
             char text[32]; // FlawFinder: ignore
+
+            // Subscribe to the close window event
+            Atom wmDeleteMessage = XInternAtom(display, "WM_DELETE_WINDOW", False);
+            XSetWMProtocols(display, window, &wmDeleteMessage, 1);
+
             switch (event.type) {
                 case Expose:
                     // Handle expose event (e.g., redraw)
@@ -395,6 +419,14 @@ namespace madlib::graph {
                         onMove(eventContext, event.xbutton.x, event.xbutton.y);
                     break;
 
+                case ClientMessage:
+                    if ((unsigned)event.xclient.data.l[0] == wmDeleteMessage) {
+                        for (const onCloseHandler& onClose: onCloseHandlers)
+                            onClose(eventContext);
+                        closing = true;
+                    }
+                    break;
+
                 default:
                     throw ERROR("Unhandled event type: " + to_string(event.type));
                     break;
@@ -407,5 +439,6 @@ namespace madlib::graph {
             zenity_dialogue(errmsg);
         }
     };
+    Display* GFX::display = nullptr;
 
 }

@@ -34,7 +34,7 @@ public:
     static void run(ManualTestApplication* test, const string& logmsg) {
         cout << ".";
         LOG("Manual testing...: " + logmsg);
-        test->run();
+        test->run(false);
         delete test;
     }
 
@@ -133,7 +133,7 @@ int main() {
     cout << "Testing in progress: ";
 
     cout << "Unit tests: ";
-    //unit_tests();
+    unit_tests();
     cout << " [OK]" << endl;
 
     cout << "Manual tests: ";

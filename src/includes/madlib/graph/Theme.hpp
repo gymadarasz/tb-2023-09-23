@@ -11,6 +11,8 @@ namespace madlib::graph {
     struct Theme {
         static const unsigned long defaultGFXEventLoopMs = 300;
         static const Color defaultWindowColor = gray;
+        static const int defaultWindowWidth = 1600;
+        static const int defaultWindowHeight = 900;
         static const char* defaultWindowTitle;
         static const char* defaultWindowFont;
 
@@ -77,13 +79,19 @@ namespace madlib::graph {
         static const Color defaultTradeLabelBuyColor;
         static const Color defaultTradeLabelSellColor;
         static const Color defaultTradeLabelErrorColor;
+
+        static const int defaultSettingsFormWidth = 520;
+        static const int defaultSettingsFormHeight = 300;
+        static const char* defaultSettingsFormTitle;
     };
-    const char* Theme::defaultWindowTitle = "graph";
+    const char* Theme::defaultWindowTitle = "Window";
     const char* Theme::defaultWindowFont = "7x14";
     const Color Theme::defaultChartDotScaleContext = darkGray;
     const Color Theme::defaultChartLineScaleContext = darkGray;
     const Color Theme::defaultChartBoxScaleContext = darkGray;
     const Color Theme::defaultChartFilledScaleContext = darkGray;
+
+    const char* Theme::defaultSettingsFormTitle = "Settings";
 
     // ==== trading ====
     const Color Theme::defaultTradeHistoryChartPriceColor = orange;

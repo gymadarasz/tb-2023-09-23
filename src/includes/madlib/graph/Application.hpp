@@ -16,9 +16,13 @@ namespace madlib::graph {
 
     public:
 
-        Application() {
+        Application(
+            int width = Theme::defaultWindowWidth,
+            int height = Theme::defaultWindowHeight,
+            const char* title = Theme::defaultWindowTitle
+        ) {
             gfx = new GFX(this);
-            gui = new GUI(gfx, 1600, 900, "Application");
+            gui = new GUI(gfx, width, height, title);
         }
 
         virtual ~Application() {
@@ -26,11 +30,11 @@ namespace madlib::graph {
             delete gui;
         }
 
-        Application* run() {
+        Application* run(bool closeDisplay = true) {
             try {
                 init();
                 gui->draw();
-                gui->loop();
+                gui->loop(closeDisplay);
             } catch (exception& e) {
                 string errmsg = "Application error: " + string(e.what());
                 LOG(errmsg);

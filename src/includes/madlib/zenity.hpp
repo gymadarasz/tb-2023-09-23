@@ -9,6 +9,10 @@ using namespace std;
 namespace madlib {
 
     string zenity_exec(const string& args, const string& err = "/dev/null") {
+        return exec("echo $(zenity " + args + " 2>" + err + ")");
+    }
+
+    string zenity_exec_trim(const string& args, const string& err = "/dev/null") {
         return str_trim(exec("echo $(zenity " + args + " 2>" + err + ")"));
     }
 
@@ -57,7 +61,7 @@ namespace madlib {
                 }
             );
 
-        return zenity_exec(cmd, err);
+        return zenity_exec_trim(cmd, err);
     }
 
     string zenity_date(
@@ -77,7 +81,7 @@ namespace madlib {
                 }
             );
 
-        return zenity_exec(cmd, err);
+        return zenity_exec_trim(cmd, err);
     }
 
     bool zenity_question(
@@ -104,6 +108,30 @@ namespace madlib {
         return !zenity_result(cmd);
     }
 
+    string zenity_entry(
+        const string& title, 
+        const string& text,
+        const string& cancel = "Cancel",
+        const string& ok = "Ok"
+    ) {
+        const string cmd = 
+            str_replace(
+                "--entry"
+                "  --title={title}"
+                "  --text={text}"
+                "  --cancel-label={cancel}"
+                "  --ok-label={ok}",
+                {
+                    { "{title}", zenity_quote_esc(title) },
+                    { "{text}", zenity_quote_esc(text) },
+                    { "{cancel}", zenity_quote_esc(cancel) },
+                    { "{ok}", zenity_quote_esc(ok) },
+                }
+            );
+
+        return zenity_exec_trim(cmd);
+    }
+
     string zenity_file_selection(
         const string& title = "", 
         const string& err = "/dev/null"
@@ -117,7 +145,7 @@ namespace madlib {
                 }
             );
 
-        return zenity_exec(cmd, err);
+        return zenity_exec_trim(cmd, err);
     }
 
     FILE* zenity_progress(

@@ -10,7 +10,7 @@ public:
 
     static void closeHandler(void* context, unsigned int, int, int) {
         Button* closeBtn = (Button*)context;
-        closeBtn->getRoot()->getGFX()->close = true;
+        closeBtn->getRoot()->getGFX()->close();
     }
 
 protected:

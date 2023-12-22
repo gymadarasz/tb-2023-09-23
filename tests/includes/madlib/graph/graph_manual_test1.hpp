@@ -44,7 +44,7 @@ void graph_manual_test1_draw(void*) {
 }
 
 void graph_manual_test1_close(void*, unsigned int, int, int) {
-    graph_manual_test1_gfxPtr->close = true;
+    graph_manual_test1_gfxPtr->close();
 }
 
 void graph_manual_test1_lbtn_draw(void* context) {
@@ -96,7 +96,7 @@ int graph_manual_test1()
 
     lbtn.addDrawHandler(graph_manual_test1_lbtn_draw);
 
-    gui.loop();
+    gui.loop(false);
 
     return 0;
 }

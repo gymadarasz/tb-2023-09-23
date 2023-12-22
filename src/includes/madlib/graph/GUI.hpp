@@ -65,12 +65,13 @@ namespace madlib::graph {
             init(width, height, title, color);
         }
 
-        void close() {
-            gfx->closeWindow();
-        }
+        // void close(bool closeDisplay = true) {
+        //     gfx->closeWindow(closeDisplay);
+        // }
 
-        void loop(unsigned long ms = Theme::defaultGFXEventLoopMs) const {
+        void loop(bool closeDisplay = true, unsigned long ms = Theme::defaultGFXEventLoopMs) const {
             gfx->eventLoop(ms);
+            gfx->closeWindow(closeDisplay);
         }
 
         void setTitle(const char* title) {

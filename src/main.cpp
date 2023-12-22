@@ -7,6 +7,7 @@
 #include "includes/madlib/graph/Select.hpp"
 #include "includes/madlib/graph/DateRange.hpp"
 #include "includes/madlib/graph/Input.hpp"
+#include "includes/madlib/graph/SettingsHolder.hpp"
 #include "includes/madlib/trading/periods.hpp"
 #include "includes/madlib/trading/Fees.hpp"
 #include "includes/madlib/trading/Pair.hpp"
@@ -67,9 +68,76 @@ const map<string, Balance> Config::balances = {
 const ms_t Config::startTime = datetime_to_ms("2023-01-01 00:00:00");
 const ms_t Config::endTime = now();
 
+class SettingsForm: public FrameApplication { // TODO: !@# seems breaks the Montecarlo history settings but otherwise works
+protected:
+    const int paddingTop = 10;
+    const int paddingLeft = 10;
+    const int lineHeight = 30; // TODO
+
+    SettingsHolder& settingsHolder;
+    vector<Mixed> settings;
+
+    Button* okButton = nullptr;
+    Button* cancelButton = nullptr;
+
+    static void onOkButtonTouchHandler(void* context, unsigned int, int, int) {
+        Button* that = (Button*)context;
+        SettingsForm* form = (SettingsForm*)that->getEventContext("SettingsForm");
+        
+        // save before close;
+        if (!form->settingsHolder.isValidSettings(form->settings)) return; // Invalid data
+        if (!form->settingsHolder.setSettings(form->settings)) throw ERROR("Unable to set data.");
+
+        that->getGFX()->close();
+    }
+
+    static void onCancelButtonTouchHandler(void* context, unsigned int, int, int) {
+        Button* that = (Button*)context;
+        that->getGFX()->close();
+    }    
+
+public:
+    explicit SettingsForm(
+        SettingsHolder& settingsHolder,
+        int width = Theme::defaultSettingsFormWidth,
+        int height = Theme::defaultSettingsFormHeight,
+        const char* title = Theme::defaultSettingsFormTitle
+    ): 
+        FrameApplication(width, height, title),
+        settingsHolder(settingsHolder),
+        settings(settingsHolder.getSettings())
+    {}
+
+    virtual ~SettingsForm() {
+        delete okButton;
+        delete cancelButton;
+    }
+
+    virtual void init() override {
+        FrameApplication::init();
+        
+        int row = 0;
+        for (Mixed& setting: settings)
+            setting.createInput(mainFrame, paddingLeft, paddingTop + row++ * lineHeight);
+        
+        row++;
+        
+        okButton = new Button(gfx, 200, row * lineHeight, 90, 20, "Ok");
+        okButton->setBackgroundColor(green);
+        okButton->setTextColor(white);
+        okButton->setEventContext("SettingsForm", this);
+        okButton->addTouchHandler(onOkButtonTouchHandler);
+        mainFrame->child(okButton);
+
+        cancelButton = new Button(gfx, 300, row * lineHeight, 90, 20, "Cancel");
+        cancelButton->addTouchHandler(onCancelButtonTouchHandler);
+        mainFrame->child(cancelButton);
+    }
+};
 
 class BitstampHistoryApplication: public FrameApplication {
 protected:
+
 
     static BitstampHistoryApplication* app;
 
@@ -82,13 +150,25 @@ protected:
         {"symbol", Strategy::Parameter(Config::symbol)},
     };
 
-
+    const int settingsLeft = 10;
+    const int settingsColWidth = 100;
 
     const int settingsTop = 10;
     const int settingsRowHeight = 30;
 
-    const int multiChartAccordionLeft = 10;
-    const int multiChartAccordionTop = settingsTop + settingsRowHeight * 2;
+    int getSettingsLeft(int col) {
+        return settingsLeft + settingsColWidth * col;
+    }
+
+    int getSettingsTop(int row) {
+        return settingsTop + settingsRowHeight * row;
+    }
+
+    const int buttonWidth = 90;
+    const int buttonHeight = 20;
+
+    // const int multiChartAccordionLeft = 10;
+    // const int multiChartAccordionTop = settingsTop + settingsRowHeight * 2;
     const int multiChartAccordionWidth = 1000;
     const int multiChartAccordionFramesHeight = 340;
 
@@ -100,6 +180,7 @@ protected:
     CandleStrategy* candleStrategy = nullptr;
 
     Select* historySelect = nullptr;
+    Button* historySetupButton = nullptr;
     DateRange* historyDateRange = nullptr;
     Select* exchangeSelect = nullptr;
     Select* periodSelect = nullptr;
@@ -133,6 +214,15 @@ protected:
         app->loadHistoryModule();
         app->loadHistoryData();
         app->updateCandleStrategyBacktesterMultiChartAccordion();
+    }
+
+    static void onHistorySetupButtonTouch(void*, unsigned int, int, int) {
+        SettingsForm form(
+            *app->candleHistory,
+            520, 300, "History Settings"
+        );
+        form.run(false);
+        app->gfx->triggerFakeEvent({ GFX::RELEASE });
     }
 
     static void onHistoryDateRangeFromTouch(void*, unsigned int, int, int) {
@@ -192,7 +282,11 @@ protected:
     void createHistorySelect() {
         vector<string> values = getHistoryClasses();
         string defval = values.size() >= 1 ? values[0] : "";
-        historySelect = new Select(mainFrame, 10, settingsTop, "History", values, defval);
+        historySelect = new Select(
+            mainFrame, 
+            getSettingsLeft(0), getSettingsTop(0), 
+            "History", values, defval
+        );
         Input* historyInput = historySelect->getInput();
         historyInput->addTouchHandler(onHistorySelected);
         if (!defval.empty()) {
@@ -200,9 +294,24 @@ protected:
             loadHistoryData();
         }
     }
+    
+    void createHistorySetupButton() {
+        historySetupButton = new Button(
+            gfx, 
+            getSettingsLeft(3), getSettingsTop(0), 
+            buttonWidth, buttonHeight, 
+            "Settings.."
+        );
+        mainFrame->child(historySetupButton);
+        historySetupButton->addTouchHandler(onHistorySetupButtonTouch);
+    }
 
     void createHistoryDateRange() {
-        historyDateRange = new DateRange(mainFrame, 300, settingsTop, "Date", Config::startTime, Config::endTime);
+        historyDateRange = new DateRange(
+            mainFrame, 
+            getSettingsLeft(4), getSettingsTop(0), 
+            "Date", Config::startTime, Config::endTime
+        );
         historyDateRange->getFromInput()->addTouchHandler(onHistoryDateRangeFromTouch);
         historyDateRange->getToInput()->addTouchHandler(onHistoryDateRangeToTouch);
     }
@@ -210,21 +319,33 @@ protected:
     void createExchangeSelect() {
         vector<string> values = getExchangeClasses();
         string defval = values.size() >= 1 ? values[0] : "";
-        exchangeSelect = new Select(mainFrame, 300, settingsTop + settingsRowHeight, "Exchange", values, defval);
+        exchangeSelect = new Select(
+            mainFrame, 
+            getSettingsLeft(4), getSettingsTop(1), 
+            "Exchange", values, defval
+        );
         Input* exchangeInput = exchangeSelect->getInput();
         exchangeInput->addTouchHandler(onExchangeSelected);
         if (!defval.empty()) loadExchangeModule();
     }
 
     void createPeriodSelect() {
-        periodSelect = new Select(mainFrame, 600, settingsTop, "Period", {}, "", 50);
+        periodSelect = new Select(
+            mainFrame, 
+            getSettingsLeft(7), getSettingsTop(0), 
+            "Period", {}, "", 50
+        );
         Input* periodInput = periodSelect->getInput();
         periodInput->addTouchHandler(onPeriodSelected);
         loadPeriods();
     }
 
     void createSymbolSelect() {
-        symbolSelect = new Select(mainFrame, 600, settingsTop + settingsRowHeight, "Symbol", {}, "", 80);
+        symbolSelect = new Select(
+            mainFrame, 
+            getSettingsLeft(7), getSettingsTop(1), 
+            "Symbol", {}, "", 80
+        );
         Input* symbolInput = symbolSelect->getInput();
         symbolInput->addTouchHandler(onSymbolSelected);
         loadSymbols();
@@ -233,20 +354,34 @@ protected:
     void createStrategySelect() {
         vector<string> values = getStrategyClasses();
         string defval = values.size() >= 1 ? values[0] : "";
-        candleStrategySelect = new Select(mainFrame, 10, settingsTop + settingsRowHeight, "Strategy", values, defval);
+        candleStrategySelect = new Select(
+            mainFrame, 
+            getSettingsLeft(0), getSettingsTop(1), 
+            "Strategy", values, defval
+        );
         Input* candleStrategyInput = candleStrategySelect->getInput();
         candleStrategyInput->addTouchHandler(onCandleStrategySelected);
         if (!defval.empty()) loadStrategyModule();
     }
 
     void createReloadButton() {
-        reloadButton = new Button(gfx, 910, settingsTop, 90, 20, "Reload");
+        reloadButton = new Button(
+            gfx, 
+            getSettingsLeft(9), getSettingsTop(0), 
+            buttonWidth, buttonHeight, 
+            "Reload"
+        );
         mainFrame->child(reloadButton);
         reloadButton->addTouchHandler(onReloadTouch);
     }
 
     void createStartButton() {
-        startButton = new Button(gfx, 910, settingsTop + settingsRowHeight, 90, 20, "Start");
+        startButton = new Button(
+            gfx, 
+            getSettingsLeft(9), getSettingsTop(1), 
+            buttonWidth, buttonHeight, 
+            "Start"
+        );
         mainFrame->child(startButton);
         startButton->addTouchHandler(onStartTouch);
     }
@@ -258,8 +393,7 @@ protected:
         candleStrategyBacktesterMultiChartAccordion = 
             new CandleStrategyBacktesterMultiChartAccordion(
                 gfx, 
-                multiChartAccordionLeft, 
-                multiChartAccordionTop, 
+                getSettingsLeft(0), getSettingsTop(2), 
                 multiChartAccordionWidth, 
                 multiChartAccordionFramesHeight,
                 startTime, endTime,
@@ -373,6 +507,7 @@ public:
 
     virtual ~BitstampHistoryApplication() {
         delete historySelect;
+        delete historySetupButton;
         delete historyDateRange;
         delete exchangeSelect;
         delete periodSelect;
@@ -394,6 +529,7 @@ public:
         createSymbolSelect();
         createHistoryDateRange();
         createHistorySelect();
+        createHistorySetupButton();
         createReloadButton();
         createStartButton();
         createCandleStrategyBacktesterMultiChartAccordion();
@@ -403,9 +539,9 @@ BitstampHistoryApplication* BitstampHistoryApplication::app = nullptr;
 
 int backtest(int, const char* []) {
     // TODO: pass arguments
-    BitstampHistoryApplication* app = new BitstampHistoryApplication();
-    app->run();
-    delete app;
+    BitstampHistoryApplication app; // = new BitstampHistoryApplication();
+    app.run();
+    // delete app;
     return 0;
 }
 

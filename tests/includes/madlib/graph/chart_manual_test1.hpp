@@ -27,7 +27,7 @@ void chart_manual_test1_generateRealPoints(Chart& chart, vector<Shape*>& points,
 
 
 void chart_manual_test1_close(void*, unsigned int, int, int) {
-    chart_manual_test1_gfxPtr->close = true;
+    chart_manual_test1_gfxPtr->close();
 }
 
 int chart_manual_test1()
@@ -59,7 +59,7 @@ int chart_manual_test1()
         chart, chart.createPointSeries(mainProjector, lightCyan)->getShapes(), 2
     );
     
-    gui.loop();
+    gui.loop(false);
     
     return 0;
 }

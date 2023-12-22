@@ -24,7 +24,7 @@ void chart_manual_test4_draw(void* /*context*/) {
 }
 
 void chart_manual_test4_close(void*, unsigned int, int, int) {
-    chart_manual_test4_gfxPtr->close = true;
+    chart_manual_test4_gfxPtr->close();
 }
 
 int chart_manual_test4_history()
@@ -91,7 +91,7 @@ int chart_manual_test4_history()
     chart.addDrawHandler(chart_manual_test4_draw);
 
     chart.draw();
-    gui.loop();
+    gui.loop(false);
     
     return 0;
 }

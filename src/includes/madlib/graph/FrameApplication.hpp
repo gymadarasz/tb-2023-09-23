@@ -7,17 +7,18 @@ namespace madlib::graph {
 
     class FrameApplication: public Application {
     protected:
+        
         Frame* mainFrame = nullptr;
-        // Frame mainFrame = Frame(
-        //     gfx, 0, 0, 
-        //     gui.getWidth(), gui.getHeight(), 
-        //     false, false, NONE, Theme::defaultWindowColor
-        // );
+
     public:
 
-        using Application::Application;
-
-        FrameApplication(): Application() {
+        FrameApplication(
+            int width = Theme::defaultWindowWidth,
+            int height = Theme::defaultWindowHeight,
+            const char* title = Theme::defaultWindowTitle
+        ): 
+            Application(width, height, title) 
+        {
             mainFrame = new Frame(
                 gfx, 0, 0, 
                 gui->getWidth(), gui->getHeight(), 

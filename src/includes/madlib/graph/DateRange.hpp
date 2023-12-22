@@ -16,7 +16,7 @@ namespace madlib::graph {
 
         static void onFromDateTouchHandler(void* context, unsigned int, int, int) {
             Area* that = (Area*)context;
-            DateRange* dateRange = (DateRange*)that->getEventContext();
+            DateRange* dateRange = (DateRange*)that->getEventContext("DateRange");
             ms_t to = datetime_to_ms(dateRange->toInput->getText());
             string selection = "";
             while (true) {
@@ -34,7 +34,7 @@ namespace madlib::graph {
 
         static void onToDateTouchHandler(void* context, unsigned int, int, int) {
             Area* that = (Area*)context;
-            DateRange* dateRange = (DateRange*)that->getEventContext();
+            DateRange* dateRange = (DateRange*)that->getEventContext("DateRange");
             ms_t from = datetime_to_ms(dateRange->fromInput->getText());
             string selection = "";
             while (true) {
@@ -78,8 +78,8 @@ namespace madlib::graph {
             parent->child(fromInput);
             parent->child(toLabel);
             parent->child(toInput);
-            fromInput->setEventContext(this);
-            toInput->setEventContext(this);
+            fromInput->setEventContext("DateRange", this);
+            toInput->setEventContext("DateRange", this);
             fromInput->addTouchHandler(onFromDateTouchHandler);
             toInput->addTouchHandler(onToDateTouchHandler);
         }

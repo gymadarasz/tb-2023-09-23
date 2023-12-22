@@ -32,8 +32,8 @@ namespace madlib::trading::strategy {
     public:
 
         PointSeries* sellAboveProjector = nullptr;
-        Chart* rsiChart = nullptr;
-        PointSeries* rsiProjector = nullptr;
+        // Chart* rsiChart = nullptr; // TODO: !@# RSI chart kills the bigMultiChart->draw() - main app recreats the bigChart but the RSI still in the multiChart alignments?
+        // PointSeries* rsiProjector = nullptr;
 
         EmaIndicator* emaIndicator1 = nullptr;
         EmaIndicator* emaIndicator2 = nullptr;
@@ -61,8 +61,8 @@ namespace madlib::trading::strategy {
             emaIndicator2 = new EmaIndicator(candleHistoryChart, price, 4000, green);
             emaIndicator3 = new EmaIndicator(candleHistoryChart, price, 16000, orange);
 
-            rsiChart = multichartAccordion->createChart("RSI", 200);
-            rsiProjector = rsiChart->createPointSeries();
+            // rsiChart = multichartAccordion->createChart("RSI", 200);
+            // rsiProjector = rsiChart->createPointSeries();
 
             reinit(price, closeAt);
         }
@@ -78,9 +78,9 @@ namespace madlib::trading::strategy {
             emaIndicator2->calc(closeAt, price);
             emaIndicator3->calc(closeAt, price);
 
-            rsiProjector->getShapes().push_back(
-                rsiChart->createPointShape(closeAt, price)
-            );
+            // rsiProjector->getShapes().push_back(
+            //     rsiChart->createPointShape(closeAt, price)
+            // );
 
 
             // sell

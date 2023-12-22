@@ -20,7 +20,7 @@ void chart_manual_test5_draw(void* /*context*/) {
 }
 
 void chart_manual_test5_close(void*, unsigned int, int, int) {
-    chart_manual_test5_gfxPtr->close = true;
+    chart_manual_test5_gfxPtr->close();
 }
 
 int chart_manual_test5_zoom()
@@ -83,7 +83,7 @@ int chart_manual_test5_zoom()
     chart.addDrawHandler(chart_manual_test5_draw);
     chart.draw();
 
-    gui.loop();
+    gui.loop(false);
     
     return 0;
 }
