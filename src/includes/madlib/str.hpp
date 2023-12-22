@@ -10,7 +10,7 @@ using namespace std;
 
 namespace madlib {
 
-    #define __FILE_LINE__ COLOR_FILENAME + madlib::path_normalize(__FILE__) + ":" + std::to_string(__LINE__) + COLOR_DEFAULT
+    #define __FILE_LINE__ COLOR_FILENAME + madlib::path_normalize(__FILE__) + ":" + to_string(__LINE__) + COLOR_DEFAULT
 
     string str_replace(const string& str, const string& from, const string& to) {
         string result = str;
@@ -209,6 +209,13 @@ namespace madlib {
         tokens.push_back(data.substr(start));
 
         return tokens;
+    }
+    
+    string str_concat(const vector<string>& strs, const string& sep) {
+        if (strs.empty()) return "";
+        string result = strs[0];
+        for (size_t i = 1; i < strs.size(); ++i) result += sep + strs[i];
+        return result;
     }
 
     template <typename... Args>

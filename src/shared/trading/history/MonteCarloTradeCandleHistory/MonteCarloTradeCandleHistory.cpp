@@ -11,26 +11,26 @@ namespace madlib::trading::history {
     protected:
         // TODO: load config somehow..??
         // const string symbol = "MONTECARLO";
-        const double defaultVolumeMean = 50;  // Initial volume
-        const double defaultVolumeStdDeviation = 5;
-        const double defaultPriceMean = 10000;  // Initial price
-        const double defaultPriceStdDeviation = 50;
-        const double defaultTimeLambda = MS_PER_SEC * 20;  // Mean time in milliseconds (60 seconds)
+        const double defaultVolumeMean = 100;  // Initial volume
+        const double defaultVolumeStdDeviation = 10;
+        const double defaultPriceMean = 100;  // Initial price
+        const double defaultPriceStdDeviation = 10;
+        const double defaultTimeLambda = MS_PER_SEC;  // Mean time in milliseconds (60 seconds)
         const bool defaultUseRandomDevice = true;
-        const unsigned int defaultSeed = 121234l;
+        const unsigned int defaultSeed = 1;
         // const unsigned int defaultSeedRandomDevice = random_device()(); // 12312334
         
 
         // Function to init events within a specified time range
         void generateTrades() {
-            const double priceMean = getSettingsValueAsDouble("Price Mean");
-            const double volumeMean = getSettingsValueAsDouble("Volume Mean");
-            const double timeLambda = getSettingsValueAsDouble("Time Lambda (sec)") * MS_PER_SEC;
-            const double priceStdDeviation = getSettingsValueAsDouble("Price Standard Deviation");
-            const double volumeStdDeviation = getSettingsValueAsDouble("Volume Standard Deviation");
-            const unsigned int seed = getSettingsValueAsBool("Use random device") 
+            const double priceMean = getDouble("priceMean");
+            const double volumeMean = getDouble("volumeMean");
+            const double timeLambda = getDouble("timeLambda");
+            const double priceStdDeviation = getDouble("priceStdDeviation");
+            const double volumeStdDeviation = getDouble("volumeStdDeviation");
+            const unsigned int seed = getBool("useRandomDevice") 
                 ? random_device()() 
-                : (unsigned int)getSettingsValueAsLong("Use seed number");
+                : (unsigned int)getLong("seed");
 
 
             mt19937 gen = mt19937(seed);
@@ -104,13 +104,13 @@ namespace madlib::trading::history {
         ): 
             TradeCandleHistory(symbol, startTime, endTime, period)
         {
-            settings.push_back(Mixed("Volume Mean", defaultVolumeMean));
-            settings.push_back(Mixed("Volume Standard Deviation", defaultVolumeStdDeviation));
-            settings.push_back(Mixed("Price Mean", defaultPriceMean));
-            settings.push_back(Mixed("Price Standard Deviation", defaultPriceStdDeviation));
-            settings.push_back(Mixed("Time Lambda (sec)", defaultTimeLambda));
-            settings.push_back(Mixed("Use random device", defaultUseRandomDevice));
-            settings.push_back(Mixed("Use seed number", (long)defaultSeed));
+            list.add("volumeMean", "Volume Mean", defaultVolumeMean);
+            list.add("volumeStdDeviation", "Volume Standard Deviation", defaultVolumeStdDeviation);
+            list.add("priceMean", "Price Mean", defaultPriceMean);
+            list.add("priceStdDeviation", "Price Standard Deviation", defaultPriceStdDeviation);
+            list.add("timeLambda", "Time Lambda (ms)", defaultTimeLambda);
+            list.add("useRandomDevice", "Use random device", defaultUseRandomDevice);
+            list.add("seed", "Use seed number", (long)defaultSeed);
         }
         
         virtual ~MonteCarloTradeCandleHistory() {}
@@ -126,20 +126,23 @@ namespace madlib::trading::history {
             load(progress);
         }
 
-        virtual bool isValidSettings(const vector<Mixed>&) override {
-            // DBG("TODO: validate settings");
-            // dumpSettings();
-            // throw ERR_UNIMP;
-            return true;
-        }
+        // virtual bool (MixedInputList& inputs) override {
+        //     DBG("TODO: currents:");
+        //     list.dump(true);
+        //     DBG("TODO: validate settings inputs:");
+        //     inputs.dump(true);
+        //     // dumpSettings();
+        //     // throw ERR_UNIMP;
+        //     return true;
+        // }
 
-        virtual bool setSettings(const vector<Mixed>& settings) override {
-            // DBG("TODO: store settings");
-            // dumpSettings();
-            // throw ERR_UNIMP;
-            this->settings = settings;
-            return true;
-        }
+        // virtual bool setList(MixedInputList& list) override {
+        //     DBG("TODO: store settings");
+        //     list.dump(true);
+        //     // throw ERR_UNIMP;
+        //     this->list = list;
+        //     return true;
+        // }
 
         // virtual void clear() override {
         //     trades.clear();

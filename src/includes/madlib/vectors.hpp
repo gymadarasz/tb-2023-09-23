@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+
 #include "str.hpp"
 #include "ERROR.hpp"
 
@@ -49,8 +50,7 @@ namespace madlib {
     template<typename T>
     vector<T> vector_load(const string &filename) {
         ifstream file(filename, ios::binary);
-        if (!file.is_open()) 
-            throw ERROR("Unable to open file for reading: " + filename);
+        if (!file.is_open()) throw ERROR("Unable to load vector from file: " + filename);
         T item;
         vector<T> data;
         while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);
@@ -64,7 +64,7 @@ namespace madlib {
     template<typename T>
     vector<T>& vector_load(const string &filename, vector<T>& data) {
         ifstream file(filename, ios::binary);
-        if (!file.is_open()) throw ERROR("Unable to open file for reading: " + filename);
+        if (!file.is_open()) throw ERROR("Unable to load vector from file: " + filename);
         data.clear();
         T item;
         while (file.read(reinterpret_cast<char*>(&item), sizeof(T))) data.push_back(item);

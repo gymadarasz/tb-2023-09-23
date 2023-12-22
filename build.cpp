@@ -149,7 +149,7 @@ protected:
         const string& filename, vector<string>& deps,
         const string& hExtension, const vector<string>& cppExtensions
     ) {
-        
+        //cout << "Collect dependencies of: " COLOR_FILENAME << filename << COLOR_DEFAULT << endl;
         vector<string> matches;
         string contents = file_get_contents(filename);
         if (!regx_match_all("\\n\\s*\\#include\\s*\"(.*)\"", contents, &matches)) return;

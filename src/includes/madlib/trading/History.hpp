@@ -1,13 +1,13 @@
 #pragma once
 
 #include "../Progress.hpp"
-#include "../graph/SettingsHolder.hpp"
+#include "../graph/Mixed.hpp"
 
 using namespace madlib::graph;
 
 namespace madlib::trading {
     
-    class History: public SettingsHolder {
+    class History: public MixedInputListHolder {
     protected:
 
         string symbol;
@@ -23,7 +23,7 @@ namespace madlib::trading {
             const ms_t endTime,
             const ms_t period
         ): 
-            SettingsHolder(),
+            MixedInputListHolder(),
             symbol(symbol),
             startTime(startTime),
             endTime(endTime),

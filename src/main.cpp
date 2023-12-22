@@ -7,7 +7,7 @@
 #include "includes/madlib/graph/Select.hpp"
 #include "includes/madlib/graph/DateRange.hpp"
 #include "includes/madlib/graph/Input.hpp"
-#include "includes/madlib/graph/SettingsHolder.hpp"
+#include "includes/madlib/graph/Mixed.hpp"
 #include "includes/madlib/trading/periods.hpp"
 #include "includes/madlib/trading/Fees.hpp"
 #include "includes/madlib/trading/Pair.hpp"
@@ -68,72 +68,72 @@ const map<string, Balance> Config::balances = {
 const ms_t Config::startTime = datetime_to_ms("2023-01-01 00:00:00");
 const ms_t Config::endTime = now();
 
-class SettingsForm: public FrameApplication { // TODO: !@# seems breaks the Montecarlo history settings but otherwise works
-protected:
-    const int paddingTop = 10;
-    const int paddingLeft = 10;
-    const int lineHeight = 30; // TODO
+// class SettingsForm: public FrameApplication { // TODO: !@# seems breaks the Montecarlo history settings but otherwise works
+// protected:
+//     const int paddingTop = 10;
+//     const int paddingLeft = 10;
+//     const int lineHeight = 30; // TODO
 
-    SettingsHolder& settingsHolder;
-    vector<Mixed> settings;
+//     SettingsHolder& settingsHolder;
+//     vector<Mixed> settings;
 
-    Button* okButton = nullptr;
-    Button* cancelButton = nullptr;
+//     Button* okButton = nullptr;
+//     Button* cancelButton = nullptr;
 
-    static void onOkButtonTouchHandler(void* context, unsigned int, int, int) {
-        Button* that = (Button*)context;
-        SettingsForm* form = (SettingsForm*)that->getEventContext("SettingsForm");
+//     static void onOkButtonTouchHandler(void* context, unsigned int, int, int) {
+//         Button* that = (Button*)context;
+//         SettingsForm* form = (SettingsForm*)that->getEventContext("SettingsForm");
         
-        // save before close;
-        if (!form->settingsHolder.isValidSettings(form->settings)) return; // Invalid data
-        if (!form->settingsHolder.setSettings(form->settings)) throw ERROR("Unable to set data.");
+//         // save before close;
+//         if (!form->settingsHolder.isValidSettings(form->settings)) return; // Invalid data
+//         if (!form->settingsHolder.setSettings(form->settings)) throw ERROR("Unable to set data.");
 
-        that->getGFX()->close();
-    }
+//         that->getGFX()->close();
+//     }
 
-    static void onCancelButtonTouchHandler(void* context, unsigned int, int, int) {
-        Button* that = (Button*)context;
-        that->getGFX()->close();
-    }    
+//     static void onCancelButtonTouchHandler(void* context, unsigned int, int, int) {
+//         Button* that = (Button*)context;
+//         that->getGFX()->close();
+//     }    
 
-public:
-    explicit SettingsForm(
-        SettingsHolder& settingsHolder,
-        int width = Theme::defaultSettingsFormWidth,
-        int height = Theme::defaultSettingsFormHeight,
-        const char* title = Theme::defaultSettingsFormTitle
-    ): 
-        FrameApplication(width, height, title),
-        settingsHolder(settingsHolder),
-        settings(settingsHolder.getSettings())
-    {}
+// public:
+//     explicit SettingsForm(
+//         SettingsHolder& settingsHolder,
+//         int width = Theme::defaultSettingsFormWidth,
+//         int height = Theme::defaultSettingsFormHeight,
+//         const char* title = Theme::defaultSettingsFormTitle
+//     ): 
+//         FrameApplication(width, height, title),
+//         settingsHolder(settingsHolder),
+//         settings(settingsHolder.getSettings())
+//     {}
 
-    virtual ~SettingsForm() {
-        delete okButton;
-        delete cancelButton;
-    }
+//     virtual ~SettingsForm() {
+//         delete okButton;
+//         delete cancelButton;
+//     }
 
-    virtual void init() override {
-        FrameApplication::init();
+//     virtual void init() override {
+//         FrameApplication::init();
         
-        int row = 0;
-        for (Mixed& setting: settings)
-            setting.createInput(mainFrame, paddingLeft, paddingTop + row++ * lineHeight);
+//         int row = 0;
+//         for (Mixed& setting: settings)
+//             setting.createInput(mainFrame, paddingLeft, paddingTop + row++ * lineHeight);
         
-        row++;
+//         row++;
         
-        okButton = new Button(gfx, 200, row * lineHeight, 90, 20, "Ok");
-        okButton->setBackgroundColor(green);
-        okButton->setTextColor(white);
-        okButton->setEventContext("SettingsForm", this);
-        okButton->addTouchHandler(onOkButtonTouchHandler);
-        mainFrame->child(okButton);
+//         okButton = new Button(gfx, 200, row * lineHeight, 90, 20, "Ok");
+//         okButton->setBackgroundColor(green);
+//         okButton->setTextColor(white);
+//         okButton->setEventContext("SettingsForm", this);
+//         okButton->addTouchHandler(onOkButtonTouchHandler);
+//         mainFrame->child(okButton);
 
-        cancelButton = new Button(gfx, 300, row * lineHeight, 90, 20, "Cancel");
-        cancelButton->addTouchHandler(onCancelButtonTouchHandler);
-        mainFrame->child(cancelButton);
-    }
-};
+//         cancelButton = new Button(gfx, 300, row * lineHeight, 90, 20, "Cancel");
+//         cancelButton->addTouchHandler(onCancelButtonTouchHandler);
+//         mainFrame->child(cancelButton);
+//     }
+// };
 
 class BitstampHistoryApplication: public FrameApplication {
 protected:
@@ -217,7 +217,7 @@ protected:
     }
 
     static void onHistorySetupButtonTouch(void*, unsigned int, int, int) {
-        SettingsForm form(
+        MixedInputListForm form(
             *app->candleHistory,
             520, 300, "History Settings"
         );

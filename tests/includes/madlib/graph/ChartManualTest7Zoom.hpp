@@ -2,10 +2,14 @@
 
 #include "../../ManualTestApplication.hpp"
 
+#include "../../../../src/includes/madlib/Factory.hpp"
 #include "../../../../src/includes/madlib/graph/Chart.hpp"
 #include "../../../../src/includes/madlib/graph/SlideBar.hpp"
 #include "../../../../src/includes/madlib/graph/ScrollBar.hpp"
 #include "../../../../src/includes/madlib/graph/IntervalBar.hpp"
+#include "../../../../src/includes/madlib/trading/periods.hpp"
+#include "../../../../src/includes/madlib/trading/CandleHistory.hpp"
+#include "../../../../src/includes/madlib/trading/CandleHistoryChart.hpp"
 
 using namespace madlib::graph;
 using namespace madlib::trading;
