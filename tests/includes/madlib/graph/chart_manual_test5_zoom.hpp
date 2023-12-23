@@ -71,7 +71,6 @@ int chart_manual_test5_zoom()
     );
     Progress progress;
     history->load(progress);
-    progress.close();
 
     CandleHistoryChart chart(
         &gfx, 10, 10, 1580, 580,

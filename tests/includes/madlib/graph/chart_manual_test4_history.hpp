@@ -79,7 +79,6 @@ int chart_manual_test4_history()
     );
     Progress progress;
     history->load(progress);
-    progress.close();
 
     // Zoom zoom;
     CandleHistoryChart chart(

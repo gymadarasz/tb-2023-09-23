@@ -86,7 +86,6 @@ public:
         );
         Progress progress;
         history->load(progress);
-        progress.close();
 
         candleStrategy = candleStrategyFactory.createInstance(
             "build/src/shared/trading/strategy/ACandleStrategy/"

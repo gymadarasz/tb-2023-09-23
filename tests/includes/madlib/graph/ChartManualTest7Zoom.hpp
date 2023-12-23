@@ -80,7 +80,6 @@ public:
         );
         Progress progress;
         history->load(progress);
-        progress.close();
         
         chart = new CandleHistoryChart(
             gfx, 300, 300, 1000, 300, history
