@@ -28,6 +28,36 @@ public:
         assert(result3 == "No spaces to trim");
     }
 
+    static void test_ltrim() {
+        const string testStr1 = "   Hello, World!   ";
+        const string testStr2 = "  \t  \t Trim this string \t  \t  ";
+        const string testStr3 = "No spaces to trim";
+
+        string result1 = str_ltrim(testStr1);
+        string result2 = str_ltrim(testStr2);
+        string result3 = str_ltrim(testStr3);
+
+        // Check if the results match the expected trimmed strings
+        assert(result1 == "Hello, World!   ");
+        assert(result2 == "Trim this string \t  \t  ");
+        assert(result3 == "No spaces to trim");
+    }
+
+    static void test_rtrim() {
+        const string testStr1 = "   Hello, World!   ";
+        const string testStr2 = "  \t  \t Trim this string \t  \t  ";
+        const string testStr3 = "No spaces to trim";
+
+        string result1 = str_rtrim(testStr1);
+        string result2 = str_rtrim(testStr2);
+        string result3 = str_rtrim(testStr3);
+
+        // Check if the results match the expected trimmed strings
+        assert(result1 == "   Hello, World!");
+        assert(result2 == "  \t  \t Trim this string");
+        assert(result3 == "No spaces to trim");
+    }
+
     static void test_normalize_datetime() {
         const string testDateTime1 = "2023-01-15 08:30:45.123";
         const string testDateTime2 = "2022-05-02 12:23";

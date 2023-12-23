@@ -20,6 +20,10 @@
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
+                },
+                {
+                    "text": "set print repeats 0",
+                    "ignoreFailures": true
                 }
             ],
             "preLaunchTask": "build-dbg",  // Optional: Specify a task to run before launching the debugger
@@ -44,6 +48,10 @@
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
+                },
+                {
+                    "text": "set print repeats 0",
+                    "ignoreFailures": true
                 }
             ],
             "preLaunchTask": "build-main-dbg",  // Optional: Specify a task to run before launching the debugger
@@ -64,6 +72,10 @@
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "set print repeats 0",
                     "ignoreFailures": true
                 }
             ],

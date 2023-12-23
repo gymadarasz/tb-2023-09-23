@@ -172,7 +172,7 @@ namespace madlib {
         return zenity_pipe(cmd);
     }
 
-    enum zenity_dialogue_type { INFO, WARNING, ERROR};
+    enum zenity_dialogue_type { INFO, WARNING, ERROR };
     void zenity_dialogue(
         const string& text, 
         const string* titleptr = nullptr,

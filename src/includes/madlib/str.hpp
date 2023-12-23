@@ -79,6 +79,18 @@ namespace madlib {
         return str.substr(start, end - start);
     }
 
+    string str_ltrim(const string& str) {
+        size_t start = 0;
+        while (start < str.length() && isspace(str[start])) start++;
+        return str.substr(start);
+    }
+
+    string str_rtrim(const string& str) {
+        size_t end = str.length();
+        while (end > 0 && isspace(str[end - 1])) end--;
+        return str.substr(0, end);
+    }
+
     inline int regx_match(
         const string& pattern, 
         const string& str, 
