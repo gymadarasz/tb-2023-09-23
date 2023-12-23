@@ -42,7 +42,7 @@ namespace madlib {
             WTERMSIG(exec_last_exit_status) == SIGPIPE
         )
             // Handle the case where the process was terminated by a broken pipe
-            LOG("Warning: The process was terminated by a broken pipe.");
+            LOGW("The process was terminated by a broken pipe.");
         else
             throw ERROR(
                 "Error occurred while closing the pipe. Exit signal: " 

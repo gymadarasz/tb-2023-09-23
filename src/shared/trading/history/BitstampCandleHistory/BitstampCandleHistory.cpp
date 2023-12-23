@@ -34,7 +34,7 @@ namespace madlib::trading::history {
                 if (readOutFileIfExists) return bitstamp_read_candle_history_dat(datFile);
             }
             LOG(
-                string("Parsing Bitstamp candle history data:\b")
+                string("Parsing Bitstamp candle history data:\n")
                     + "csv input file   : " + csvFile + "\n"
                     + "output data file : " + datFile
             );

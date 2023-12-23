@@ -37,7 +37,7 @@ namespace madlib::graph {
                 gui->loop(closeDisplay);
             } catch (exception& e) {
                 string errmsg = "Application error: " + string(e.what());
-                LOG(errmsg);
+                LOGE(errmsg);
                 throw ERROR(errmsg);
             }
             return this;

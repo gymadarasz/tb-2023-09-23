@@ -105,12 +105,12 @@ bool exec_cmd(string cmd) {
         replaced = str_replace(replaced, "error:", COLOR_ERROR "error:" COLOR_DEFAULT);
         cout << replaced << endl;
         if (replaced != output) {
-            LOG("Command output contains error(s).");
+            LOGE("Command output contains error(s).");
             return false;
         }
     }
     if (exec_last_exit_code != 0) {
-        LOG("Command exit code is non-zero: " + to_string(exec_last_exit_code));
+        LOGE("Command exit code is non-zero: " + to_string(exec_last_exit_code));
         return false;
     }
     return true;
@@ -338,7 +338,7 @@ int main(int argc, const char *argv[]) {
     } catch (exception &e) {
         const string errmsg = "Exception in build process: " + string(e.what());
         cerr << errmsg << endl;
-        LOG(errmsg);
+        LOGE(errmsg);
         return -1;
     }
     

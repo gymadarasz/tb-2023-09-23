@@ -262,9 +262,10 @@ namespace madlib::graph {
 
         const string dump(bool show = false) {
             vector<string> outs;
-            for (const auto& key: mixeds.getOrder()) 
-                outs.push_back(mixeds.at(key).dump());
-            string outp = str_concat(outs, "\n");
+            vector<string> order = mixeds.getOrder();
+            if (order.empty()) outs.push_back("[empty]");
+            else for (const auto& key: order) outs.push_back(mixeds.at(key).dump());
+            string outp = str_concat(outs, "\n");            
             if (show) DBG(outp);
             return outp;
         }
@@ -342,7 +343,7 @@ namespace madlib::graph {
         }
 
         virtual bool validate(MixedInputList& inputs) {
-            LOG("Warning: A MixedInputList validation is not implemented");
+            LOGW("A MixedInputList validation is not implemented");
             DBG("Inputs are:\n" + inputs.dump());
             return true;
         }

@@ -272,7 +272,7 @@ namespace madlib::trading {
         void backtest() {
 
             if (!backtester->backtest()) {
-                LOG("Backtest failed"); // TODO
+                LOGE("Backtest failed"); // TODO
             }
 
         }

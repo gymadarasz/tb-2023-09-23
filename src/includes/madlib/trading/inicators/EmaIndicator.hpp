@@ -28,7 +28,7 @@ namespace madlib::trading {
             emaProjector = candleHistoryChart->createPointSeries(
                 mainProjector, color
             );
-            LOG("emaProjector (" + to_string((unsigned long long)emaProjector) + ") should align to: " + to_string((unsigned long long)mainProjector));
+            DBG("emaProjector (" + to_string((unsigned long long)emaProjector) + ") should align to: " + to_string((unsigned long long)mainProjector));
         }
 
         virtual ~EmaIndicator() {}

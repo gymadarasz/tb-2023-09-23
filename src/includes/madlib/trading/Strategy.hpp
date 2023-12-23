@@ -110,11 +110,11 @@ namespace madlib::trading {
         // }
 
         virtual void onStart(Exchange*&, const string&) {
-            LOG("Warning: onStart is not implemented");
+            LOGW("onStart is not implemented");
         }
 
         virtual void onFirstCandleClose(Exchange*&, const string&, const Candle&) {
-            LOG("Warning: onFirstCandleClose is not implemented");
+            LOGW("onFirstCandleClose is not implemented");
         }
 
         virtual void onCandleClose(Exchange*&, const string&, const Candle&) {
@@ -177,7 +177,7 @@ namespace madlib::trading {
                 addBuyText(exchange, symbol, currentTime, currentPrice);
                 return true;
             }
-            LOG(
+            LOGA(
                 " Exchange time: " + ms_to_datetime(currentTime) 
                 + ", Strategy BUY Error, [" + symbol + "] " + to_string(amount)
             );
@@ -192,7 +192,7 @@ namespace madlib::trading {
                 addSellText(exchange, symbol, currentTime, currentPrice);
                 return true;
             }
-            LOG(
+            LOGA(
                 " Exchange time: " + ms_to_datetime(currentTime) 
                 + ", Strategy SELL Error, [" + symbol + "] " + to_string(amount)
             );

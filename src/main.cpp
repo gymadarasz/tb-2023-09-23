@@ -558,7 +558,7 @@ int help(int, const char* argv[]) {
 
 int main(int argc, const char* argv[])
 {
-    LOG("Main thread started.");
+    LOGI("Main thread started.");
     try { 
         // if (argv[1] && !strcmp(argv[1], "test-command")) return test(argc, argv);
         if (argv[1] && !strcmp(argv[1], "backtest")) return backtest(argc, argv);
