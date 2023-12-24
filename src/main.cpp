@@ -267,7 +267,7 @@ protected:
         app->candleHistory->setStartTime(from);
         app->candleHistory->setEndTime(to);
         app->candleHistory->setPeriod(period);
-        Progress progress("Reload history...", true);
+        Progress progress("Reload history...", false);
         app->candleHistory->reload(progress);
         app->gfx->triggerFakeEvent({ GFX::RELEASE });
     }
@@ -433,7 +433,7 @@ protected:
         candleHistory->setEndTime(endTime);
         candleHistory->setSymbol(symbol);
         candleHistory->setPeriod(period);
-        Progress progress("Loading history...");
+        Progress progress("Loading history...", false);
         candleHistory->load(progress);
     }
 

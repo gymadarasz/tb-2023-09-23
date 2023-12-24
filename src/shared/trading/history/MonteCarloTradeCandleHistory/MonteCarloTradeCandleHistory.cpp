@@ -79,7 +79,7 @@ namespace madlib::trading::history {
                 previousPrice = trade.price;  // Update the previous_price
                 previousVolume = trade.volume;  // Update the previous_volume
 
-                progress.update((double)trade.timestamp, (double)startTime, (double)endTime, false, &next);
+                if (!progress.update((double)trade.timestamp, (double)startTime, (double)endTime, false, &next)) break;
             }
             progress.update("Align history to price bottom..");
             double priceInc = priceBottom - priceMin;

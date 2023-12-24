@@ -59,7 +59,7 @@ namespace madlib::trading::history {
                 if (t < now() - 5 * second) {
                     t = now();
                     string msg = "Parse CSV: [" + line + "]";
-                    progress.update(msg);
+                    if (!progress.update(msg)) throw ERROR("User canceled");
                     LOG(msg);
                 }
                 vector<string> fields = str_split(",", line);
@@ -103,7 +103,7 @@ namespace madlib::trading::history {
                 file_create_path(path);
             }
             for (int year = fromYear; year <= toYear; year++) {
-                progress.update(year, fromYear, toYear);
+                if(!progress.update(year, fromYear, toYear, false)) throw ERROR("User canceled");
                 progress.update("Download data " + to_string(year) + "...");
                 const string filenameYear = str_replace(filename, "{year}", to_string(year));
                 const string filepath = path + filenameYear;
@@ -140,7 +140,7 @@ namespace madlib::trading::history {
             string _datFileTpl = str_replace(datFileTpl, repl);
             string _csvFileTpl = str_replace(csvFileTpl, repl);            
             for (int year = fromYear; year <= toYear; year++) {
-                progress.update("Parse data " + to_string(year) + "...");
+                if (!progress.update("Parse data " + to_string(year) + "...")) throw ERROR("User canceled");
                 const string csvFile = str_replace(_csvFileTpl, "{year}", to_string(year));
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
                 bitstamp_parse_candle_history_csv(progress, csvFile, datFile, false, false);
@@ -167,7 +167,7 @@ namespace madlib::trading::history {
             string _datFileTpl = str_replace(datFileTpl, repl);
             candles.clear();
             for (int year = fromYear; year <= toYear; year++) {
-                progress.update("Loading data " + to_string(year) + "...");
+                if (!progress.update("Loading data " + to_string(year) + "...")) throw ERROR("User canceled");
                 const string datFile = str_replace(_datFileTpl, "{year}", to_string(year));
                 if (!file_exists(datFile)) {
                     string _csvFileTpl = str_replace(csvFileTpl, repl);
