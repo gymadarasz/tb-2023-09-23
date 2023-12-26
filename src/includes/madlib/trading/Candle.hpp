@@ -1,6 +1,11 @@
 #pragma once
 
+#include <cmath>
+
+#include "../ERROR.hpp"
 #include "../time.hpp"
+
+using namespace std;
 
 namespace madlib::trading {
     
@@ -8,13 +13,27 @@ namespace madlib::trading {
     protected:
         double open, close, low, high, volume;
         ms_t start, end; // ms
+        bool strict;
+
+        void validate() {
+            if (open < 0 || close < 0 || low < 0 || high < 0) throw ERROR("Candle prices cannot be negative.");
+            if (isnan(open) || isnan(close) || isnan(low) || isnan(high) || isnan(volume)) throw ERROR("Invalid NaN value(s).");
+            if (end < start) throw ERROR("Candle start time cannot be greater than end time.");
+            if (volume < 0) throw ERROR("Candle volume cannot be negative.");
+            if (low > open || low > close) throw ERROR("Candle low should be the lowest.");
+            if (high < open || high < close) throw ERROR("Candle high should be the highest.");
+        }
+
     public:
         Candle(
             double open = 0, double close = 0, double low = 0, double high = 0, double volume = 0, 
-            ms_t start = 0, ms_t end = 0
+            ms_t start = 0, ms_t end = 0, bool strict = false
         ):
             open(open), close(close), low(low), high(high), volume(volume), 
-            start(start), end(end) {}
+            start(start), end(end), strict(strict)
+        {
+            if (strict) validate();
+        }
 
         double getOpen() const {
             return open;
@@ -22,6 +41,7 @@ namespace madlib::trading {
 
         void setOpen(double open) {
             this->open = open;
+            if (strict) validate();
         }
 
         double getClose() const {
@@ -30,6 +50,7 @@ namespace madlib::trading {
 
         void setClose(double close) {
             this->close = close;
+            if (strict) validate();
         }
 
         double getLow() const {
@@ -38,6 +59,7 @@ namespace madlib::trading {
 
         void setLow(double low) {
             this->low = low;
+            if (strict) validate();
         }
 
         double getHigh() const {
@@ -46,6 +68,7 @@ namespace madlib::trading {
 
         void setHigh(double high) {
             this->high = high;
+            if (strict) validate();
         }
 
         double getVolume() const {
@@ -54,6 +77,7 @@ namespace madlib::trading {
 
         void setVolume(double volume) {
             this->volume = volume;
+            if (strict) validate();
         }
 
         ms_t getStart() const {
@@ -62,6 +86,7 @@ namespace madlib::trading {
 
         void setStart(ms_t start) {
             this->start = start;
+            if (strict) validate();
         }
 
         ms_t getEnd() const {
@@ -70,6 +95,7 @@ namespace madlib::trading {
 
         void setEnd(ms_t end) {
             this->end = end;
+            if (strict) validate();
         }
     };
 

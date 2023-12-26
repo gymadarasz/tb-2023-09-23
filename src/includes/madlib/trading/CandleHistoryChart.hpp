@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../graph/Chart.hpp"
 #include "CandleHistory.hpp"
 
 namespace madlib::trading {

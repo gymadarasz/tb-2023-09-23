@@ -63,10 +63,6 @@ namespace madlib::trading {
         virtual void reload(Progress&) {
             throw ERR_UNIMP;
         }
-
-        // virtual void clear() {
-        //     throw ERR_UNIMP;
-        // }
     };
 
 }

@@ -23,6 +23,8 @@
 #include "includes/madlib/graph/ChartLabelManualTest1.hpp"
 #include "includes/madlib/graph/TestCandleHistoryChartReload.hpp"
 
+#include "includes/madlib/trading/TradingTest.hpp"
+
 using namespace std;
 
 class Tester {
@@ -111,6 +113,36 @@ void unit_tests() {
     TEST(LogTest::testLog_writeln);
 }
 
+void unit_tests_trading() {
+    TEST(TradingTest::testBalance_DefaultInitialization);
+    TEST(TradingTest::testBalance_CustomInitialization);
+    TEST(TradingTest::testBalance_SetAndGetAmount);
+    TEST(TradingTest::testBalance_IncrementPositiveAmount);
+    TEST(TradingTest::testBalance_IncrementNegativeAmount);
+    TEST(TradingTest::testBalance_DecrementPositiveAmount);
+    TEST(TradingTest::testBalance_DecrementNegativeAmount);
+    TEST(TradingTest::testBalance_DecrementToNegative);
+    TEST(TradingTest::testBalance_CheckIfNegativeThroughIncrement);
+    TEST(TradingTest::testBalance_IncrementDecrementZeroAmount);
+    TEST(TradingTest::testBalance_IncrementDecrementWithErrorHandling);
+    TEST(TradingTest::testBalance_CheckIfNegativeViaIncrement);
+    TEST(TradingTest::testBalance_CheckIfNegativeViaDecrement);
+    TEST(TradingTest::testCandle_DefaultInitialization);
+    TEST(TradingTest::testCandle_CustomInitialization);
+    TEST(TradingTest::testCandle_SettersAndGetters);
+    TEST(TradingTest::testCandle_InvalidInitialization);
+    TEST(TradingTest::testCandle_ExtremeValues);
+    TEST(TradingTest::testCandle_ConsistencyInGetterSetter);
+    TEST(TradingTest::testCandle_VolumeAndPriceRelationship);
+    TEST(TradingTest::testHistory_DefaultInitialization);
+    TEST(TradingTest::testHistory_SetAndGetSymbol);
+    TEST(TradingTest::testHistory_SetAndGetStartTime);
+    TEST(TradingTest::testHistory_SetAndGetEndTime);
+    TEST(TradingTest::testHistory_SetAndGetPeriod);
+    TEST(TradingTest::testHistory_Load);
+    TEST(TradingTest::testHistory_Reload);
+}
+
 void manual_tests() {
     TEST(new TestCandleHistoryChartReload);
     TEST(new ChartLabelManualTest1);
@@ -136,6 +168,7 @@ int main() {
 
     cout << "Unit tests: ";
     unit_tests();
+    unit_tests_trading();
     cout << " [OK]" << endl;
 
     cout << "Manual tests: ";

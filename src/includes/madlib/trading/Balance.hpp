@@ -23,7 +23,7 @@ namespace madlib::trading {
     public:
         Balance(double amount = 0, bool canGoNegative = false): 
             amount(amount), canGoNegative(canGoNegative)
-            {}
+        {}
         
         void setAmount(double amount) {
             this->amount = amount;
