@@ -1,3 +1,10 @@
+./cleanup.sh
+./build-run.sh -i src/shared -s
+./build-run.sh -i tests/test.cpp -e --libs " -lX11 -ldl"
+
+----- [NOTE!!!!!] ------
+the following are deprecated:
+
 Commands:
 (from vscode may need to run `unset GTK_PATH` command to use zenity
     see more: https://github.com/ros2/ros2/issues/1406#issuecomment-1500898231)

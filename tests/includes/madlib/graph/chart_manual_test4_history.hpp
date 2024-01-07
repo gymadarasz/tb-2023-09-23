@@ -68,7 +68,7 @@ int chart_manual_test4_history()
     Factory factory = Factory<CandleHistory>();
 
     CandleHistory* history = factory.createInstance(
-        "build/src/shared/trading/history/MonteCarloTradeCandleHistory/" 
+        "build/release/src/shared/trading/history/MonteCarloTradeCandleHistory/" 
         "MonteCarloTradeCandleHistory.so",
         // new TradeCandleHistory::Args({
         symbol, startTime, endTime, period

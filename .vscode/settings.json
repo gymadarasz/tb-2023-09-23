@@ -71,7 +71,8 @@
         "list": "cpp",
         "typeindex": "cpp",
         "variant": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "csignal": "cpp"
     },
     "cmake.configureOnOpen": false,
 }

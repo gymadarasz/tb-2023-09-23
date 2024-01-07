@@ -4,9 +4,10 @@
 #include <map>
 #include <dlfcn.h>
 
-#include "ERROR.hpp"
+#include "../../../libs/clib/clib/err.hpp"
 
 using namespace std;
+using namespace clib;
 
 namespace madlib {
 

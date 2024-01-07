@@ -3,8 +3,8 @@
 #include <cassert>
 
 #include "../../../libs/clib/clib/time.hpp"
+#include "../../../libs/clib/clib/str.hpp"
 
-#include "../../../src/includes/madlib/str.hpp"
 #include "../../../src/includes/madlib/sys.hpp"
 #include "../../../src/includes/madlib/maps.hpp"
 

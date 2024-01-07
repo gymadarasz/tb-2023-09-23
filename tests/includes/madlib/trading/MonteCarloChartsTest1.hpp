@@ -66,7 +66,7 @@ public:
         gui->setTitle("MonteCarloChartsTest1");
 
         testExchange = testExchangeFactory.createInstance(
-            "build/src/shared/trading/exchange/test/DefaultTestExchange/"
+            "build/release/src/shared/trading/exchange/test/DefaultTestExchange/"
             "DefaultTestExchange.so", 
             // new TestExchange::Args({ 
             periods, symbols, pairs, balances 
@@ -74,7 +74,7 @@ public:
         );
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
         history = candleHistoryFactory.createInstance(
-            "build/src/shared/trading/history/MonteCarloTradeCandleHistory/"
+            "build/release/src/shared/trading/history/MonteCarloTradeCandleHistory/"
             "MonteCarloTradeCandleHistory.so",
             // new TradeCandleHistory::Args({
             symbol, 
@@ -88,7 +88,7 @@ public:
         history->load(progress);
 
         candleStrategy = candleStrategyFactory.createInstance(
-            "build/src/shared/trading/strategy/ACandleStrategy/"
+            "build/release/src/shared/trading/strategy/ACandleStrategy/"
             "ACandleStrategy.so", nullptr 
         );
     

@@ -5,10 +5,13 @@
 #include "../../../../libs/clib/clib/time.hpp"
 #include "../../../../src/includes/madlib/Factory.hpp"
 #include "../../../../src/includes/madlib/graph/MultiChartAccordion.hpp"
+#include "../../../../src/includes/madlib/trading/CandleHistory.hpp"
+#include "../../../../src/includes/madlib/trading/periods.hpp"
 #include "../../../../src/includes/madlib/trading/inicators/EmaIndicator.hpp"
 
 using namespace clib;
 using namespace madlib::graph;
+using namespace madlib::trading;
 
 class TestCandleHistoryChartReload: public ManualTestApplication {
 protected:
@@ -50,7 +53,7 @@ public:
         multiChartAccordion = new MultiChartAccordion(gfx, 10, 50, 1000, startTime, endTime);
 
         candleHistory = candleHistoryFactory.createInstance(
-            "build/src/shared/trading/history/BitstampCandleHistory/BitstampCandleHistory.so", 
+            "build/release/src/shared/trading/history/BitstampCandleHistory/BitstampCandleHistory.so", 
             symbol, startTime, endTime, period
         );
 

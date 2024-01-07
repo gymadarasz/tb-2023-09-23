@@ -8,10 +8,10 @@
 #include <fstream>
 #include <sys/stat.h>
 
-#include "../../../src/includes/madlib/files.hpp"
+#include "../../../libs/clib/clib/files.hpp"
 
 using namespace std;
-using namespace madlib;
+using namespace clib;
 
 class FilesTest {
 protected:
@@ -76,8 +76,8 @@ public:
         assert(file_replace_extension("", ".jpg") == ".jpg");
 
         // Test replacing extension with an empty one
-        assert(file_replace_extension("file.txt", "") == "file.");
-        assert(file_replace_extension("file", "") == "file.");
+        assert(file_replace_extension("file.txt", "") == "file");
+        assert(file_replace_extension("file", "") == "file");
     }
 
     static void testFiles_normalizePath() {

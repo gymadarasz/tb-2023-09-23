@@ -22,7 +22,8 @@
         {
             "label": "build-test-dbg",
             "type": "shell",
-            "command": "./build-run.sh DEBUG_TESTS && ./build/build DEBUG_TESTS",  // Command to run your build script
+            "command": "./build-run.sh -i tests/test.cpp -d --libs \" -lX11 -ldl\"",
+            //"command": "./build-run.sh DEBUG_TESTS && ./build/build DEBUG_TESTS",  // Command to run your build script
             "group": {
                 "kind": "build",
                 "isDefault": true

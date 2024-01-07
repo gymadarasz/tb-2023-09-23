@@ -1,10 +1,11 @@
 #pragma once
 
-#include "str.hpp"
+#include "../../../libs/clib/clib/str.hpp"
 #include "sys.hpp"
 #include "vectors.hpp"
 
 using namespace std;
+using namespace clib;
 
 namespace madlib {
 

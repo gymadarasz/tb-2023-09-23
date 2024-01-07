@@ -2,7 +2,9 @@
 
 #include <string>
 
-#include "../ERROR.hpp"
+#include "../../../../libs/clib/clib/err.hpp"
+
+using namespace clib;
 
 namespace madlib::trading {
    

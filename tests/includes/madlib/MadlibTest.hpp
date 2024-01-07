@@ -1,12 +1,15 @@
 #pragma once
 
+#include <iostream>
 #include <cassert>
 
+#include "../../../libs/clib/clib/args.hpp"
 #include "../../../src/includes/madlib/VectorFactory.hpp"
-#include "../../../src/includes/madlib/args.hpp"
 #include "../../../src/includes/madlib/Factory.hpp"
 #include "../../../src/includes/madlib/Printer.hpp"
 
+using namespace std;
+using namespace clib;
 using namespace madlib;
 
 class MadlibTest {
@@ -300,13 +303,13 @@ public:
 
         Factory factory = Factory<Printer>();
 
-        Printer* printer1 = factory.createInstance("build/src/shared/Test1Printer.so");
+        Printer* printer1 = factory.createInstance("build/release/src/shared/Test1Printer.so");
         printer1->println("Printer1 is printing");
         assert(buffer.str() == "Test1Printer prints: Printer1 is printing\n");
 
         buffer.str("");  // Clear the buffer for reuse
         
-        Printer* printer2 = factory.createInstance("build/src/shared/Test2Printer.so");
+        Printer* printer2 = factory.createInstance("build/release/src/shared/Test2Printer.so");
         printer2->println("Printer2 is printing");
         assert(buffer.str() == "Test2Printer prints: Printer2 is printing\n");
 

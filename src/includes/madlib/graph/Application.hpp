@@ -1,9 +1,11 @@
 #pragma once
 
+#include "../../../../libs/clib/clib/str.hpp"
 #include "../Log.hpp"
-#include "../ERROR.hpp"
 #include "GUI.hpp"
 #include "GFX.hpp"
+
+using namespace clib;
 
 namespace madlib::graph {
 

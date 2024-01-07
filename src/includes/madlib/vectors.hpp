@@ -4,10 +4,11 @@
 #include <vector>
 #include <string>
 
-#include "str.hpp"
-#include "ERROR.hpp"
+#include "../../../libs/clib/clib/str.hpp"
+#include "../../../libs/clib/clib/err.hpp"
 
 using namespace std;
+using namespace clib;
 
 namespace madlib {
 

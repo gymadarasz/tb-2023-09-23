@@ -41,7 +41,7 @@ public:
 
         // Create a MonteCarloTradeCandleHistory object with the specified parameters
         history = candleHistoryFactory.createInstance(
-            "build/src/shared/trading/history/MonteCarloTradeCandleHistory/"
+            "build/release/src/shared/trading/history/MonteCarloTradeCandleHistory/"
             "MonteCarloTradeCandleHistory.so",
             // new TradeCandleHistory::Args({
             symbol, 

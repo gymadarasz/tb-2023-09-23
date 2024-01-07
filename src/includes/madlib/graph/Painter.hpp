@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../ERROR.hpp"
+#include "../../../../libs/clib/clib/err.hpp"
 
 #include "Theme.hpp"
 #include "EventHandler.hpp"
 #include "Zoomable.hpp"
 #include "Scrollable.hpp"
+
+using namespace clib;
 
 namespace madlib::graph {
 

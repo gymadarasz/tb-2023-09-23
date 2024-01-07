@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../../../libs/clib/clib/time.hpp"
+#include "../../../../libs/clib/clib/err.hpp"
 
-#include "../ERROR.hpp"
 #include "../maps.hpp"
 
 using namespace clib;

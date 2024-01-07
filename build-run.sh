@@ -11,6 +11,7 @@ cppcheck . -ibuild \
 --enable=style \
 --std=c++11 \
 --error-exitcode=1 && \
-g++ -c build.cpp -o build/build.o && \
-g++ -o build/build build/build.o && \
-./build/build "$@"
+./libs/clib/build/builder "$@"
+# g++ -c build.cpp -o build/build.o && \
+# g++ -o build/build build/build.o && \
+# ./build/build "$@"
