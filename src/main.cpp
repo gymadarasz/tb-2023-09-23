@@ -109,6 +109,7 @@ const ms_t Config::endTime = now();
 //         settings(settingsHolder.getSettings())
 //     {}
 
+
 //     virtual ~SettingsForm() {
 //         delete okButton;
 //         delete cancelButton;
