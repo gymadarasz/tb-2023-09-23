@@ -4,7 +4,10 @@
 #include <string>
 #include "zenity.hpp"
 
+#include "../../../libs/clib/clib/time.hpp"
+
 using namespace std;
+using namespace clib;
 
 namespace madlib {
 

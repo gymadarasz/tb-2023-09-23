@@ -1,10 +1,12 @@
 #pragma once
 
+#include "../../../libs/clib/clib/time.hpp"
+
 #include "Printer.hpp"
-#include "time.hpp"
 #include "files.hpp"
 
 using namespace std;
+using namespace clib;
 
 namespace madlib {
 

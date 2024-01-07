@@ -4,14 +4,16 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 
+#include "../../../../libs/clib/clib/time.hpp"
 #include "../ERROR.hpp"
-#include "../time.hpp"
 #include "../zenity.hpp"
 
 #include "defs.hpp"
 #include "Color.hpp"
 #include "Theme.hpp"
 #include "EventHandler.hpp"
+
+using namespace clib;
 
 namespace madlib::graph {
 

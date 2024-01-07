@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdio>
 
-#include "includes/madlib/time.hpp"
+#include "../libs/clib/clib/time.hpp"
 #include "includes/madlib/Factory.hpp"
 #include "includes/madlib/graph/FrameApplication.hpp"
 #include "includes/madlib/graph/Select.hpp"
@@ -18,6 +18,7 @@
 #include "includes/madlib/trading/CandleStrategyBacktesterMultiChartAccordion.hpp"
 
 using namespace std;
+using namespace clib;
 using namespace madlib;
 using namespace madlib::graph;
 using namespace madlib::trading;

@@ -2,11 +2,12 @@
 
 #include "../../ManualTestApplication.hpp"
 
-#include "../../../../src/includes/madlib/time.hpp"
+#include "../../../../libs/clib/clib/time.hpp"
 #include "../../../../src/includes/madlib/Factory.hpp"
 #include "../../../../src/includes/madlib/graph/MultiChartAccordion.hpp"
 #include "../../../../src/includes/madlib/trading/inicators/EmaIndicator.hpp"
 
+using namespace clib;
 using namespace madlib::graph;
 
 class TestCandleHistoryChartReload: public ManualTestApplication {

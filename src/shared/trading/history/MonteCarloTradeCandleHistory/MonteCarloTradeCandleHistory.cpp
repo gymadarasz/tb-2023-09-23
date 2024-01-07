@@ -1,9 +1,11 @@
+#include "../../../../../libs/clib/clib/time.hpp"
+
 #include "../../../../includes/madlib/rand.hpp"
-#include "../../../../includes/madlib/time.hpp"
 #include "../../../../includes/madlib/Progress.hpp"
 #include "../../../../includes/madlib/graph/Mixed.hpp"
 #include "../../../../includes/madlib/trading/TradeCandleHistory.hpp"
 
+using namespace clib;
 
 namespace madlib::trading::history {
 

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "../../../../libs/clib/clib/time.hpp"
+
+using namespace clib;
+
 namespace madlib::graph {
 
     template<typename T>

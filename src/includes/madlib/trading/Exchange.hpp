@@ -3,10 +3,12 @@
 #include <map>
 #include <string>
 
-#include "../time.hpp"
+#include "../../../../libs/clib/clib/time.hpp"
 
 #include "Pair.hpp"
 #include "Balance.hpp"
+
+using namespace clib;
 
 namespace madlib::trading {
     

@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 
+#include "libs/clib/clib/time.hpp"
 #include "src/includes/madlib/macros.hpp"
 #include "src/includes/madlib/sys.hpp"
 #include "src/includes/madlib/str.hpp"
@@ -9,9 +10,9 @@
 #include "src/includes/madlib/vectors.hpp"
 #include "src/includes/madlib/Log.hpp"
 #include "src/includes/madlib/ERROR.hpp"
-#include "src/includes/madlib/time.hpp"
 
 using namespace std;
+using namespace clib;
 using namespace madlib;
 
 class BuildArguments {

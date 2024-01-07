@@ -2,12 +2,14 @@
 
 #include <cassert>
 
+#include "../../../libs/clib/clib/time.hpp"
+
 #include "../../../src/includes/madlib/str.hpp"
-#include "../../../src/includes/madlib/time.hpp"
 #include "../../../src/includes/madlib/sys.hpp"
 #include "../../../src/includes/madlib/maps.hpp"
 
 using namespace std;
+using namespace clib;
 using namespace madlib;
 
 class ToolsTest {
