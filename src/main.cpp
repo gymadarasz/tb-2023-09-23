@@ -42,9 +42,9 @@ struct Config {
     static const ms_t startTime;
     static const ms_t endTime;
 };
-const string Config::candleHistoryPath = "build/src/shared/trading/history";
-const string Config::testExchangePath = "build/src/shared/trading/exchange/test";
-const string Config::candleStrategyPath = "build/src/shared/trading/strategy";
+const string Config::candleHistoryPath = "build/release/src/shared/trading/history";
+const string Config::testExchangePath = "build/release/src/shared/trading/exchange/test";
+const string Config::candleStrategyPath = "build/release/src/shared/trading/strategy";
 
 const string Config::symbol = "BTCUSD";
 

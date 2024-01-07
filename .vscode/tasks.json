@@ -13,7 +13,8 @@
         {
             "label": "build-main-dbg",
             "type": "shell",
-            "command": "./build-run.sh DEBUG && ./build/build DEBUG",  // Command to run your build script
+            "command": "./build-run.sh -i src/main.cpp -d --libs \" -lX11 -ldl\"",
+            //"command": "./build-run.sh DEBUG && ./build/build DEBUG",  // Command to run your build script
             "group": {
                 "kind": "build",
                 "isDefault": true

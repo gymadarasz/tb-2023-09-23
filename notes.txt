@@ -1,6 +1,9 @@
 ./cleanup.sh
 ./build-run.sh -i src/shared -s
 ./build-run.sh -i tests/test.cpp -e --libs " -lX11 -ldl"
+./build-run.sh -i src/main.cpp -e --libs " -lX11 -ldl"
+
+note: use -d for debug (instead -e aka --execute)
 
 ----- [NOTE!!!!!] ------
 the following are deprecated:
