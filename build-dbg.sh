@@ -1,6 +1,6 @@
 #!/bin/bash
 unset GTK_PATH
-cppcheck . \
+cppcheck . -ibuild \
 --enable=all \
 --suppress=useStlAlgorithm \
 --suppress=cstyleCast \

@@ -13,16 +13,16 @@ namespace madlib {
         vector<KeyT> order;
     public:
         void insert(const KeyT& key, const ValueT& value) {
-            // Check if the key already exists
-            if (data.find(key) == data.end()) {
-                // Insert the key-value pair into the map
-                data[key] = value;
-                // Store the key in the order vector
-                order.push_back(key);
-            } else {
-                // Key already exists, update the value
-                data[key] = value;
+            // Use try_emplace to efficiently insert or update the element
+            auto result = data.try_emplace(key, value);
+
+            // If the key already existed, update the value
+            if (!result.second) {
+                result.first->second = value;
             }
+
+            // Always add the key to the order vector
+            order.push_back(key);
         }
 
         const vector<KeyT>& getOrder() const {

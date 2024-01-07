@@ -1,4 +1,10 @@
-# cd src/libs
-# git clone https://github.com/jarro2783/cxxopts.git
-# cd cxxopts
-# git checkout v3.1.1
+mkdir libs
+cd libs
+
+git clone https://github.com/gyulamad/clib.git
+cd clib 
+./build.sh
+
+cd ..
+
+
